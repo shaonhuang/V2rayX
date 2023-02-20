@@ -1,16 +1,19 @@
 import { app, BrowserWindow } from 'electron';
 import * as path from 'path';
-import installExtension, { REACT_DEVELOPER_TOOLS } from "electron-devtools-installer";
+import installExtension, { REACT_DEVELOPER_TOOLS } from 'electron-devtools-installer';
+import Store from 'electron-store';
 
 function createWindow() {
   const win = new BrowserWindow({
     width: 800,
     height: 600,
+    // transparent: true,
+    transparent: false,
     webPreferences: {
       // contextIsolation: false,
-      preload: path.join(__dirname, 'preload.js')
-    }
-  })
+      preload: path.join(__dirname, 'preload.js'),
+    },
+  });
 
   if (app.isPackaged) {
     // 'build/index.html'
@@ -22,14 +25,16 @@ function createWindow() {
 
     // Hot Reloading on 'node_modules/.bin/electronPath'
     require('electron-reload')(__dirname, {
-      electron: path.join(__dirname,
+      electron: path.join(
+        __dirname,
         '..',
         '..',
         'node_modules',
         '.bin',
-        'electron' + (process.platform === "win32" ? ".cmd" : "")),
+        'electron' + (process.platform === 'win32' ? '.cmd' : '')
+      ),
       forceHardReset: true,
-      hardResetMethod: 'exit'
+      hardResetMethod: 'exit',
     });
   }
 }
@@ -39,6 +44,9 @@ app.whenReady().then(() => {
   installExtension(REACT_DEVELOPER_TOOLS)
     .then((name) => console.log(`Added Extension:  ${name}`))
     .catch((err) => console.log('An error occurred: ', err));
+
+  store.set('foo.bar', true);
+  console.log(store.get('foo'));
 
   createWindow();
 

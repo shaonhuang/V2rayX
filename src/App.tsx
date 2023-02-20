@@ -1,24 +1,27 @@
-import React from 'react';
-import logo from './logo.svg';
 import './App.css';
-
+import Layout from './components/Layout';
+import Navigation from './components/navigation/Navigation';
+import GernalSettings from './pages/Home';
+import Config from './pages/Config';
+import { useAppSelector } from './store/hooks';
 function App() {
+  const tabName = useAppSelector((state) => state.navTab.tabName);
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+    <div className="App dark:bg-slate-800 dark:text-white">
+      <Layout>
+        <Navigation />
+        <hr />
+        {((tabName: string): JSX.Element => {
+          switch (tabName) {
+            case 'config':
+              return <Config></Config>;
+            case 'home':
+            default:
+              return <GernalSettings />;
+          }
+        })(tabName)}
+        <div className="text-black dark:text-white">hello</div>
+      </Layout>
     </div>
   );
 }
