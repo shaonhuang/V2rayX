@@ -1,4 +1,4 @@
-import nightMode from "./Theme";
+import nightMode from './Theme';
 
 nightMode();
 
@@ -7,6 +7,6 @@ interface LayoutProps {
 }
 const Layout = (props: LayoutProps) => {
   const { children } = props;
-  return <div className="container max-h-screen mx-auto py-6">{children}</div>;
+  return <div className="container mx-auto max-h-screen py-6">{children}</div>;
 };
 export default Layout;

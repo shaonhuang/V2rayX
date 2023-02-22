@@ -1,1 +1,1 @@
-import * from './test'
+// import * from './test'

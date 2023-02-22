@@ -1,6 +1,6 @@
-import { configureStore } from "@reduxjs/toolkit";
-import serversReducer from "./serversSlice";
-import navTabReducer from "./navigationSlice";
+import { configureStore } from '@reduxjs/toolkit';
+import serversReducer from './serversSlice';
+import navTabReducer from './navigationSlice';
 
 const store = configureStore({
   reducer: {

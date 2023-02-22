@@ -11,7 +11,7 @@ function App() {
       <Layout>
         <Navigation />
         <hr />
-        {((tabName: string): JSX.Element => {
+        {(function (tabName: string): JSX.Element {
           switch (tabName) {
             case 'config':
               return <Config></Config>;

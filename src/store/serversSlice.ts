@@ -1,16 +1,16 @@
-import { createSlice, configureStore } from "@reduxjs/toolkit";
+import { createSlice, configureStore } from '@reduxjs/toolkit';
 
 const serversSlice = createSlice({
-  name: "servers",
+  name: 'servers',
   initialState: {
-    url: "",
+    url: '',
   },
   reducers: {
     setUrl: (state, action) => {
       state.url = action.payload;
     },
     deleteUrl: (state) => {
-      state.url = "";
+      state.url = '';
     },
   },
 });

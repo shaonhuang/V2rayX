@@ -1,7 +1,7 @@
 import { app, BrowserWindow } from 'electron';
 import * as path from 'path';
 import installExtension, { REACT_DEVELOPER_TOOLS } from 'electron-devtools-installer';
-import Store from 'electron-store';
+// import Store from 'electron-store';
 
 function createWindow() {
   const win = new BrowserWindow({
@@ -45,8 +45,8 @@ app.whenReady().then(() => {
     .then((name) => console.log(`Added Extension:  ${name}`))
     .catch((err) => console.log('An error occurred: ', err));
 
-  store.set('foo.bar', true);
-  console.log(store.get('foo'));
+  // store.set('foo.bar', true);
+  // console.log(store.get('foo'));
 
   createWindow();
 

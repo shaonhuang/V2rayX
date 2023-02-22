@@ -1,15 +1,15 @@
-import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
 interface NavTabState {
   tabName: string;
 }
 const initialState: NavTabState = {
-  tabName: "home",
+  tabName: 'home',
 };
 // tabName's options home config setting about
 
 const navTabSlice = createSlice({
-  name: "navTab",
+  name: 'navTab',
   initialState,
   reducers: {
     setNavTab: (state, action: PayloadAction<string>) => {
