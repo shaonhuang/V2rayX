@@ -13,34 +13,52 @@ const NavButton = styled(Button)({
   display: 'flex',
   flexDirection: 'column',
   textTransform: 'none',
+  padding: 'auto 4rem',
+  color: 'white',
 });
 const Navigation = () => {
   const [value, setValue] = React.useState(0);
   const { tabName } = useAppSelector((state: RootState) => state.navTab);
   const dispatch = useAppDispatch();
-  console.log(tabName);
   return (
-    <nav>
+    <nav className="bg-blue-dark">
       <Stack spacing={4} direction="row" className="flex justify-center">
         <NavButton
-          variant={tabName === 'home' ? 'contained' : 'text'}
-          className="flex flex-col"
+          variant={tabName === 'home' ? 'contained' : 'outlined'}
           onClick={() => dispatch(setNavTab('home'))}
         >
-          General
+          Home
           <HomeIcon />
         </NavButton>
         <NavButton
-          variant={tabName === 'config' ? 'contained' : 'text'}
-          onClick={() => dispatch(setNavTab('config'))}
+          variant={tabName === 'servers' ? 'contained' : 'outlined'}
+          onClick={() => dispatch(setNavTab('servers'))}
         >
-          Configs <LinkIcon />
+          Servers
+          <LinkIcon />
         </NavButton>
         <NavButton
-          variant={tabName === 'setting' ? 'contained' : 'text'}
-          onClick={() => dispatch(setNavTab('setting'))}
+          variant={tabName === 'logs' ? 'contained' : 'outlined'}
+          onClick={() => dispatch(setNavTab('logs'))}
+          disabled
+        >
+          Logs
+          <LinkIcon />
+        </NavButton>
+        <NavButton
+          variant={tabName === 'settings' ? 'contained' : 'outlined'}
+          onClick={() => dispatch(setNavTab('settings'))}
+          disabled
         >
           Settings
+          <LinkIcon />
+        </NavButton>
+        <NavButton
+          variant={tabName === 'about' ? 'contained' : 'outlined'}
+          onClick={() => dispatch(setNavTab('about'))}
+          disabled
+        >
+          About
           <SettingsIcon />
         </NavButton>
       </Stack>
