@@ -2,11 +2,13 @@ import './App.css';
 import Layout from './components/Layout';
 import Navigation from './components/navigation/Navigation';
 import GernalSettings from './pages/Home';
-import Servers from './pages/Servers';
+import Servers from './pages/servers/Servers';
 import Config from './pages/Config';
 import { useAppSelector } from './store/hooks';
 function App() {
+  // FIXME: before commit
   const tabName = useAppSelector((state) => state.navTab.tabName);
+  // tabName = 'servers';
   return (
     <div className="App">
       <Layout>

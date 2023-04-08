@@ -1,0 +1,91 @@
+{
+    "log": {
+        "error": "",
+        "loglevel": "info",
+        "access": ""
+    },
+    "inbounds": [
+        {
+            "listen": "127.0.0.1",
+            "protocol": "socks",
+            "settings": {
+                "udp": false,
+                "auth": "noauth"
+            },
+            "port": "1080"
+        },
+        {
+            "listen": "127.0.0.1",
+            "protocol": "http",
+            "settings": {
+                "timeout": 360
+            },
+            "port": "1087"
+        }
+    ],
+    "outbounds": [
+        {
+            "mux": {
+                "enabled": false,
+                "concurrency": 8
+            },
+            "protocol": "vmess",
+            "streamSettings": {
+                "wsSettings": {
+                    "path": "/hkcHOyeEK",
+                    "headers": {
+                        "host": "hihacker.shop"
+                    }
+                },
+                "tlsSettings": {
+                    "serverName": "hihacker.shop",
+                    "allowInsecure": false
+                },
+                "security": "tls",
+                "network": "ws"
+            },
+            "tag": "proxy",
+            "settings": {
+                "vnext": [
+                    {
+                        "address": "45.76.168.25",
+                        "users": [
+                            {
+                                "id": "54374ca2-3388-4df2-a999-08bb81eefee7",
+                                "alterId": 0,
+                                "level": 0,
+                                "security": "aes-128-gcm"
+                            }
+                        ],
+                        "port": 443
+                    }
+                ]
+            }
+        },
+        {
+            "tag": "direct",
+            "protocol": "freedom",
+            "settings": {
+                "domainStrategy": "UseIP",
+                "userLevel": 0
+            }
+        },
+        {
+            "tag": "block",
+            "protocol": "blackhole",
+            "settings": {
+                "response": {
+                    "type": "none"
+                }
+            }
+        }
+    ],
+    "dns": {},
+    "routing": {
+        "settings": {
+            "domainStrategy": "AsIs",
+            "rules": []
+        }
+    },
+    "transport": {}
+}

@@ -5,6 +5,14 @@ import DarkModeIcon from '@mui/icons-material/DarkMode';
 import SettingsBrightnessIcon from '@mui/icons-material/SettingsBrightness';
 import ReactECharts from 'echarts-for-react';
 
+const startV2ray = () => {
+  window.v2rayService.startService();
+};
+
+const stopV2ray = () => {
+  window.v2rayService.stopService();
+};
+
 const label = { inputProps: { 'aria-label': 'Checkbox' } };
 const options = {
   grid: { top: 8, right: 8, bottom: 24, left: 36 },
@@ -81,10 +89,12 @@ const GernalSettings = () => (
         </ApperanceButton>
       </Stack>
     </div>
-    <section style={{ backgroundColor: 'white', width: '500px' }} className="rounded-xl p-8">
+    {/*<section style={{ backgroundColor: 'white', width: '500px' }} className="rounded-xl p-8">
       <p className="pb-4 text-xl font-bold text-blue-deep">Today&apos;s useage</p>
       <ReactECharts option={options} />
     </section>
+    <Button onClick={() => startV2ray()}>start v2ray</Button>
+    <Button onClick={() => stopV2ray()}>stop v2ray</Button>*/}
   </section>
 );
 export default GernalSettings;
