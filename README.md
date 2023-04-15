@@ -1,46 +1,147 @@
-# Getting Started with Create React App
+```txt
+██╗░░░██╗██████╗░██████╗░░█████╗░██╗░░░██╗██╗░░██╗
+██║░░░██║╚════██╗██╔══██╗██╔══██╗╚██╗░██╔╝╚██╗██╔╝
+╚██╗░██╔╝░░███╔═╝██████╔╝███████║░╚████╔╝░░╚███╔╝░
+░╚████╔╝░██╔══╝░░██╔══██╗██╔══██║░░╚██╔╝░░░██╔██╗░
+░░╚██╔╝░░███████╗██║░░██║██║░░██║░░░██║░░░██╔╝╚██╗
+░░░╚═╝░░░╚══════╝╚═╝░░╚═╝╚═╝░░╚═╝░░░╚═╝░░░╚═╝░░╚═╝
+```
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+[● Telegram Channel](https://t.me/V2rayX_electron)
 
-## Available Scripts
+# WARN: text below will change in development. product is not ready to show (release day will be soon)
 
-In the project directory, you can run:
+## I. V2ray Electron
 
-### `yarn start`
+V2ray GUI client with cross-platform desktop support powered by Electron⚛️, made specially for Linux / Windows / MacOS users.
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+### ➣ Tested on
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+- Ubuntu22.10 (amd64)
+- MacOS Ventura (x64)
+- Windows10/11 (x64)
 
-### `yarn test`
+### ➣ Future test plan
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+- Linux Kali/Manjaro (x64)
 
-### `yarn build`
+## II. Features
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+### ➣ Supported (TODO List)
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+- [ ] **SS / SSR** Protocol
+- [ ] **PAC** Mode
+  - Auto proxy mode for browser that use [GFWList](https://raw.githubusercontent.com/gfwlist/gfwlist/master/gfwlist.txt) as default rules.
+  - Allow custom rules.
+- [ ] **Global** Mode
+  - Global socks5 proxy for browser.
+- [ ] **Manual** Mode
+  - Get some tools like SwitchOmega to enable browser proxy on this mode.
+- [ ] **HTTP(S)** Proxy
+  - On Windows, commands for terminal proxy(port 1087 as default):
+    - `$env:HTTPS_PROXY="http://127.0.0.1:1087"` (powershell)
+    - `$env:HTTP_PROXY="http://127.0.0.1:1087"` (powershell)
+    - `set http_proxy=http://127.0.0.1:1087` (cmd)
+    - `set https_proxy=http://127.0.0.1:1087` (cmd)
+  - On Linux/MacOS, commands for terminal proxy:
+    - `export http_proxy="127.0.0.1:1087"`
+    - `export https_proxy="127.0.0.1:1087"`
+    - Some tools like `proxychains` is deep recommended.
+- [ ] ACL (access control list)
+- [ ] Nodes Load-Balancing Mode
+- [ ] Clipboard / QR-code Import
+- [ ] Subscription Import
+- [ ] Language Detecting And Switching (zh-CN / en-US / ru-RU)
+- [ ] Configuration Backup / Recovery
+- [ ] Dark / Light Mode
+- [ ] Auto Start
+- [ ] Server Share
+- [ ] Activity Logs
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+### ➣ In Testing
 
-### `yarn eject`
+### ➣ Comming Soon
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+## III. Problems
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+## IV. Supported Platforms & Arch
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+![system](https://img.shields.io/badge/system-win%20%7C%20mac%20%7C%20linux-green)
 
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+> More architectures will be supported if necessary, just give me an issue.
 
-## Learn More
+- Ubuntu
+  - deb `x64/x86/arm64`
+  - AppImage `x64/x86/arm64`
+  - snap `x64`
+- MacOS
+  - dmg `x64/arm64`
+  - zip `x64/arm64`
+- Windows
+  - exe `x64/x86`
+  - zip `x64/x86`
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+## V. Screenshots
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+### Home Page
+
+### Dark Mode
+
+## VI. Downloads
+
+- GitHub Releases
+
+  - ![statistics](https://img.shields.io/github/downloads/shaonhuang/V2rayX/total?style=plastic)
+  - [↪ releases page](https://github.com/shaonhuang/V2rayX/releases/latest)
+
+- ElectronJs Website
+
+- Snapcraft Store (linux)
+
+## VII. Plugins Downloads
+
+> not necessary, just for some advanced users.
+
+## IX. Why?
+
+## X. Development
+
+### 1. Env
+
+- Node@^`18.14.0`
+- Ubuntu18.04 or higher version
+- Mac catalina or other versions (works in most recent versions in theory)
+- Windows 10 (WSL tested)or higher version
+
+### 2. Prepare
+
+```bash
+# for ubuntu developers
+# for mac developers
+
+# proxy env set (if your local machine support)
+export HTTPS_PROXY=http://127.0.0.1:<port>
+export HTTP_PROXY=http://127.0.0.1:<port>
+```
+
+### 3. Run commands in terminal
+
+```bash
+# [01]clone
+$: git clone https://github.com/shaonhuang/V2rayX.git
+$: cd v2rayx
+
+# for china developers
+$: npm config set electron_mirror http://npm.taobao.org/mirrors/electron/
+
+# [02]npm
+$: npm i -g yarn
+$: yarn
+
+# [04]start
+$: yarn start
+```
+
+## XI. Mention
+
+## XII. Credit
