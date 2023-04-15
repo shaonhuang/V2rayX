@@ -12,6 +12,7 @@
 /build
 /dist
 /release
+/v2ray-core
 
 # misc
 .DS_Store
@@ -20,6 +21,15 @@
 .env.test.local
 .env.production.local
 
+# Yarn 3 files
+/.pnp
+.pnp.js
+.pnp.cjs
+.yarn/cache
+.yarn/unplugged
+.yarn/install-state.gzs
+
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+v2ray.zip

@@ -7,8 +7,9 @@
     "outDir": "../build",
     "rootDir": "../",
     "noEmitOnError": true,
-    "typeRoots": [
-      "node_modules/@types"
-    ]
+    "typeRoots": ["node_modules/@types"]
+  },
+  "rules": {
+    "@typescript-eslint/no-require-imports": "error"
   }
 }
