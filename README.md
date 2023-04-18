@@ -9,7 +9,7 @@
 
 [● Telegram Channel](https://t.me/V2rayX_electron)
 
-# WARN: text below will change in development. product is not ready to show (release day will be soon)
+# WARN: text below will change in development. product is not ready to release beta (release day will be soon)
 
 ## I. V2ray Electron
 
