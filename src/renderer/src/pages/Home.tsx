@@ -89,11 +89,11 @@ const GernalSettings = () => (
         </ApperanceButton>
       </Stack>
     </div>
+    {/*
     <section style={{ backgroundColor: 'white', width: '500px' }} className="rounded-xl p-8">
       <p className="pb-4 text-xl font-bold text-blue-deep">Today&apos;s useage</p>
       <ReactECharts option={options} />
     </section>
-    {/*
     <Button onClick={() => startV2ray()}>start v2ray</Button>
     <Button onClick={() => stopV2ray()}>stop v2ray</Button>
     */}

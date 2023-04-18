@@ -19,6 +19,8 @@ import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { cloneDeep } from 'lodash';
 import { useState } from 'react';
 import ReactJson from 'react-json-view';
+import * as md5 from 'md5'
+import { encode, decode } from 'js-base64';
 
 export interface AddServerDialogProps {
   open: boolean;
@@ -57,22 +59,20 @@ const RoundedButton = styled(Button)({
   backgroundColor: '#7CA4E2',
 });
 
-const ImportSettings = () => {
-  // const [data, setData] = useState({});
-  // const serverData = async () => {
-  //   let tmpData = await window.serverFiles.openFile();
-  //   if (tmpData === null) {
-  //     tmpData = {};
-  //   }
-  //   const data = tmpData;
-  //   setData(data);
-  //   return data;
-  // };
-  // useEffect(() => {
-  //   serverData();
-  // }, [data]);
-  const data = {};
-  return <section className="min-h-[100px]">{<ReactJson src={data} theme="solarized" />}</section>;
+const ImportSettings = (props: any) => {
+  const data = props.data ?? {};
+  console.log(typeof data)
+  return <section className="min-h-[100px] text-left">{
+    <ReactJson
+      src={data}
+      theme="solarized"
+      collapsed={false}
+      displayObjectSize={true}
+      enableClipboard={true}
+      indentWidth={4}
+      displayDataTypes={true}
+      iconStyle='triangle'
+    />}</section>;
 };
 const ManualSettings = () => {
   const protocol = ['vmess', 'vless', 'trojan', 'shadowsocks', 'socks'];
@@ -334,6 +334,13 @@ const ManualSettings = () => {
 const AddServerDialog = (props: AddServerDialogProps) => {
   const { onClose, open } = props;
   const [mode, setMode] = useState('import');
+  const [importData, setImportData] = useState('vmess://eyAidiI6IjIiLCAicHMiOiIiLCAiYWRkIjoiNDUuNzYuMTY4LjI1IiwgInBvcnQiOiI0NDMiLCAiaWQiOiI1NDM3NGNhMi0zMzg4LTRkZjItYTk5OS0wOGJiODFlZWZlZTciLCAiYWlkIjoiMCIsICJuZXQiOiJ3cyIsICJ0eXBlIjoibm9uZSIsICJob3N0IjoiaGloYWNrZXIuc2hvcCIsICJwYXRoIjoiL2hrY0hPeWVFSyIsICJ0bHMiOiJ0bHMiIH0=');
+  const [data, setData] = useState({});
+  const handleImportUrl = () => {
+    setData(JSON.parse(decode(importData.split('://')[1])))
+    console.log(window.electron.store.get('serversHash'))
+    window.electron.store.setServer(data);
+  }
   const handleClose = () => {
     onClose();
   };
@@ -353,9 +360,14 @@ const AddServerDialog = (props: AddServerDialogProps) => {
             >
               <InputLabel>Url</InputLabel>
               <Input
+                value={importData}
+                placeholder="Support Vmess Only"
+                onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
+                  setImportData(event.target.value);
+                }}
                 endAdornment={
                   <InputAdornment position="end">
-                    <Button>Import</Button>
+                    <Button onClick={() => handleImportUrl()}>Import</Button>
                   </InputAdornment>
                 }
               />
@@ -365,11 +377,10 @@ const AddServerDialog = (props: AddServerDialogProps) => {
                 <RoundedButton onClick={() => setMode('import')}>Import</RoundedButton>
                 <RoundedButton onClick={() => setMode('manual')}>Manual</RoundedButton>
               </div>
-              <div>{mode === 'import' ? <ImportSettings /> : <ManualSettings />}</div>
+              <div>{mode === 'import' ? <ImportSettings data={data} /> : <ManualSettings />}</div>
             </div>
           </div>
           <div className=' m-6'>
-
             <RoundedButton
               className="w-12"
               onClick={() => {

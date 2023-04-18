@@ -2769,6 +2769,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"electron-is-dev@npm:^2.0.0":
+  version: 2.0.0
+  resolution: "electron-is-dev@npm:2.0.0"
+  checksum: 7393f46f06153d70a427ea904c60a092e50fbf1015c26c342cebb8324ada8c9e0c0f1f02867af56d9cc76f47be17da8cb311ea6bdc83343e7ebd2323ec4014c8
+  languageName: node
+  linkType: hard
+
 "electron-osx-sign@npm:^0.6.0":
   version: 0.6.0
   resolution: "electron-osx-sign@npm:0.6.0"
@@ -4363,6 +4370,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"js-base64@npm:^3.7.5":
+  version: 3.7.5
+  resolution: "js-base64@npm:3.7.5"
+  checksum: 67a78c8b1c47b73f1c6fba1957e9fe6fd9dc78ac93ac46cc2e43472dcb9cf150d126fb0e593192e88e0497354fa634d17d255add7cc6ee3c7b4d29870faa8e18
+  languageName: node
+  linkType: hard
+
 "js-sdsl@npm:^4.1.4":
   version: 4.4.0
   resolution: "js-sdsl@npm:4.4.0"
@@ -4480,6 +4494,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"jsqr@npm:^1.4.0":
+  version: 1.4.0
+  resolution: "jsqr@npm:1.4.0"
+  checksum: 7c572971f90c42772e30d152bde63b84edf1164bde80c53942e6b2068ea31caf00ad704aa46cacc9e71645f52dbeddebc6e84ba15e883c678ee93cde690de339
+  languageName: node
+  linkType: hard
+
 "jsx-ast-utils@npm:^2.4.1 || ^3.0.0":
   version: 3.3.3
   resolution: "jsx-ast-utils@npm:3.3.3"
@@ -4548,6 +4569,13 @@ __metadata:
   version: 1.2.4
   resolution: "lines-and-columns@npm:1.2.4"
   checksum: 0c37f9f7fa212b38912b7145e1cd16a5f3cd34d782441c3e6ca653485d326f58b3caccda66efce1c5812bde4961bbde3374fae4b0d11bf1226152337f3894aa5
+  languageName: node
+  linkType: hard
+
+"load-json-file@npm:^7.0.1":
+  version: 7.0.1
+  resolution: "load-json-file@npm:7.0.1"
+  checksum: a560288da6891778321ef993e4bdbdf05374a4f3a3aeedd5ba6b64672798c830d748cfc59a2ec9891a3db30e78b3d04172e0dcb0d4828168289a393147ca0e74
   languageName: node
   linkType: hard
 
@@ -6868,6 +6896,7 @@ __metadata:
     echarts-for-react: ^3.0.2
     electron: ^24.1.2
     electron-builder: ^23.6.0
+    electron-is-dev: ^2.0.0
     electron-store: ^8.1.0
     electron-updater: ^5.3.0
     electron-vite: ^1.0.21
@@ -6876,6 +6905,9 @@ __metadata:
     eslint-plugin-prettier: ^4.2.1
     eslint-plugin-react: ^7.32.2
     eslint-plugin-react-hooks: ^4.6.0
+    js-base64: ^3.7.5
+    jsqr: ^1.4.0
+    load-json-file: ^7.0.1
     lodash: ^4.17.21
     md5: ^2.3.0
     postcss: ^8.4.22

@@ -4,6 +4,7 @@ const admZip = require('adm-zip');
 const { net } = require('electron');
 import * as path from 'path';
 import * as fs from 'fs';
+import { homedir, platform, tmpdir } from 'os';
 
 const mac = 'darwin';
 const win = 'win32';
@@ -25,8 +26,28 @@ const runCmd = (cmd: any) => {
     console.log(`stdout: ${stdout}`);
   });
 };
+const clean = () => {
+  try {
+    runCmd('rm -rf ~/.v2rayx/v2ray-core');
+    console.log('finish clean core');
+    runCmd('rm -rf ~/.v2rayx/pac');
+    console.log('finish clean pac');
+  } catch (err) {
+    console.log('clean err');
+  }
+};
 
 export default {
+  checkConfigDir(): any {
+    try {
+      const filePath = path.join(homedir(), 'v2ray-core', 'config');
+      console.log(filePath, 'filePath');
+      if (fs.existsSync(filePath)) {
+        return true;
+      }
+      return false;
+    } catch (er) {}
+  },
   // # remove old file
   // rm -rf ~/.v2rayx/v2ray-core
   // rm -rf ~/.v2rayx/pac
@@ -62,27 +83,24 @@ export default {
       return info;
     };
     const download = async (url: string, dest: string, cb: any) => {
-      const zipFile = 'v2ray.zip';
-      const outputDir = 'v2ray-core';
-      console.log(url, dest);
       const request = net.request(url);
       const data: Array<any> = [];
-      const write = fs.createWriteStream(zipFile);
-      request.on('response', (response) => {
-        response.on('data', (chunk) => {
-          data.push(chunk);
+      await new Promise((rev) => {
+        request.on('response', (response) => {
+          response.on('data', (chunk) => {
+            data.push(chunk);
+          });
+          response.on('end', () => {
+            const buffer = Buffer.concat(data);
+            rev(buffer);
+          });
         });
-        response.on('end', () => {
-          const buffer = Buffer.concat(data);
-          fs.writeFileSync(zipFile, buffer);
-        });
+        request.end();
+      }).then((buffer: any) => {
+        fs.writeFileSync(dest, buffer);
       });
-      request.end();
     };
     try {
-      const zipFile = 'v2ray.zip';
-      const outputDir = 'v2ray-core';
-
       const info = await getInfo();
       const version = info?.['tag_name'];
       let system;
@@ -97,24 +115,18 @@ export default {
           system = 'windows';
           break;
       }
-      const url = `https://github.com/v3fly/v2ray-core/releases/download/${version}/v2ray-${system}-64.zip`;
-      // console.log(url);
-      fs.existsSync('v2ray.zip') ?? (await download(url, __dirname, undefined));
+      const url = `https://github.com/v2fly/v2ray-core/releases/download/${version}/v2ray-${system}-64.zip`;
+      const outputDir = path.join(homedir(), 'v2ray-core');
+      const zipFile = path.join(tmpdir() + '/v2ray.zip');
+      console.log(outputDir, zipFile, fs.existsSync(zipFile), url);
+      if (!fs.existsSync(zipFile)) {
+        await download(url, zipFile, undefined);
+      }
       const zip = new admZip(zipFile);
       zip.extractAllTo(/*target path*/ outputDir, /*overwrite*/ true);
       console.log('extractAllTo success');
     } catch (err) {
       console.log('failed download:', err);
-    }
-  },
-  // # copy
-  copy() {
-    try {
-      const homedir = require('os').homedir();
-      fs.cpSync('v2ray-core', path.join(homedir, 'v2ray-core'), { recursive: true });
-      console.log('copy success');
-    } catch (err) {
-      console.log(err);
     }
   },
   v2rayService(type: string) {
@@ -124,7 +136,7 @@ export default {
       v2ray = spawn(path.join(homedir, 'v2ray-core') + '/v2ray', [
         'run',
         '-c',
-        path.join(homedir, 'v2ray-core', 'test.json'),
+        path.join(homedir, 'v2ray-core', 'config', 'test.json'),
       ]);
       v2ray.stdout.on('data', (data: string) => {
         console.log(`stdout: ${data}`);
