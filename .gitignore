@@ -31,7 +31,7 @@ out
 .pnp.cjs
 .yarn/cache
 .yarn/unplugged
-.yarn/install-state.gzs
+.yarn/install-state.gz
 
 npm-debug.log*
 yarn-debug.log*
