@@ -3,6 +3,6 @@
   "arrowParens": "always",
   "singleQuote": true,
   "endOfLine": "auto",
-  "printWidth": 100,
+  "printWidth": 101,
   "plugins": ["prettier-plugin-tailwindcss"]
 }

@@ -1,125 +1,73 @@
 {
   "name": "v2rayx",
-  "version": "0.1.0",
-  "private": true,
-  "homepage": ".",
-  "main": "build/electron/main.js",
+  "version": "1.0.0",
+  "description": "An Electron application with React and TypeScript",
+  "main": "./out/main/index.js",
+  "author": "example.com",
+  "homepage": "https://www.electronjs.org",
+  "scripts": {
+    "format": "prettier --write .",
+    "lint": "eslint . --ext .js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix",
+    "typecheck:node": "tsc --noEmit -p tsconfig.node.json --composite false",
+    "typecheck:web": "tsc --noEmit -p tsconfig.web.json --composite false",
+    "typecheck": "npm run typecheck:node && npm run typecheck:web",
+    "start": "electron-vite preview",
+    "dev": "electron-vite dev",
+    "build": "npm run typecheck && electron-vite build",
+    "postinstall": "electron-builder install-app-deps",
+    "build:win": "npm run build && electron-builder --win --config",
+    "build:mac": "electron-vite build && electron-builder --mac --config",
+    "build:linux": "electron-vite build && electron-builder --linux --config"
+  },
   "dependencies": {
+    "@electron-toolkit/preload": "^1.0.3",
+    "@electron-toolkit/utils": "^1.0.2",
+    "electron-updater": "^5.3.0",
+    "react-json-view": "^1.21.3"
+  },
+  "devDependencies": {
+    "@electron-toolkit/tsconfig": "^1.0.1",
+    "@electron/notarize": "^1.2.3",
     "@emotion/react": "^11.10.5",
     "@emotion/styled": "^11.10.5",
-    "@fontsource/roboto": "^4.5.8",
-    "@headlessui/react": "^1.7.7",
-    "@heroicons/react": "^2.0.13",
     "@mui/icons-material": "^5.11.0",
     "@mui/material": "^5.11.5",
     "@mui/styled-engine-sc": "^5.11.0",
-    "@reduxjs/toolkit": "^1.9.1",
-    "@testing-library/jest-dom": "^5.14.1",
-    "@testing-library/react": "^13.0.0",
-    "@testing-library/user-event": "^13.2.1",
-    "@types/adm-zip": "^0.5.0",
-    "@types/electron-devtools-installer": "^2.2.2",
-    "@types/jest": "^27.0.1",
+    "@reduxjs/toolkit": "^1.9.4",
+    "@types/lodash": "^4.14.194",
     "@types/node": "^18.15.11",
-    "@types/react": "^18.0.0",
-    "@types/react-dom": "^18.0.0",
+    "@types/react": "18.0.30",
+    "@types/react-dom": "18.0.11",
     "@types/superagent": "^4.1.16",
+    "@typescript-eslint/eslint-plugin": "^5.57.0",
+    "@typescript-eslint/parser": "^5.57.0",
+    "@vitejs/plugin-react": "^3.1.0",
     "adm-zip": "^0.5.10",
-    "ajv": "^8.12.0",
+    "autoprefixer": "^10.4.14",
     "echarts": "^5.4.2",
     "echarts-for-react": "^3.0.2",
-    "electron-devtools-installer": "^3.2.0",
-    "electron-is-dev": "^2.0.0",
-    "electron-json-storage": "^4.6.0",
-    "electron-reload": "^2.0.0-alpha.1",
+    "electron": "^24.1.2",
+    "electron-builder": "^23.6.0",
     "electron-store": "^8.1.0",
-    "global": "^4.4.0",
+    "electron-vite": "^1.0.21",
+    "eslint": "^8.36.0",
+    "eslint-config-prettier": "^8.8.0",
+    "eslint-plugin-prettier": "^4.2.1",
+    "eslint-plugin-react": "^7.32.2",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "lodash": "^4.17.21",
+    "md5": "^2.3.0",
+    "postcss": "^8.4.22",
+    "prettier": "^2.8.7",
+    "prettier-plugin-tailwindcss": "^0.2.7",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-is": "^18.2.0",
-    "react-json-view": "^1.21.3",
     "react-redux": "^8.0.5",
-    "react-scripts": "5.0.1",
-    "redux": "^4.2.0",
     "redux-thunk": "^2.4.2",
-    "styled-components": "^5.3.6",
     "superagent": "^8.0.9",
-    "web-vitals": "^2.1.0"
-  },
-  "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
-    "postinstall": "electron-builder install-app-deps",
-    "electron:dev": "concurrently \"cross-env BROWSER=none yarn start\" \"wait-on http://127.0.0.1:3000 && tsc -p electron -w\" \"wait-on http://127.0.0.1:3000 && tsc -p electron && electron .\"",
-    "electron:build": "yarn build && tsc -p electron && electron-builder",
-    "package:win": "electron-builder --publish never --win",
-    "package:linux": "electron-builder --publish never --linux",
-    "eject": "react-scripts eject"
-  },
-  "build": {
-    "appId": "Electron-desktop",
-    "productName": "Electron-desktop",
-    "copyright": "",
-    "win": {
-      "target": [
-        "nsis"
-      ],
-      "icon": "./public/logo512.png"
-    },
-    "linux": {
-      "target": [
-        "AppImage"
-      ]
-    },
-    "extends": null,
-    "asar": true,
-    "files": [
-      "build/**/*"
-    ],
-    "directories": {
-      "buildResources": "assets"
-    }
-  },
-  "eslintConfig": {
-    "extends": [
-      "react-app",
-      "react-app/jest"
-    ]
-  },
-  "browserslist": {
-    "production": [
-      ">0.2%",
-      "not dead",
-      "not op_mini all"
-    ],
-    "development": [
-      "last 1 chrome version",
-      "last 1 firefox version",
-      "last 1 safari version"
-    ]
-  },
-  "devDependencies": {
-    "@typescript-eslint/eslint-plugin": "^5.58.0",
-    "@typescript-eslint/parser": "^5.58.0",
-    "autoprefixer": "^10.4.13",
-    "concurrently": "^7.6.0",
-    "cross-env": "^7.0.3",
-    "electron": "^24.1.1",
-    "electron-builder": "^23.6.0",
-    "eslint": "^8.38.0",
-    "eslint-config-prettier": "^8.6.0",
-    "eslint-config-recommended": "^4.1.0",
-    "eslint-plugin-prettier": "^4.2.1",
-    "eslint-plugin-react": "latest",
-    "lodash": "^4.17.21",
-    "postcss": "^8.4.21",
-    "prettier": "^2.8.7",
-    "prettier-eslint": "^15.0.1",
-    "prettier-plugin-tailwindcss": "^0.2.2",
-    "tailwindcss": "^3.2.4",
+    "tailwindcss": "^3.3.1",
     "typescript": "^5.0.4",
-    "wait-on": "^7.0.1"
+    "vite": "^4.2.1"
   },
   "packageManager": "yarn@3.5.0"
 }
