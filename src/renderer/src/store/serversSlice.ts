@@ -1,20 +1,26 @@
-import { createSlice, configureStore } from '@reduxjs/toolkit';
+import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+// discarded
+interface ServersState {
+  servers: any[];
+}
+
+const initialState: ServersState = {
+  servers: [],
+};
 
 const serversSlice = createSlice({
   name: 'servers',
-  initialState: {
-    url: '',
-  },
+  initialState,
   reducers: {
-    setUrl: (state, action) => {
-      state.url = action.payload;
+    setServer: (state, action: PayloadAction<any[]>) => {
+      state.servers = action.payload;
     },
-    deleteUrl: (state) => {
-      state.url = '';
+    deleteServer: (state, action: PayloadAction<Object>) => {
+      // state.servers =
     },
   },
 });
 
-export const { setUrl, deleteUrl } = serversSlice.actions;
+export const { setServer, deleteServer } = serversSlice.actions;
 
 export default serversSlice.reducer;

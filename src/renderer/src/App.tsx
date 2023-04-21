@@ -143,16 +143,17 @@
 // }
 //
 // export default App
-import './App.css'
-import Layout from './components/Layout'
-import Navigation from './components/navigation/Navigation'
-import GernalSettings from './pages/Home'
-import Servers from './pages/servers/Servers'
-import { useAppSelector } from './store/hooks'
+import './App.css';
+import Layout from './components/Layout';
+import Navigation from './components/navigation/Navigation';
+import GernalSettings from './pages/Home';
+import Servers from './pages/servers/Servers';
+import { useAppSelector } from './store/hooks';
+// import 'animate.css';
 
 function App() {
   // FIXME: before commit
-  const tabName = useAppSelector((state) => state.navTab.tabName)
+  const tabName = useAppSelector((state) => state.navTab.tabName);
   // tabName = 'servers';
   return (
     <div className="App">
@@ -162,15 +163,15 @@ function App() {
         {(function (tabName: string): JSX.Element {
           switch (tabName) {
             case 'servers':
-              return <Servers />
+              return <Servers />;
             case 'home':
             default:
-              return <GernalSettings />
+              return <GernalSettings />;
           }
         })(tabName)}
       </Layout>
     </div>
-  )
+  );
 }
 
-export default App
+export default App;

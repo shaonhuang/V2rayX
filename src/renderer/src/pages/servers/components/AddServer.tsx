@@ -1,45 +1,38 @@
+import * as React from 'react';
 import styled from '@emotion/styled';
 import {
   Button,
-  Checkbox,
   Dialog,
   DialogTitle,
   FormControl,
-  FormControlLabel,
-  FormGroup,
   Input,
   InputAdornment,
   InputLabel,
-  MenuItem,
-  Select,
-  TextField,
+  Snackbar,
 } from '@mui/material';
-import { SelectChangeEvent } from '@mui/material/Select';
+import MuiAlert, { AlertProps } from '@mui/material/Alert';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
-import { cloneDeep } from 'lodash';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import ReactJson from 'react-json-view';
-import * as md5 from 'md5'
-import { encode, decode } from 'js-base64';
+import md5 from 'md5';
+import * as _ from 'lodash';
+import hash from 'object-hash';
+
+import {
+  VmessV1,
+  VmessV2,
+  isVMessLink,
+  isVMessLinkV1,
+  isVMessLinkV2,
+  parseV1Link,
+  parseV2Link,
+  parseVmess2config,
+} from '@renderer/utils/protocol';
+import ManualSettings from './ManualSettings';
 
 export interface AddServerDialogProps {
   open: boolean;
-  onClose: () => void;
-}
-export interface Settings {
-  protocol: string;
-  address: string;
-  port: string;
-  id: string;
-  alterId: string;
-  level: string;
-  encryption: string;
-  network: string;
-  host: string;
-  path: string;
-  security: string;
-  allowInsecure: boolean;
-  tlsServerDomin: string;
+  onClose: (newServerHash: string) => void;
 }
 
 const theme = createTheme({
@@ -59,296 +52,114 @@ const RoundedButton = styled(Button)({
   backgroundColor: '#7CA4E2',
 });
 
+const Alert = React.forwardRef<HTMLDivElement, AlertProps>(function Alert(props, ref) {
+  return <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />;
+});
+
 const ImportSettings = (props: any) => {
   const data = props.data ?? {};
-  console.log(typeof data)
-  return <section className="min-h-[100px] text-left">{
-    <ReactJson
-      src={data}
-      theme="solarized"
-      collapsed={false}
-      displayObjectSize={true}
-      enableClipboard={true}
-      indentWidth={4}
-      displayDataTypes={true}
-      iconStyle='triangle'
-    />}</section>;
-};
-const ManualSettings = () => {
-  const protocol = ['vmess', 'vless', 'trojan', 'shadowsocks', 'socks'];
-  const algorithm = [
-    'auto',
-    'aes-256-cfb',
-    'aes-128-cfb',
-    'chacha20',
-    'chacha20-ietf',
-    'aes-256-gcm',
-    'aes-128-gcm',
-  ];
-  const network = ['ws', 'tcp', 'h2', 'kcp', 'quic', 'domainsocket'];
-
-  const [settings, setSettings] = useState<Settings>({
-    protocol: '',
-    address: '',
-    port: '',
-    id: '',
-    alterId: '',
-    level: '',
-    encryption: '',
-    network: '',
-    host: '',
-    path: '',
-    security: '',
-    allowInsecure: false,
-    tlsServerDomin: '',
-  });
-
-  const handleProtocolChange = (event: SelectChangeEvent) => {
-    setSettings(cloneDeep({ ...settings, protocol: event.target.value }));
-  };
-  const handleEncryptionChange = (event: SelectChangeEvent) => {
-    setSettings(cloneDeep({ ...settings, encryption: event.target.value }));
-  };
-  const handleNetworkChange = (event: SelectChangeEvent) => {
-    setSettings(cloneDeep({ ...settings, network: event.target.value }));
-  };
-  const handleSecurityChange = (event: SelectChangeEvent) => {
-    setSettings(cloneDeep({ ...settings, security: event.target.value }));
-  };
   return (
-    <section className="">
-      <div className="mx-6 mb-6 rounded-xl bg-sky-100 px-4 py-6">
-        <div className="flex flex-row justify-between">
-          <span className="my-auto">Base Settings</span>
-          <Button>Settings</Button>
-        </div>
-        <div className='bg-sky-50 p-3 rounded-xl'>
-          <div className="flex flex-row flex-nowrap justify-between py-3">
-            <TextField
-              className="w-24"
-              id="outlined-number"
-              label="socket port"
-              type="number"
-              size="small"
-              InputLabelProps={{
-                shrink: true,
-              }}
-            />
-            <TextField
-              className="w-24"
-              id="outlined-number"
-              label="http port"
-              type="number"
-              size="small"
-              InputLabelProps={{
-                shrink: true,
-              }}
-            />
-            <FormGroup className="w-fit">
-              <FormControlLabel control={<Checkbox defaultChecked />} label="udp" />
-            </FormGroup>
-          </div>
-          <div>
-            <TextField size="small" fullWidth label="DNS" id="fullWidth" />
-          </div>
-          <div className="flex flex-row flex-nowrap justify-between py-3">
-            <FormGroup className="w-fit">
-              <FormControlLabel control={<Checkbox defaultChecked />} label="Mux" />
-            </FormGroup>
-            <input value="8" className="w-24 border-2 border-gray-300 bg-transparent" />
-          </div>
-        </div>
-      </div>
-      <div className="mx-6 mb-6 rounded-xl bg-sky-100 px-4 py-6">
-        <div className="flex flex-row justify-between">
-          <span className="my-auto">Server Settings</span>
-          <FormControl sx={{ m: 1, minWidth: 100 }}>
-            <InputLabel id="demo-simple-select-autowidth-label">Protocol</InputLabel>
-            <Select
-              labelId="demo-simple-select-autowidth-label"
-              id="demo-simple-select-autowidth"
-              value={settings.protocol}
-              onChange={handleProtocolChange}
-              autoWidth
-              size="small"
-              label="Protocol"
-            >
-              {protocol.map((i) => (
-                <MenuItem key={i} value={i}>
-                  {i}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        </div>
-        <div className='bg-sky-50 p-3 rounded-xl'>
-          <div className="flex flex-row items-center justify-center py-3">
-            <TextField
-              id="outlined-basic"
-              label="address"
-              variant="outlined"
-              size="small"
-              className="w-[268px]"
-              value={settings.address}
-            />
-            <span className="my-auto px-3">:</span>
-            <TextField
-              id="outlined-basic"
-              label="port"
-              variant="outlined"
-              size="small"
-              type="number"
-              className="w-[120px]"
-              value={settings.port}
-            />
-          </div>
-          <div className='mb-3'>
-            <TextField size="small" fullWidth label="Id" id="fullWidth" value={settings.id} />
-          </div>
-          <div className='w-full flex flex-row justify-between mb-3'>
-            <TextField
-              id="outlined-basic"
-              label="alterId"
-              variant="outlined"
-              size="small"
-              className="w-[100px]"
-              value={settings.alterId}
-            />
-            <TextField
-              id="outlined-basic"
-              label="level"
-              variant="outlined"
-              size="small"
-              className="w-[100px]"
-              value={settings.level}
-            />
-          </div>
-          <div className='flex flex-row justify-start m-0'>
-            <FormControl sx={{ minWidth: 200 }}>
-              <InputLabel id="demo-simple-select-autowidth-label">Encryption algorithm</InputLabel>
-              <Select
-                labelId="demo-simple-select-autowidth-label"
-                id="demo-simple-select-autowidth"
-                value={settings.encryption}
-                onChange={handleEncryptionChange}
-                autoWidth
-                size="small"
-                label="Encryption algorithm"
-              >
-                {algorithm.map((i) => (
-                  <MenuItem key={i} value={i}>
-                    {i}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-
-          </div>
-        </div>
-      </div>
-      <div className="mx-6 mb-6 rounded-xl bg-sky-100 px-4 py-6">
-        <div className="flex flex-row justify-between mb-3">
-          <span className='my-auto'>Steam setting</span>
-          <FormControl sx={{ m: 1, minWidth: 120 }}>
-            <InputLabel id="demo-simple-select-autowidth-label">network</InputLabel>
-            <Select
-              labelId="demo-simple-select-autowidth-label"
-              id="demo-simple-select-autowidth"
-              value={settings.network}
-              onChange={handleNetworkChange}
-              autoWidth
-              size="small"
-              label="Encryption algorithm"
-            >
-              {network.map((i) => (
-                <MenuItem key={i} value={i}>
-                  {i}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        </div>
-        <div className='flex flex-row justify-between bg-sky-50 p-3 rounded-xl'>
-          <TextField
-            id="outlined-number"
-            label="host"
-            type="string"
-            size="small"
-            InputLabelProps={{
-              shrink: true,
-            }}
-            value={settings.host}
-          />
-          <TextField
-            id="outlined-number"
-            label="path"
-            type="string"
-            size="small"
-            InputLabelProps={{
-              shrink: true,
-            }}
-            value={settings.path}
-          />
-        </div>
-      </div>
-      <div className='mx-6 mb-6 rounded-xl bg-sky-50 px-4 py-6'>
-        <div className='flex flex-row justify-between mb-3'>
-          <FormControl sx={{ minWidth: 120 }}>
-            <InputLabel id="demo-simple-select-autowidth-label">security</InputLabel>
-            <Select
-              labelId="demo-simple-select-autowidth-label"
-              id="demo-simple-select-autowidth"
-              value={settings.security}
-              onChange={handleSecurityChange}
-              size='small'
-              autoWidth
-              label="security"
-            >
-              <MenuItem value="">
-                <em>None</em>
-              </MenuItem>
-              <MenuItem value={'tls'}>tls</MenuItem>
-              <MenuItem value={'xtls'}>xtls</MenuItem>
-            </Select>
-          </FormControl>
-          <FormGroup className='w-fit my-auto'>
-            <FormControlLabel control={<Checkbox defaultChecked />} label="allow insecuree" />
-          </FormGroup>
-        </div>
-        <TextField
-          id="outlined-number"
-          label="tls server domin"
-          type="string"
-          fullWidth
-          size='small'
-          InputLabelProps={{
-            shrink: true,
-          }}
-          value={settings.tlsServerDomin}
+    <section className="min-h-[100px] text-left">
+      {
+        <ReactJson
+          src={data}
+          theme="solarized"
+          collapsed={false}
+          displayObjectSize={true}
+          enableClipboard={true}
+          indentWidth={4}
+          displayDataTypes={true}
+          iconStyle="triangle"
         />
-      </div>
-    </section >
+      }
+    </section>
   );
 };
 
 const AddServerDialog = (props: AddServerDialogProps) => {
+  const [errorType, setErrorType] = useState('empty');
   const { onClose, open } = props;
+  const [openNotice, setNoticeOpen] = React.useState(false);
   const [mode, setMode] = useState('import');
-  const [importData, setImportData] = useState('vmess://eyAidiI6IjIiLCAicHMiOiIiLCAiYWRkIjoiNDUuNzYuMTY4LjI1IiwgInBvcnQiOiI0NDMiLCAiaWQiOiI1NDM3NGNhMi0zMzg4LTRkZjItYTk5OS0wOGJiODFlZWZlZTciLCAiYWlkIjoiMCIsICJuZXQiOiJ3cyIsICJ0eXBlIjoibm9uZSIsICJob3N0IjoiaGloYWNrZXIuc2hvcCIsICJwYXRoIjoiL2hrY0hPeWVFSyIsICJ0bHMiOiJ0bHMiIH0=');
-  const [data, setData] = useState({});
+  const [importData, setImportData] = useState(
+    'vmess://eyAidiI6IjIiLCAicHMiOiIiLCAiYWRkIjoiNDUuNzYuMTY4LjI1IiwgInBvcnQiOiI0NDMiLCAiaWQiOiI1NDM3NGNhMi0zMzg4LTRkZjItYTk5OS0wOGJiODFlZWZlZTciLCAiYWlkIjoiMCIsICJuZXQiOiJ3cyIsICJ0eXBlIjoibm9uZSIsICJob3N0IjoiaGloYWNrZXIuc2hvcCIsICJwYXRoIjoiL2hrY0hPeWVFSyIsICJ0bHMiOiJ0bHMiIH0='
+  );
+  const [data, setData] = useState({}); // vmess json
+  const [importConfig, setImportConfig] = useState({});
   const handleImportUrl = () => {
-    setData(JSON.parse(decode(importData.split('://')[1])))
-    console.log(window.electron.store.get('serversHash'))
-    window.electron.store.setServer(data);
-  }
-  const handleClose = () => {
-    onClose();
+    if (isVMessLink(importData)) {
+      const vmessObj: VmessV1 | VmessV2 = isVMessLinkV1(importData)
+        ? parseV1Link(importData)
+        : parseV2Link(importData);
+      setImportConfig(parseVmess2config(vmessObj));
+      setData(parseVmess2config(vmessObj));
+      setMode('import');
+    } else {
+      setErrorType('invalid');
+      setImportData('');
+      setData({});
+      setImportConfig({});
+      setNoticeOpen(true);
+    }
   };
-  // ipcRenderer.send('serverItem', JSON.stringify(teams));
+  const handleFinish = (vmessObj) => {
+    const config = parseVmess2config(vmessObj);
+    window.electron.store.get('newServerHash');
+    const newServerHash = hash(config);
+    // onClose(window.electron.store.get('newServerHash'));
+    const compareArr = Object.values(Object.values(window.electron.store.get('servers')));
+    if (JSON.stringify(config) === '{}') {
+      setErrorType('empty');
+      setNoticeOpen(true);
+      onClose(config);
+      return;
+    }
+    if (!window.electron.store.get('hashCheckList').includes(hash(config))) {
+      // window.electron.store.setServer(config);
+      console.log('test');
+      window.electron.store.set({
+        hashCheckList: [...window.electron.store.get('hashCheckList'), newServerHash],
+        serversHash: [...window.electron.store.get('serversHash'), `server-${newServerHash}`],
+        servers: { ...window.electron.store.get('servers'), [`server-${newServerHash}`]: config },
+      });
+      window.serverToFiles.saveFile(`server-${hash(config)}`, config);
+      onClose(config);
+    } else {
+      setImportData('');
+      setData({});
+      setImportConfig({});
+      setErrorType('duplicated');
+      setNoticeOpen(true);
+      onClose({});
+    }
+  };
+  const handleNoticeText = (errorType) => {
+    switch (errorType) {
+      case 'empty':
+        return 'Please fill in the form or Import a link';
+      case 'duplicated':
+        return 'Server already exists';
+      case 'invalid':
+        return 'Invalid import link';
+      default:
+        return 'error';
+    }
+  };
+  const handleNoticeClose = (event?: React.SyntheticEvent | Event, reason?: string) => {
+    if (reason === 'clickaway') {
+      return;
+    }
+    setNoticeOpen(false);
+  };
   return (
     <ThemeProvider theme={theme}>
-      <Dialog onClose={handleClose} open={open}>
-        <div className="w-[600px]  bg-sky-100 p-6 overflow-x-hidden">
+      <Snackbar open={openNotice} autoHideDuration={6000} onClose={handleNoticeClose}>
+        <Alert onClose={handleNoticeClose} severity="warning" sx={{ width: '100%' }}>
+          {handleNoticeText(errorType)}
+        </Alert>
+      </Snackbar>
+      <Dialog onClose={onClose} open={open}>
+        <div className="w-[600px]  overflow-x-hidden bg-sky-100 p-6">
           <DialogTitle className="text-center text-gray-700">
             <span className="">Configure Server</span>
           </DialogTitle>
@@ -377,14 +188,20 @@ const AddServerDialog = (props: AddServerDialogProps) => {
                 <RoundedButton onClick={() => setMode('import')}>Import</RoundedButton>
                 <RoundedButton onClick={() => setMode('manual')}>Manual</RoundedButton>
               </div>
-              <div>{mode === 'import' ? <ImportSettings data={data} /> : <ManualSettings />}</div>
+              <div>
+                {mode === 'import' ? (
+                  <ImportSettings data={importConfig} />
+                ) : (
+                  <ManualSettings data={data} />
+                )}
+              </div>
             </div>
           </div>
-          <div className=' m-6'>
+          <div className=" m-6">
             <RoundedButton
               className="w-12"
               onClick={() => {
-                console.log('Finish');
+                handleFinish(data);
               }}
             >
               Finish

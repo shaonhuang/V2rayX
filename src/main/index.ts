@@ -3,16 +3,20 @@ import { join } from 'path';
 import { electronApp, optimizer, is } from '@electron-toolkit/utils';
 import icon from '../../resources/icon.png?asset';
 import * as path from 'path';
-import { readFileSync, mkdir } from 'fs';
+import { readFileSync, mkdir, writeFileSync, unlink } from 'fs';
 import { initStore } from './store';
 import { homedir } from 'os';
 import v2ray from './v2ray/manage';
 
-const handleFileOpen = () => {
-  const data = JSON.parse(
-    readFileSync(path.join(homedir(), 'v2ray-core', 'config', '/test.json'), 'utf-8')
-  );
-  return data;
+const handleSaveConfig = (name: string, data: JSON) => {
+  writeFileSync(path.join(homedir(), 'v2ray-core', 'config', `${name}.json`), JSON.stringify(data),"utf8");
+};
+const handleDeleteConfig = (name: any) => {
+  console.log(name);
+  unlink(path.join(homedir(), 'v2ray-core', 'config', `${name}.json`), function (err) {
+    if (err) return console.log(err);
+    console.log('file deleted successfully');
+  });
 };
 
 function createWindow(): void {
@@ -99,8 +103,14 @@ app.whenReady().then(async () => {
   //     console.log(controller);
   //   }
   // };
-  ipcMain.handle('dialog:openFile', handleFileOpen);
-  ipcMain.handle('v2ray:start', () => v2ray.v2rayService('start'));
+  ipcMain.handle('servers:saveFile', async (event, name, data) => {
+    console.log(name, data, 'saveFile');
+    handleSaveConfig(name, data);
+  });
+  ipcMain.handle('servers:deleteFile', (event, name) => {
+    handleDeleteConfig(name);
+  });
+  ipcMain.handle('v2ray:start', (event, fileName: string) => v2ray.v2rayService('start', fileName));
   ipcMain.handle('v2ray:stop', () => v2ray.v2rayService('stop'));
 
   app.on('activate', function () {

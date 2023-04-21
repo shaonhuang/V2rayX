@@ -3,7 +3,8 @@ import { loadJsonFileSync } from 'load-json-file';
 import { homedir } from 'os';
 import * as path from 'path';
 import { readdirSync } from 'fs';
-const md5 = require('md5');
+const _ = require('lodash');
+const hash = require('object-hash');
 const Store = require('electron-store');
 const { webContents } = require('electron');
 import { cloneDeep } from 'lodash';
@@ -12,26 +13,39 @@ const store = new Store();
 const configPath = path.join(homedir(), 'v2ray-core', 'config');
 
 const setServer = (jsonObj: JSON) => {
-  const newServerHash = md5(JSON.stringify(jsonObj));
-  if (!store.get(`servers.${newServerHash}`)) {
-    console.log('store.set');
+  const newServerHash = hash(JSON.stringify(jsonObj));
+  const serversHash = store.get('serversHash');
+  if (!store.get('serversHash')) {
+    store.set('serversHash', []);
+  }
+  if (!store.get(`servers.server-${newServerHash}`)) {
     store.set({
-      serversHash: [...(store.get('serversHash') ?? []), newServerHash],
+      serversHash: [...serversHash, ...(serversHash.includes(newServerHash) ? [] : [newServerHash])],
       servers: {
         ...(store.get('servers') ?? {}),
-        [newServerHash]: jsonObj,
+        [`server-${newServerHash}`]: jsonObj,
       },
     });
   }
-  console.log(store.get('serversHash'), JSON.stringify(store.get('servers')));
+
+  store.set('newServerHash', newServerHash);
+  // store.set('serversHash', []);
+  // store.set('servers', {});
 };
 
 const loadJsonList = (folder: string) => {
+  const serversHash: Array<string> = [];
+  const hashCheckList: Array<string> = [];
+  const servers: Object = {};
   readdirSync(folder).forEach((file) => {
-    console.log(file);
-    const jsonObj: any = loadJsonFileSync(configPath + `/${file}`) ?? {};
-    setServer(jsonObj);
+    const jsonObj: any = loadJsonFileSync(path.join(configPath, file)) ?? {};
+    serversHash.push(file.replace('.json', ''));
+    hashCheckList.push(hash(jsonObj));
+    servers[file.replace('.json', '')] = jsonObj;
   });
+  store.set('serversHash', serversHash);
+  store.set('hashCheckList', hashCheckList);
+  store.set('servers', servers);
 };
 
 export function initStore() {
@@ -41,8 +55,10 @@ export function initStore() {
   ipcMain.on('electron-store-set', async (event, key, val) => {
     store.set(key, val);
   });
+  ipcMain.on('electron-store-delete', async (event, key) => {
+    store.delete(key);
+  });
   ipcMain.on('electron-store-set-server', async (event, val) => {
-    console.log(val, 'electron-store-set-server');
     setServer(val);
   });
   ipcMain.on('servers', async (event, type, val) => {
@@ -56,8 +72,5 @@ export function initStore() {
     }
   });
   store.set('unicorn', '🦄');
-  console.log(store.get('unicorn'), app.getPath('userData'));
-  // console.log(loadJsonFileSync(configPath + '/test.json'));
-  console.log(configPath);
   loadJsonList(configPath);
 }

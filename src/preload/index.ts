@@ -23,16 +23,16 @@ const api = {
 // renderer only if context isolation is enabled, otherwise
 // just add to the DOM global.
 if (process.contextIsolated) {
-  console.log('process.contextIsolated', process.contextIsolated);
   try {
     contextBridge.exposeInMainWorld('api', api);
 
-    contextBridge.exposeInMainWorld('serverFiles', {
-      openFile: () => ipcRenderer.invoke('dialog:openFile'),
+    contextBridge.exposeInMainWorld('serverToFiles', {
+      saveFile: (name: any, data: any) => ipcRenderer.invoke('servers:saveFile', name, data),
+      deleteFile: (data: any) => ipcRenderer.invoke('servers:deleteFile', data),
     });
 
     contextBridge.exposeInMainWorld('v2rayService', {
-      startService: () => ipcRenderer.invoke('v2ray:start'),
+      startService: (fileName: string) => ipcRenderer.invoke('v2ray:start', fileName),
       stopService: () => ipcRenderer.invoke('v2ray:stop'),
     });
 
@@ -45,9 +45,11 @@ if (process.contextIsolated) {
         set(property: any, val: any) {
           ipcRenderer.send('electron-store-set', property, val);
         },
+        delete(key: string) {
+          ipcRenderer.send('electron-store-delete', key);
+        },
         // Other method you want to add like has(), reset(), etc.
         setServer(val: any) {
-          console.log('preload setServer', val);
           ipcRenderer.send('electron-store-set-server', val);
         },
       },

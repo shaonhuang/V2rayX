@@ -41,7 +41,6 @@ export default {
   checkConfigDir(): any {
     try {
       const filePath = path.join(homedir(), 'v2ray-core', 'config');
-      console.log(filePath, 'filePath');
       if (fs.existsSync(filePath)) {
         return true;
       }
@@ -117,7 +116,7 @@ export default {
       }
       const url = `https://github.com/v2fly/v2ray-core/releases/download/${version}/v2ray-${system}-64.zip`;
       const outputDir = path.join(homedir(), 'v2ray-core');
-      const zipFile = path.join(tmpdir() + '/v2ray.zip');
+      const zipFile = path.join(tmpdir() + 'v2ray.zip');
       console.log(outputDir, zipFile, fs.existsSync(zipFile), url);
       if (!fs.existsSync(zipFile)) {
         await download(url, zipFile, undefined);
@@ -129,14 +128,15 @@ export default {
       console.log('failed download:', err);
     }
   },
-  v2rayService(type: string) {
+  v2rayService(type: string, fileName: string | undefined) {
     const homedir = require('os').homedir();
     const { spawn } = require('node:child_process');
+    console.log('v2rayService', type, fileName);
     const init = () => {
-      v2ray = spawn(path.join(homedir, 'v2ray-core') + '/v2ray', [
+      v2ray = spawn(path.join(homedir, 'v2ray-core', 'v2ray'), [
         'run',
         '-c',
-        path.join(homedir, 'v2ray-core', 'config', 'test.json'),
+        path.join(homedir, 'v2ray-core', 'config', `${fileName}.json`),
       ]);
       v2ray.stdout.on('data', (data: string) => {
         console.log(`stdout: ${data}`);
