@@ -5,13 +5,13 @@ import { electronAPI } from '@electron-toolkit/preload';
 const api = {
   send: (channel, data) => {
     // whitelist channels
-    const validChannels = ['toMain'];
+    const validChannels = ['toMain', 'v2ray:install'];
     if (validChannels.includes(channel)) {
       ipcRenderer.send(channel, data);
     }
   },
   receive: (channel, func) => {
-    const validChannels = ['fromMain'];
+    const validChannels = ['fromMain', 'v2ray:downloadStatus', 'v2ray:unzipStatus'];
     if (validChannels.includes(channel)) {
       // Deliberately strip event as it includes `sender`
       ipcRenderer.on(channel, (event, ...args) => func(...args));
@@ -25,15 +25,14 @@ const api = {
 if (process.contextIsolated) {
   try {
     contextBridge.exposeInMainWorld('api', api);
-
-    contextBridge.exposeInMainWorld('serverToFiles', {
-      saveFile: (name: any, data: any) => ipcRenderer.invoke('servers:saveFile', name, data),
-      deleteFile: (data: any) => ipcRenderer.invoke('servers:deleteFile', data),
-    });
-
     contextBridge.exposeInMainWorld('v2rayService', {
-      startService: (fileName: string) => ipcRenderer.invoke('v2ray:start', fileName),
+      startService: (data: JSON) => ipcRenderer.invoke('v2ray:start', data),
       stopService: () => ipcRenderer.invoke('v2ray:stop'),
+    });
+    contextBridge.exposeInMainWorld('update', {
+      checkForUpdate: () => ipcRenderer.invoke('update:checkForUpdate'),
+      downloadUpdate: () => ipcRenderer.invoke('update:downloadUpdate'),
+      quitAndInstall: () => ipcRenderer.invoke('update:quitAndInstall'),
     });
 
     contextBridge.exposeInMainWorld('electron', {

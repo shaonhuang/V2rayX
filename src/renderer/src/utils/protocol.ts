@@ -5,13 +5,13 @@ import { decode, encode } from 'js-base64';
 const tryToParseJson = (str: string): any => {
   try {
     return JSON.parse(str);
-  } catch (e) { }
+  } catch (e) {}
 };
 
 const tryDecode = (encoded: string): string => {
   try {
     return decode(encoded);
-  } catch (e) { }
+  } catch (e) {}
   return '';
 };
 const v1ToV2Mapper = {
@@ -206,7 +206,7 @@ const objToV2Link = (obj: VmessV2): string => {
 };
 
 const parseVmess2config = (obj: VmessV2) => {
-  if(JSON.stringify(obj) ==='{}') return {};
+  if (JSON.stringify(obj) === '{}') return {};
   const config: any = {
     log: {
       error: '',
@@ -316,6 +316,103 @@ const parseVmess2config = (obj: VmessV2) => {
   config.outbounds = [outbounds, ...outboundsInjection];
   return config;
 };
+
+const emptyVmessV2 = (): VmessV2 => {
+  const config: any = {
+    log: {
+      error: '',
+      loglevel: 'info',
+      access: '',
+    },
+    inbounds: [
+      {
+        listen: '127.0.0.1',
+        protocol: 'socks',
+        settings: {
+          udp: false,
+          auth: 'noauth',
+        },
+        port: '10801',
+      },
+      {
+        listen: '127.0.0.1',
+        protocol: 'http',
+        settings: {
+          timeout: 360,
+        },
+        port: '10871',
+      },
+    ],
+    outbounds: [],
+    dns: {},
+    routing: {
+      settings: {
+        domainStrategy: 'AsIs',
+        rules: [],
+      },
+    },
+    transport: {},
+  };
+  const outboundsInjection = [
+    {
+      tag: 'direct',
+      protocol: 'freedom',
+      settings: {
+        domainStrategy: 'UseIP',
+        userLevel: 0,
+      },
+    },
+    {
+      tag: 'block',
+      protocol: 'blackhole',
+      settings: {
+        response: {
+          type: 'none',
+        },
+      },
+    },
+  ];
+  const outbounds: any = {
+    mux: {
+      enabled: false,
+      concurrency: 8,
+    },
+    protocol: 'vmess',
+    streamSettings: {
+      wsSettings: {
+        path: '/hkcHOyeEK',
+        headers: {
+          host: 'hihacker.shop',
+        },
+      },
+      tlsSettings: {
+        serverName: 'hihacker.shop',
+        allowInsecure: false,
+      },
+      security: 'tls',
+      network: 'ws',
+    },
+    tag: 'proxy',
+    settings: {
+      vnext: [
+        {
+          address: '45.76.168.25',
+          users: [
+            {
+              id: '54374ca2-3388-4df2-a999-08bb81eefee7',
+              alterId: 0,
+              level: 0,
+              security: 'aes-128-gcm',
+            },
+          ],
+          port: 443,
+        },
+      ],
+    },
+  };
+  config.outbounds = [outbounds, ...outboundsInjection];
+  return config;
+};
 // link: https://github.com/shadowsocks/ShadowsocksX-NG
 
 // link: https://coderschool.cn/2498.html
@@ -329,4 +426,5 @@ export {
   objToV1Link,
   objToV2Link,
   parseVmess2config,
+  emptyVmessV2,
 };

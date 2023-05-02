@@ -1,51 +1,10 @@
 import { app, ipcMain } from 'electron';
-import { loadJsonFileSync } from 'load-json-file';
-import { homedir } from 'os';
-import * as path from 'path';
-import { readdirSync } from 'fs';
-const _ = require('lodash');
-const hash = require('object-hash');
 const Store = require('electron-store');
-const { webContents } = require('electron');
-import { cloneDeep } from 'lodash';
 
 const store = new Store();
-const configPath = path.join(homedir(), 'v2ray-core', 'config');
 
 const setServer = (jsonObj: JSON) => {
-  const newServerHash = hash(JSON.stringify(jsonObj));
-  const serversHash = store.get('serversHash');
-  if (!store.get('serversHash')) {
-    store.set('serversHash', []);
-  }
-  if (!store.get(`servers.server-${newServerHash}`)) {
-    store.set({
-      serversHash: [...serversHash, ...(serversHash.includes(newServerHash) ? [] : [newServerHash])],
-      servers: {
-        ...(store.get('servers') ?? {}),
-        [`server-${newServerHash}`]: jsonObj,
-      },
-    });
-  }
-
-  store.set('newServerHash', newServerHash);
-  // store.set('serversHash', []);
-  // store.set('servers', {});
-};
-
-const loadJsonList = (folder: string) => {
-  const serversHash: Array<string> = [];
-  const hashCheckList: Array<string> = [];
-  const servers: Object = {};
-  readdirSync(folder).forEach((file) => {
-    const jsonObj: any = loadJsonFileSync(path.join(configPath, file)) ?? {};
-    serversHash.push(file.replace('.json', ''));
-    hashCheckList.push(hash(jsonObj));
-    servers[file.replace('.json', '')] = jsonObj;
-  });
-  store.set('serversHash', serversHash);
-  store.set('hashCheckList', hashCheckList);
-  store.set('servers', servers);
+  store.set('servers', store.get('servers') ?? [jsonObj]);
 };
 
 export function initStore() {
@@ -71,6 +30,5 @@ export function initStore() {
         break;
     }
   });
-  store.set('unicorn', '🦄');
-  loadJsonList(configPath);
+  store.set('servers', store.get('servers') ?? []);
 }

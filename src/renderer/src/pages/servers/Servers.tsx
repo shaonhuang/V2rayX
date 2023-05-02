@@ -10,13 +10,12 @@ import {
   ListItemButton,
   ListItemText,
   CircularProgress,
-  Backdrop
+  Backdrop,
 } from '@mui/material';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { Storage, Share, MoreHoriz, Add, Edit, Delete } from '@mui/icons-material';
 import AddServerDialog from './components/AddServer';
-import hash from 'object-hash';
-import * as _ from 'lodash';
+import { cloneDeep } from 'lodash';
 
 const theme = createTheme({
   palette: {
@@ -39,7 +38,12 @@ const MoreOptionsList = (props) => {
   return (
     <List>
       <ListItem disablePadding>
-        <ListItemButton>
+        <ListItemButton
+          onClick={(e) => {
+            e.preventDefault();
+            props.handleEdit(data.key);
+          }}
+        >
           <ListItemIcon>
             <Edit />
           </ListItemIcon>
@@ -65,7 +69,6 @@ const MoreOptionsList = (props) => {
   );
 };
 const ServerItem = (props: any) => {
-  console.log(props);
   const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null);
   const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
@@ -87,15 +90,16 @@ const ServerItem = (props: any) => {
       onClick={props.onClick}
     >
       <div className="ml-3 mr-6 inline-flex h-12 w-12 items-center rounded-xl bg-purple-600">
-          <Storage style={{}} className="m-auto" />
-        </div>
-      <span className="inline-flex items-center font-bold w-fit">
-        {serverName}
-      </span>
-      <span className="text-black-dim w-fit justify-self-center">{protocol}</span>
-      <span className="text-black-dim w-fit justify-self-center">5M</span>
+        <Storage style={{}} className="m-auto" />
+      </div>
+      <span className="inline-flex w-fit items-center font-bold">{serverName}</span>
+      <span className="w-fit justify-self-center text-black-dim">{protocol}</span>
+      {
+        // placeholder for data usage status
+      }
+      <span className="w-fit justify-self-center text-black-dim"> </span>
       <ThemeProvider theme={theme}>
-        <IconButton color="primary" className="w-fit justify-self-center">
+        <IconButton color="primary" className="w-fit justify-self-center" disabled>
           <Share className="justify-self-center" fontSize="medium" />
         </IconButton>
         <IconButton
@@ -121,80 +125,102 @@ const ServerItem = (props: any) => {
             horizontal: 'center',
           }}
         >
-          <MoreOptionsList data={props.data} handleDelete={props.handleDelete} />
+          <MoreOptionsList
+            data={props.data}
+            handleDelete={props.handleDelete}
+            handleEdit={props.handleEdit}
+          />
         </Popover>
       </ThemeProvider>
     </div>
   );
 };
 
-const Servers = () => {
+const Servers = (): JSX.Element => {
+  const [editIdx, setEditIdx] = useState(-1);
   const [open, setOpen] = useState(false);
-  const [loading,setLoading] = useState(false);
-  const [seletedServerHash, setSeletedServerHash] = useState<string>(window.electron.store.get('selectedServer') ?? '');
+  const [edit, setEdit] = useState<JSON>({});
+  const [dialogType, setDialogType] = useState<'add' | 'edit'>('add');
+  const [loading, setLoading] = useState(false);
+  const [seletedServer, setSeletedServer] = useState<number>(
+    window.electron.store.get('selectedServer') ?? -1
+  );
   const [servers, setServers] = useState<Array<JSON>>(
-    Object.entries(window.electron.store.get(`servers`)).map((i) => {
-      const [key, value] = i;
-      value.key = key;
-      return value;
+    window.electron.store.get(`servers`).map((i, idx) => {
+      i.key = idx;
+      return i;
     })
   );
 
-  const handleSelectServer = (key: string) => {
-    setSeletedServerHash(key);
+  const handleSelectServer = (key: number) => {
+    setSeletedServer(key);
     window.electron.store.set('selectedServer', key);
   };
 
-  const handleClickOpen = () => {
+  const handleAddOpen = () => {
     setOpen(true);
+    setDialogType('add');
   };
-  useEffect(()=>{
-    if(seletedServerHash !== ''){
-      setLoading(true)
-      window.v2rayService.stopService()
-      window.v2rayService.startService(seletedServerHash)
-      console.log('loading')
-      setLoading(false)
-    }
-  },[seletedServerHash])
 
-  const handleClose = (config: JSON) => {
-    // console.log(config,'handleClose',typeof config,config.type)
-    console.log(config, 'config');
-    if (config?.type === 'click') {
+  useEffect(() => {
+    if (seletedServer > -1) {
+      setLoading(true);
+      // FIXME: service
+      window.v2rayService.stopService();
+      window.v2rayService.startService(window.electron.store.get('servers')[seletedServer]);
+      setLoading(false);
+    }
+  }, [seletedServer]);
+
+  const handleClose = function (type: 'add' | 'edit', config: JSON) {
+    if (arguments[1] === 'backdropClick' || arguments[1] === 'escapeKeyDown') {
       setOpen(false);
       return;
     }
-    if (JSON.stringify(config) !== '{}') {
-      config = { ...config, key: `server-${hash(config)}` };
-      setServers([...servers, config]);
+    if (typeof config === 'object' && JSON.stringify(config) !== '{}') {
+      if (type === 'add') {
+        window.electron.store.set('servers', [...window.electron.store.get('servers'), config]);
+        config = { ...config, key: servers.length };
+        setServers([...servers, config]);
+        window.v2rayService.stopService();
+        window.v2rayService.startService(window.electron.store.get('servers')[seletedServer]);
+      } else {
+        const storeServers = window.electron.store.get('servers');
+        storeServers.splice(editIdx, 1, config);
+        window.electron.store.set('servers', storeServers);
+        config = { ...config, key: editIdx };
+        servers.splice(editIdx, 1, config);
+        setServers(cloneDeep(servers));
+        window.v2rayService.stopService();
+        window.v2rayService.startService(window.electron.store.get('servers')[seletedServer]);
+      }
       setOpen(false);
     }
-    console.log(servers);
   };
 
   const handleDeleteItem = (key) => {
-    setServers(_.filter(servers, (i) => i.key !== key));
-    const configJson = window.electron.store.get(`servers.${key}`);
-    // delete configJson.key;
-    console.log(configJson, 'configJson', key);
-    const hashVal = hash(configJson);
-    window.electron.store.delete(`servers.${key}`);
-    window.electron.store.set(
-      'serversHash',
-      _.filter(window.electron.store.get('serversHash'), (i) => i !== key)
+    servers.splice(key, 1);
+    setServers(
+      servers.map((i, idx) => {
+        i.key = idx;
+        return i;
+      })
     );
     window.electron.store.set(
-      'hashCheckList',
-      _.filter(window.electron.store.get('hashCheckList'), (i) => i !== hashVal)
+      'servers',
+      window.electron.store.get('servers').filter((i, idx) => idx !== key)
     );
-    window.serverToFiles.deleteFile(key);
-    console.log(key, 'key', hashVal);
-    // setServers(servers.filter((i)=>i.key !== newServerHash));
   };
-  const handleLoading = ()=>{
+  const handleEditItem = (key) => {
+    setEditIdx(key);
+    setOpen(true);
+    setDialogType('edit');
+    setEdit(window.electron.store.get('servers')[key]);
+    debugger;
+  };
+  const handleLoading = () => {
     setLoading(true);
-  }
+  };
 
   return (
     <section className="">
@@ -218,7 +244,7 @@ const Servers = () => {
             (i, idx) =>
               i && (
                 <ServerItem
-                  className={seletedServerHash === i.key ? 'bg-sky-200' : 'bg-white'}
+                  className={seletedServer === i.key ? 'bg-sky-200' : 'bg-white'}
                   serverName="New Server"
                   key={idx}
                   data={i}
@@ -229,17 +255,18 @@ const Servers = () => {
                     }
                   }}
                   handleDelete={handleDeleteItem}
+                  handleEdit={handleEditItem}
                 ></ServerItem>
               )
           )
         )}
       </div>
       <div className="float-left ml-6">
-        <Fab color="primary" aria-label="add" onClick={handleClickOpen}>
+        <Fab color="primary" aria-label="add" onClick={handleAddOpen}>
           <Add />
         </Fab>
       </div>
-      <AddServerDialog open={open} onClose={handleClose} />
+      <AddServerDialog open={open} type={dialogType} onClose={handleClose} edit={edit} />
       <Backdrop
         sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
         open={loading}

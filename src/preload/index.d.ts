@@ -3,18 +3,23 @@ import { ElectronAPI } from '@electron-toolkit/preload';
 declare global {
   interface Window {
     electron: {
+      electronAPI: IElectronAPI;
       store: {
         get: (key: string) => any;
-        set: (key: string | JSON, val: any | undefined) => void;
+        set: (key: string | JSON, val?: any) => void;
         delete: (key: string) => void;
       };
     };
-    api: unknown;
+    api: IElectronAPI;
     serverFiles: IElectronAPI;
-    serverToFiles: IElectronAPI;
     v2rayService: {
-      startService: (fileName:string) => void;
+      startService: (data: JSON) => void;
       stopService: () => void;
+    };
+    update: {
+      checkForUpdate: () => void;
+      downloadUpdate: () => void;
+      quitAndInstall: () => void;
     };
   }
 }

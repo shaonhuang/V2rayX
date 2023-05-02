@@ -11,7 +11,19 @@ import {
 } from '@mui/material';
 import { SelectChangeEvent } from '@mui/material/Select';
 import { cloneDeep } from 'lodash';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+
+import {
+  VmessV1,
+  VmessV2,
+  isVMessLink,
+  isVMessLinkV1,
+  isVMessLinkV2,
+  parseV1Link,
+  parseV2Link,
+  parseVmess2config,
+  emptyVmessV2,
+} from '@renderer/utils/protocol';
 
 export interface Settings {
   protocol: string;
@@ -50,11 +62,10 @@ const ManualSettings = (props: any) => {
   ];
   const network = ['ws', 'tcp', 'h2', 'kcp', 'quic', 'domainsocket'];
   let { inbounds, outbounds } = props.data;
-  console.log(props.data, 'data');
   if (JSON.stringify(props.data) === '{}') {
     inbounds = [];
-    outbounds = []
-      }
+    outbounds = [];
+  }
   const encryption =
     outbounds?.[0]?.settings?.vnext?.[0]?.users?.[0]?.security === 'none'
       ? 'auto'
@@ -116,6 +127,39 @@ const ManualSettings = (props: any) => {
         break;
     }
   };
+
+  const setting2Config = () => {
+    const config = Object.keys(props.data).length === 0 ? emptyVmessV2() : cloneDeep(props.data);
+    config.inbounds[0].port = baseSettings.socket;
+    config.inbounds[1].port = baseSettings.http;
+    config.inbounds[0].settings.udp = baseSettings.udp;
+    config.outbounds[0].protocol = settings.protocol;
+    config.outbounds[0].settings.vnext[0] = {
+      ...config.outbounds[0].settings.vnext[0],
+      address: settings.address,
+      port: settings.port,
+    };
+    config.outbounds[0].settings.vnext[0].users[0] = {
+      ...config.outbounds[0].settings.vnext[0].users[0],
+      id: settings.id,
+      alterId: settings.alterId,
+      level: settings.level,
+      security: settings.encryption,
+    };
+    config.outbounds[0].streamSettings.network = settings.network;
+    config.outbounds[0].streamSettings.wsSettings.headers.host = settings.host;
+    config.outbounds[0].streamSettings.wsSettings.path = settings.path;
+    config.outbounds[0].streamSettings.security = settings.security;
+    config.outbounds[0].streamSettings.tlsSettings.allowInsecure = settings.allowInsecure;
+    config.outbounds[0].streamSettings.tlsSettings.serverName = settings.tlsServerDomin;
+    config.outbounds[0].mux.enabled = baseSettings.mux;
+    config.outbounds[0].mux.concurrency = baseSettings.concurrency;
+    return config;
+  };
+  useEffect(() => {
+    props.handleDataSave(setting2Config());
+  }, [baseSettings, settings]);
+
   return (
     <section className="">
       <div className="mx-6 mb-6 rounded-xl bg-sky-100 px-4 py-6">
@@ -131,6 +175,12 @@ const ManualSettings = (props: any) => {
               label="socket port"
               type="number"
               size="small"
+              error={baseSettings.socket === baseSettings.http}
+              helperText={
+                baseSettings.socket === baseSettings.http
+                  ? 'Incorrect entry. The Socket port and the HTTP port should not be identical'
+                  : ''
+              }
               onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
                 handleOnChange(event, 'baseSettings', 'socket');
               }}
@@ -145,6 +195,12 @@ const ManualSettings = (props: any) => {
               label="http port"
               type="number"
               size="small"
+              error={baseSettings.socket === baseSettings.http}
+              helperText={
+                baseSettings.socket === baseSettings.http
+                  ? 'Incorrect entry. The Socket port and the HTTP port should not be identical'
+                  : ''
+              }
               onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
                 handleOnChange(event, 'baseSettings', 'http')
               }

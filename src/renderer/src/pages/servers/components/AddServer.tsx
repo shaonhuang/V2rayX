@@ -14,9 +14,7 @@ import MuiAlert, { AlertProps } from '@mui/material/Alert';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { useEffect, useState } from 'react';
 import ReactJson from 'react-json-view';
-import md5 from 'md5';
 import * as _ from 'lodash';
-import hash from 'object-hash';
 
 import {
   VmessV1,
@@ -27,12 +25,16 @@ import {
   parseV1Link,
   parseV2Link,
   parseVmess2config,
+  emptyVmessV2,
 } from '@renderer/utils/protocol';
 import ManualSettings from './ManualSettings';
 
 export interface AddServerDialogProps {
   open: boolean;
-  onClose: (newServerHash: string) => void;
+  type: 'add' | 'edit';
+  edit: JSON;
+  idx: number;
+  onClose: (type: 'add' | 'edit', configObj: JSON) => void;
 }
 
 const theme = createTheme({
@@ -77,80 +79,74 @@ const ImportSettings = (props: any) => {
 };
 
 const AddServerDialog = (props: AddServerDialogProps) => {
+  const { onClose, open, type, edit } = props;
   const [errorType, setErrorType] = useState('empty');
-  const { onClose, open } = props;
   const [openNotice, setNoticeOpen] = React.useState(false);
   const [mode, setMode] = useState('import');
   const [importData, setImportData] = useState(
-    'vmess://eyAidiI6IjIiLCAicHMiOiIiLCAiYWRkIjoiNDUuNzYuMTY4LjI1IiwgInBvcnQiOiI0NDMiLCAiaWQiOiI1NDM3NGNhMi0zMzg4LTRkZjItYTk5OS0wOGJiODFlZWZlZTciLCAiYWlkIjoiMCIsICJuZXQiOiJ3cyIsICJ0eXBlIjoibm9uZSIsICJob3N0IjoiaGloYWNrZXIuc2hvcCIsICJwYXRoIjoiL2hrY0hPeWVFSyIsICJ0bHMiOiJ0bHMiIH0='
+    process.env.NODE_ENV === 'development'
+      ? 'vmess://eyAidiI6IjIiLCAicHMiOiIiLCAiYWRkIjoiNDUuNzYuMTY4LjI1IiwgInBvcnQiOiI0NDMiLCAiaWQiOiI1NDM3NGNhMi0zMzg4LTRkZjItYTk5OS0wOGJiODFlZWZlZTciLCAiYWlkIjoiMCIsICJuZXQiOiJ3cyIsICJ0eXBlIjoibm9uZSIsICJob3N0IjoiaGloYWNrZXIuc2hvcCIsICJwYXRoIjoiL2hrY0hPeWVFSyIsICJ0bHMiOiJ0bHMiIH0='
+      : ''
   );
-  const [data, setData] = useState({}); // vmess json
-  const [importConfig, setImportConfig] = useState({});
+  const [data, setData] = useState(props.type === 'add' ? {} : props.edit);
+
   const handleImportUrl = () => {
     if (isVMessLink(importData)) {
       const vmessObj: VmessV1 | VmessV2 = isVMessLinkV1(importData)
         ? parseV1Link(importData)
         : parseV2Link(importData);
-      setImportConfig(parseVmess2config(vmessObj));
       setData(parseVmess2config(vmessObj));
       setMode('import');
     } else {
       setErrorType('invalid');
       setImportData('');
       setData({});
-      setImportConfig({});
       setNoticeOpen(true);
     }
   };
+
+  const hanleConfigChange = (configObj: JSON) => {
+    setData(configObj);
+  };
+
   const handleFinish = (vmessObj) => {
-    const config = parseVmess2config(vmessObj);
-    window.electron.store.get('newServerHash');
-    const newServerHash = hash(config);
-    // onClose(window.electron.store.get('newServerHash'));
-    const compareArr = Object.values(Object.values(window.electron.store.get('servers')));
-    if (JSON.stringify(config) === '{}') {
+    if (JSON.stringify(vmessObj) === '{}') {
       setErrorType('empty');
       setNoticeOpen(true);
-      onClose(config);
+      onClose(type, vmessObj);
+      return;
+    } else if (vmessObj.inbounds[0].port === vmessObj.inbounds[1].port) {
+      setErrorType('invalid');
+      setNoticeOpen(true);
       return;
     }
-    if (!window.electron.store.get('hashCheckList').includes(hash(config))) {
-      // window.electron.store.setServer(config);
-      console.log('test');
-      window.electron.store.set({
-        hashCheckList: [...window.electron.store.get('hashCheckList'), newServerHash],
-        serversHash: [...window.electron.store.get('serversHash'), `server-${newServerHash}`],
-        servers: { ...window.electron.store.get('servers'), [`server-${newServerHash}`]: config },
-      });
-      window.serverToFiles.saveFile(`server-${hash(config)}`, config);
-      onClose(config);
-    } else {
-      setImportData('');
-      setData({});
-      setImportConfig({});
-      setErrorType('duplicated');
-      setNoticeOpen(true);
-      onClose({});
-    }
+    onClose(type, vmessObj);
+    setData({});
   };
+
   const handleNoticeText = (errorType) => {
     switch (errorType) {
       case 'empty':
         return 'Please fill in the form or Import a link';
-      case 'duplicated':
-        return 'Server already exists';
       case 'invalid':
         return 'Invalid import link';
       default:
         return 'error';
     }
   };
+
   const handleNoticeClose = (event?: React.SyntheticEvent | Event, reason?: string) => {
     if (reason === 'clickaway') {
       return;
     }
     setNoticeOpen(false);
   };
+
+  useEffect(() => {
+    if (type === 'edit') {
+      setData(edit);
+    }
+  }, [type, edit]);
   return (
     <ThemeProvider theme={theme}>
       <Snackbar open={openNotice} autoHideDuration={6000} onClose={handleNoticeClose}>
@@ -190,9 +186,9 @@ const AddServerDialog = (props: AddServerDialogProps) => {
               </div>
               <div>
                 {mode === 'import' ? (
-                  <ImportSettings data={importConfig} />
+                  <ImportSettings data={data} />
                 ) : (
-                  <ManualSettings data={data} />
+                  <ManualSettings data={data} handleDataSave={hanleConfigChange} />
                 )}
               </div>
             </div>

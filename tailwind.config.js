@@ -5,12 +5,12 @@ module.exports = {
     './src/**/**/**/*.{html,js,tsx}',
     './src/**/**/*.{html,js,tsx}',
     './src/**/*.{html,js,tsx}',
-    './src/*.{html,js,tsx}'
+    './src/*.{html,js,tsx}',
   ],
   theme: {
     fontFamily: {
       sans: ['Graphik', 'sans-serif'],
-      serif: ['Merriweather', 'serif']
+      serif: ['Merriweather', 'serif'],
     },
     extend: {
       colors: {
@@ -21,16 +21,16 @@ module.exports = {
         'blue-dim': '#77A7E8',
         'black-dim': '#929292',
         'gray-dark': '#273444',
-        'gray-light': '#d3dce6'
+        'gray-light': '#d3dce6',
       },
       spacing: {
         128: '32rem',
-        144: '36rem'
+        144: '36rem',
       },
       borderRadius: {
-        '4xl': '2rem'
-      }
-    }
+        '4xl': '2rem',
+      },
+    },
   },
-  plugins: []
-}
+  plugins: [],
+};

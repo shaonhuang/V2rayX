@@ -14,7 +14,6 @@ const nightMode = () => {
 
   // Whenever the user explicitly chooses dark mode
   localStorage.theme = 'dark';
-  console.log('test');
   // // Whenever the user explicitly chooses to respect the OS preference
   // localStorage.removeItem('theme');
 };

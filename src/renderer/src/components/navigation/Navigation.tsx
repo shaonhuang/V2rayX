@@ -1,10 +1,8 @@
-import * as React from 'react';
 import { styled } from '@mui/material/styles';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
 import HomeIcon from '@mui/icons-material/Home';
 import LinkIcon from '@mui/icons-material/Link';
-import FolderSharedIcon from '@mui/icons-material/FolderShared';
 import SettingsIcon from '@mui/icons-material/Settings';
 import { setNavTab } from '../../store/navigationSlice';
 import { useAppSelector, useAppDispatch } from '../../store/hooks';
@@ -17,7 +15,6 @@ const NavButton = styled(Button)({
   color: 'white',
 });
 const Navigation = () => {
-  const [value, setValue] = React.useState(0);
   const { tabName } = useAppSelector((state: RootState) => state.navTab);
   const dispatch = useAppDispatch();
   return (
@@ -56,7 +53,6 @@ const Navigation = () => {
         <NavButton
           variant={tabName === 'about' ? 'contained' : 'outlined'}
           onClick={() => dispatch(setNavTab('about'))}
-          disabled
         >
           About
           <SettingsIcon />
