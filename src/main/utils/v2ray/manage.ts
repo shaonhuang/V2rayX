@@ -77,6 +77,7 @@ export default {
       const info = await getInfoFromGithub(apiUrl);
       const version = info?.['tag_name'];
       let system = '';
+      let arch = '';
       switch (process.platform) {
         case linux:
           system = 'linux';
@@ -88,7 +89,20 @@ export default {
           system = 'windows';
           break;
       }
-      const url = `https://github.com/v2fly/v2ray-core/releases/download/${version}/v2ray-${system}-64.zip`;
+      switch (process.arch) {
+        case 'x64':
+          arch = '64';
+          break;
+        case 'ia32':
+          arch = '32';
+          break;
+        case 'arm':
+          arch = 'arm32-v7a';
+        case 'arm64':
+          arch = 'arm64-v8a';
+          break;
+      }
+      const url = `https://github.com/v2fly/v2ray-core/releases/download/${version}/v2ray-${system}-${arch}.zip`;
       const zipFile = path.join(tmpdir(), 'v2ray.zip');
 
       if (!fs.existsSync(zipFile)) {

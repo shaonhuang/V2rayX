@@ -47,8 +47,6 @@ V2ray GUI client with cross-platform desktop support powered by Electron⚛️, 
     - `export http_proxy="127.0.0.1:1087"`
     - `export https_proxy="127.0.0.1:1087"`
     - Some tools like `proxychains` is deep recommended.
-- [ ] ACL (access control list)
-- [ ] Nodes Load-Balancing Mode
 - [ ] Clipboard / QR-code Import
 - [ ] Subscription Import
 - [ ] Language Detecting And Switching (zh-CN / en-US / ru-RU)
@@ -73,19 +71,31 @@ V2ray GUI client with cross-platform desktop support powered by Electron⚛️, 
 - Ubuntu
   - deb `x64/x86/arm64`
   - AppImage `x64/x86/arm64`
-  - snap `x64`
+  - snap `x64/x86/arm64`
 - MacOS
   - dmg `x64/arm64`
   - zip `x64/arm64`
 - Windows
-  - exe `x64/x86`
-  - zip `x64/x86`
+  - exe `x64/x86/arm64`
+  - zip `x64/x86/arm64`
 
 ## V. Screenshots
 
 ### Home Page
 
-### Dark Mode
+![home.png](./assets/home-page.png)
+
+### Server Page
+
+![server.png](./assets/servers-page.png)
+
+### Server Add
+
+![addServer.png](./assets/add-server-page.png)
+
+### About Page
+
+![about.png](./assets/about-page.png)
 
 ## VI. Downloads
 
@@ -94,15 +104,22 @@ V2ray GUI client with cross-platform desktop support powered by Electron⚛️, 
   - ![statistics](https://img.shields.io/github/downloads/shaonhuang/V2rayX/total?style=plastic)
   - [↪ releases page](https://github.com/shaonhuang/V2rayX/releases/latest)
 
-- ElectronJs Website
-
 - Snapcraft Store (linux)
+
+  - [![Get it from the Snap Store](https://snapcraft.io/static/images/badges/en/snap-store-black.svg)](https://snapcraft.io/v2rayx)
+  - [↪ home page](https://snapcraft.io/v2rayx)
 
 ## VII. Plugins Downloads
 
-> not necessary, just for some advanced users.
+after install, app will auto install v2ray component.
 
 ## IX. Why?
+
+This project was heavily inspired by yanue/V2rayU, which uses packed v2ray-core to avoid complex intallation with native O-C code.But it is not intuitive to use.Only support macos.
+
+I wish to create a web development work flow to work with frondend and backend, and app need a little bit of user interface and it has to be cross-platform.
+
+Hence, the app is created.Welcome to pull or make pr.
 
 ## X. Development
 
@@ -111,7 +128,7 @@ V2ray GUI client with cross-platform desktop support powered by Electron⚛️, 
 - Node@^`18.14.0`
 - Ubuntu18.04 or higher version
 - Mac catalina or other versions (works in most recent versions in theory)
-- Windows 10 (WSL tested)or higher version
+- Windows 10 (WSL tested) or higher version
 
 ### 2. Prepare
 
@@ -136,12 +153,17 @@ $: npm config set electron_mirror http://npm.taobao.org/mirrors/electron/
 
 # [02]npm
 $: npm i -g yarn
-$: yarn
+$: yarn set version stable
 
-# [04]start
-$: yarn start
+# [03]yarn install
+$: yarn install
+
+# [04]dev
+$: yarn dev
 ```
 
 ## XI. Mention
 
 ## XII. Credit
+
+- [yanue/V2rayU](https://github.com/yanue/V2rayU/tree/master)
