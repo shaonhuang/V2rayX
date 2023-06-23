@@ -21,5 +21,14 @@ declare global {
       downloadUpdate: () => void;
       quitAndInstall: () => void;
     };
+    clipboard: {
+      paste: (data: string) => void;
+    };
+    autoLaunch: {
+      change: (status: boolean) => void;
+    };
+    proxyMode: {
+      change: (status: string) => void;
+    };
   }
 }

@@ -1,6 +1,6 @@
 {
   "name": "v2rayx",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "An Electron application with React and TypeScript",
   "main": "./out/main/index.js",
   "author": "shaonhuang",
@@ -31,6 +31,7 @@
     "@types/object-hash": "^3.0.2",
     "adm-zip": "^0.5.10",
     "animate.css": "^4.1.1",
+    "chalk": "^4",
     "electron-is-dev": "^2.0.0",
     "electron-store": "^8.1.0",
     "electron-updater": "^5.3.0",
@@ -39,8 +40,9 @@
     "lodash": "^4.17.21",
     "log4js": "^6.9.1",
     "object-hash": "^3.0.0",
+    "open": "7.0.3",
     "react-json-view": "^1.21.3",
-    "winston": "^3.8.2",
+    "winston": "^3.9.0",
     "winston-daily-rotate-file": "^4.7.1"
   },
   "devDependencies": {

@@ -1,4 +1,4 @@
-import { app, shell, BrowserWindow, ipcMain, Tray, Menu, nativeImage} from 'electron';
+import { app, shell, BrowserWindow, ipcMain, Tray, Menu, nativeImage, clipboard } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import { join } from 'path';
 import log4js from 'log4js';
@@ -6,6 +6,8 @@ import * as fs from 'fs';
 import { electronApp, optimizer, is } from '@electron-toolkit/utils';
 import icon from '../../resources/icon.png?asset';
 import * as path from 'path';
+import { Mode } from './constant/types';
+import { Proxy } from './utils/proxy';
 import initLogger from './utils/logger';
 import appUpdater from './utils/appUpdater';
 import { initStore } from './store';
@@ -16,9 +18,17 @@ import v2rayManage from './utils/v2ray/manage';
 
 let tray: any = null;
 let mainWindow: any = null;
+let proxy: Proxy | null = null;
 const v2rayBin = path.join(app.getPath('userData'), 'v2ray-core', 'v2ray');
 initLogger();
 const logger = log4js.getLogger('mainProcess');
+let cleanUp = false;
+const gotTheLock = app.requestSingleInstanceLock();
+if (!gotTheLock) {
+  cleanUp = true;
+  // If another instance of the app is already running, quit this instance
+  app.quit();
+}
 
 const createTray = () => {
   const menuIcon = nativeImage.createFromDataURL(
@@ -66,12 +76,48 @@ const init = () => {
   ipcMain.handle('quit-app', () => {
     app.quit();
   });
-  logger.trace('Entering cheese testing');
-  logger.debug('Got cheese.');
-  logger.info('Cheese is Comté.');
-  logger.warn('Cheese is quite smelly.');
-  logger.error('Cheese is too ripe!');
-  logger.fatal('Cheese was breeding ground for listeria.');
+  ipcMain.handle('clipboard:paste', (event, data) => {
+    clipboard.writeText(data);
+  });
+  ipcMain.handle('autoLaunch:change', (event, status) => {
+    app.setLoginItemSettings({
+      openAtLogin: status,
+    });
+  });
+  v2rayManage.v2rayService('start');
+  const localPort = store.get('servers')[store.get('selectedServer')]?.inbounds[0].port;
+  const pacPort = store.get('servers')[store.get('selectedServer')]?.inbounds[1].port;
+  if (localPort && pacPort) {
+    const mode = (store.get('proxyMode') as Mode) ?? store.set('proxyMode', 'Manual');
+    console.log(mode);
+    proxy = Proxy.createProxy(process.platform, localPort, 11111, mode);
+    if (proxy) {
+      proxy.start();
+    }
+  } else {
+    store.set('proxyMode', 'Manual');
+  }
+  ipcMain.handle('proxyMode:change', (event, mode: Mode) => {
+    const localPort = store.get('servers')[store.get('selectedServer')]?.inbounds[0].port;
+    const pacPort = store.get('servers')[store.get('selectedServer')]?.inbounds[1].port;
+
+    console.log(mode, '1', localPort, '2', pacPort);
+    if (localPort && pacPort) {
+      proxy = proxy ?? Proxy.createProxy(process.platform, localPort, 11111, mode);
+      if (proxy) {
+        console.log(mode);
+        if (mode === 'Manual') {
+          proxy.stop();
+        } else {
+          proxy.switch(mode);
+        }
+        store.set('proxyMode', mode);
+      }
+    } else {
+      store.set('proxyMode', 'Manual');
+      proxy?.stop()
+    }
+  });
 };
 
 function createWindow(): void {
@@ -111,8 +157,11 @@ function createWindow(): void {
     const mainWindow = BrowserWindow.getAllWindows()[0];
     mainWindow.webContents.openDevTools();
   }
-  // Check for updates
 }
+
+app.setLoginItemSettings({
+  openAtLogin: store.get('autoLaunch') ?? false,
+});
 
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
@@ -133,7 +182,7 @@ app.whenReady().then(async () => {
   initStore();
   appUpdater(mainWindow);
 
-  const v2rayPackageStatus = fs.existsSync(v2rayBin);
+  const v2rayPackageStatus = fs.existsSync(v2rayBin.concat(process.platform === 'win32' ? '.exe' : ''));
   store.set('v2rayInstallStatus', v2rayPackageStatus);
 
   logger.error('v2rayPackageStatus', v2rayPackageStatus, v2rayBin);
@@ -181,3 +230,22 @@ app.on('window-all-closed', () => {
 
 // In this file you can include the rest of your app"s specific main process
 // code. You can also put them in separate files and require them here.
+app.on('before-quit', (event) => {
+  // Perform some actions before quitting
+  console.log('Before quitting...', proxy);
+  console.log('finished');
+
+  // Prevent the application from quitting immediately
+  cleanUp || event.preventDefault();
+
+  Promise.resolve()
+    .then(() => proxy?.stop())
+    .then(() => {
+      v2rayManage.v2rayService('stop');
+      cleanUp = true;
+    })
+    .then(() => app.quit())
+    .catch((error) => {
+      console.error(error);
+    });
+});

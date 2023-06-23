@@ -68,7 +68,6 @@ const AppUpdater = (mainWindow) => {
   const checkForUpdates = () => {
     log.info('call check update');
     return autoUpdater.checkForUpdates();
-    // autoUpdater.checkForUpdatesAndNotify();
   };
   checkForUpdates();
 };

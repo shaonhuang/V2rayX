@@ -18,7 +18,7 @@ const Navigation = () => {
   const { tabName } = useAppSelector((state: RootState) => state.navTab);
   const dispatch = useAppDispatch();
   return (
-    <nav className="bg-blue-dark">
+    <nav className="bg-blue-dark p-4 rounded-xl">
       <Stack spacing={4} direction="row" className="flex justify-center">
         <NavButton
           variant={tabName === 'home' ? 'contained' : 'outlined'}

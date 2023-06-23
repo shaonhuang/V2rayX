@@ -34,6 +34,15 @@ if (process.contextIsolated) {
       downloadUpdate: () => ipcRenderer.invoke('update:downloadUpdate'),
       quitAndInstall: () => ipcRenderer.invoke('update:quitAndInstall'),
     });
+    contextBridge.exposeInMainWorld('clipboard', {
+      paste: (data:string) => ipcRenderer.invoke('clipboard:paste', data),
+    });
+    contextBridge.exposeInMainWorld('autoLaunch', {
+      change: (status: boolean) => ipcRenderer.invoke('autoLaunch:change', status),
+    });
+    contextBridge.exposeInMainWorld('proxyMode', {
+      change: (mode: string) => ipcRenderer.invoke('proxyMode:change', mode),
+    });
 
     contextBridge.exposeInMainWorld('electron', {
       electronAPI,
