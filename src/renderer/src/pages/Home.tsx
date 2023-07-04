@@ -8,7 +8,7 @@ import DarkModeIcon from '@mui/icons-material/DarkMode';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import IconButton from '@mui/material/IconButton';
 import SettingsBrightnessIcon from '@mui/icons-material/SettingsBrightness';
-import { platform, version } from '@renderer/constant/index';
+import { platform } from '@renderer/constant/index';
 
 const label = { inputProps: { 'aria-label': 'Checkbox' } };
 const ApperanceButton = styled(Button)({
@@ -31,14 +31,14 @@ const GernalSettings = (): JSX.Element => {
   const socksCmdPaste =
     platform === 'win32'
       ? `set socks_proxy "socks5://127.0.0.1:${socksPort}"`
-      : `export socks_proxy="socks5://127.0.0.1:${socksPort}"`;
+      : `${socksPort}`
   const [httpPort, setHttpPort] = useState<number>(
     servers[selectedServer]?.inbounds?.[1]?.port ?? 1080
   );
   const httpCmdPaste =
     platform === 'win32'
       ? `set http_proxy=http://127.0.0.1:${httpPort}`
-      : `export http_proxy="http://127.0.0.1:${httpPort}"`;
+      : `export http_proxy=http://127.0.0.1:${httpPort};export https_proxy=http://127.0.0.1:${httpPort};`;
   const [autoLaunch, setAutoLaunch] = useState<boolean>(
     window.electron.store.get('autoLaunch') ?? false
   );
@@ -46,7 +46,6 @@ const GernalSettings = (): JSX.Element => {
   const handleChangePort = (e) => {
     setSocksPort(e.target.value);
   };
-  console.log(platform, version);
   return (
     <section className="flex flex-row items-center justify-around">
       <div

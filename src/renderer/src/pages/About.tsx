@@ -21,7 +21,7 @@ const AboutPage = (): JSX.Element => {
           <img src={icon} alt="" className="m-4 h-24 w-24" />
           <p className="text-xl text-slate-700">V2rayX({window.electron.store.get('appVersion')})</p>
         </div>
-        <p>An all platform(Macos Windows LInux) V2ray client build with electron.</p>
+        <p>An all platform(Macos Windows Linux) V2ray client build with electron.</p>
         <div className="my-4 flex flex-row gap-2">
           <Button variant="outlined" className="relative" onClick={handleCheckUpdate}>
             {!updateAvailable || true ? 'CHECK UPDATE' : 'INSTALL PDATE'}

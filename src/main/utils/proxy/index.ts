@@ -39,6 +39,10 @@ export class Proxy {
         return new Proxy(platform, localPort, pacPort, mode);
     }
   }
+  updatePort(localPort: number, pacPort: number){
+    this.localPort = localPort;
+    this.pacPort = pacPort;
+  }
 
   // eslint-disable-next-line @typescript-eslint/no-empty-function
   public start() {}

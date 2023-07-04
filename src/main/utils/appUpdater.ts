@@ -1,24 +1,21 @@
 import { dialog } from 'electron';
-import path from 'path';
+import logger from '@main/utils/logs';
 import { autoUpdater } from 'electron-updater';
-import log4js from 'log4js';
-
-const log = log4js.getLogger('appUpdater');
 
 const AppUpdater = (mainWindow) => {
   autoUpdater.autoDownload = false;
-  autoUpdater.logger = log;
+  autoUpdater.logger = logger;
   // if (process.env.NODE_ENV === 'development') {
   //   console.log(path.join(__dirname, '../../dev-app-update.yml'));
   //   autoUpdater.setFeedURL(path.join(__dirname, '../../dev-app-update.yml'));
   // }
   autoUpdater.allowPrerelease = true;
   autoUpdater.on('checking-for-update', () => {
-    log.info('Checking for update...');
+    logger.info('Checking for update...');
   });
 
   autoUpdater.on('update-available', (info) => {
-    log.info('Update available.', info);
+    logger.info('Update available.', info);
     dialog
       .showMessageBox({
         type: 'info',
@@ -27,7 +24,7 @@ const AppUpdater = (mainWindow) => {
         buttons: ['Sure', 'No'],
       })
       .then((buttonIndex) => {
-        log.info('buttonIndex', buttonIndex);
+        logger.info('buttonIndex', buttonIndex);
         if (buttonIndex.response === 0) {
           autoUpdater.downloadUpdate();
         } else {
@@ -36,7 +33,7 @@ const AppUpdater = (mainWindow) => {
   });
 
   autoUpdater.on('update-not-available', (info) => {
-    log.info('Update not available.', info);
+    logger.info('Update not available.', info);
     mainWindow.webContents.send('update-available', false);
     dialog.showMessageBox({
       title: 'Updates not found',
@@ -45,15 +42,15 @@ const AppUpdater = (mainWindow) => {
   });
 
   autoUpdater.on('error', (err) => {
-    log.error('Error checking for update:', ['err', err]);
+    logger.error('Error checking for update:', ['err', err]);
   });
 
   autoUpdater.on('download-progress', (progressObj) => {
-    log.info(`Download progress: ${progressObj.percent}%`);
+    logger.info(`Download progress: ${progressObj.percent}%`);
   });
 
   autoUpdater.on('update-downloaded', (info) => {
-    log.info('Update downloaded:', info.version);
+    logger.info('Update downloaded:', info.version);
     mainWindow.webContents.send('update-available', true);
     dialog
       .showMessageBox({
@@ -66,7 +63,7 @@ const AppUpdater = (mainWindow) => {
   });
 
   const checkForUpdates = () => {
-    log.info('call check update');
+    logger.info('call check update');
     return autoUpdater.checkForUpdates();
   };
   checkForUpdates();

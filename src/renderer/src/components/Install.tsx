@@ -24,7 +24,7 @@ const InstallDialog = (props) => {
   window.api.receive('v2ray:downloadStatus', (status) => {
     setProgress(status * 100 > 99 ? 99 : status * 100);
   });
-  window.api.receive('v2ray:unzipStatus', (status) => {
+  window.api.receive('v2ray:finishedInstall', (status) => {
     status ? setProgress(100) : null;
   });
 

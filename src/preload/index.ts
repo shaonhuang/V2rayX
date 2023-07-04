@@ -11,7 +11,7 @@ const api = {
     }
   },
   receive: (channel, func) => {
-    const validChannels = ['fromMain', 'v2ray:downloadStatus', 'v2ray:unzipStatus'];
+    const validChannels = ['fromMain', 'v2ray:downloadStatus', 'v2ray:finishedInstall'];
     if (validChannels.includes(channel)) {
       // Deliberately strip event as it includes `sender`
       ipcRenderer.on(channel, (event, ...args) => func(...args));
@@ -35,7 +35,7 @@ if (process.contextIsolated) {
       quitAndInstall: () => ipcRenderer.invoke('update:quitAndInstall'),
     });
     contextBridge.exposeInMainWorld('clipboard', {
-      paste: (data:string) => ipcRenderer.invoke('clipboard:paste', data),
+      paste: (data: string) => ipcRenderer.invoke('clipboard:paste', data),
     });
     contextBridge.exposeInMainWorld('autoLaunch', {
       change: (status: boolean) => ipcRenderer.invoke('autoLaunch:change', status),

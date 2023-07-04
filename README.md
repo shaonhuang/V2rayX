@@ -33,11 +33,11 @@ V2ray GUI client with cross-platform desktop support powered by Electron⚛️, 
 - [ ] **PAC** Mode
   - Auto proxy mode for browser that use [GFWList](https://raw.githubusercontent.com/gfwlist/gfwlist/master/gfwlist.txt) as default rules.
   - Allow custom rules.
-- [ ] **Global** Mode
+- [x] **Global** Mode
   - Global socks5 proxy for browser.
-- [ ] **Manual** Mode
+- [x] **Manual** Mode
   - Get some tools like SwitchOmega to enable browser proxy on this mode.
-- [ ] **HTTP(S)** Proxy
+- [x] **HTTP(S)** Proxy
   - On Windows, commands for terminal proxy(port 1087 as default):
     - `$env:HTTPS_PROXY="http://127.0.0.1:1087"` (powershell)
     - `$env:HTTP_PROXY="http://127.0.0.1:1087"` (powershell)
@@ -47,16 +47,22 @@ V2ray GUI client with cross-platform desktop support powered by Electron⚛️, 
     - `export http_proxy="127.0.0.1:1087"`
     - `export https_proxy="127.0.0.1:1087"`
     - Some tools like `proxychains` is deep recommended.
-- [ ] Clipboard / QR-code Import
+- [x] Clipboard
+- [ ] QR-code Import
 - [ ] Subscription Import
 - [ ] Language Detecting And Switching (zh-CN / en-US / ru-RU)
 - [ ] Configuration Backup / Recovery
 - [ ] Dark / Light Mode
-- [ ] Auto Start
+- [x] Auto Start (Not support on Linux)
 - [ ] Server Share
 - [ ] Activity Logs
 
 ### ➣ In Testing
+
+- [ ] **PAC** Mode
+- [ ] QR-code Import
+- [ ] Dark / Light Mode
+- [ ] Server Share
 
 ### ➣ Comming Soon
 

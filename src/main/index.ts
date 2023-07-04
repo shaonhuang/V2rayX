@@ -1,27 +1,21 @@
-import { app, shell, BrowserWindow, ipcMain, Tray, Menu, nativeImage, clipboard } from 'electron';
-import { autoUpdater } from 'electron-updater';
+import { app, shell, BrowserWindow, ipcMain } from 'electron';
 import { join } from 'path';
-import log4js from 'log4js';
-import * as fs from 'fs';
 import { electronApp, optimizer, is } from '@electron-toolkit/utils';
 import icon from '../../resources/icon.png?asset';
-import * as path from 'path';
-import { Mode } from './constant/types';
-import { Proxy } from './utils/proxy';
-import initLogger from './utils/logger';
-import appUpdater from './utils/appUpdater';
-import { initStore } from './store';
+import { Proxy } from '@main/utils/proxy';
+import logger from '@main/utils/logs';
+import appUpdater from '@main/utils/appUpdater';
+import { initStore } from '@main/store';
 const Store = require('electron-store');
 const store = new Store();
+import { Install } from '@main/utils/install';
+import { Service } from '@main/utils/v2ray';
+import { createTray } from '@main/tray';
+import { init } from '@main/setups';
 
-import v2rayManage from './utils/v2ray/manage';
-
-let tray: any = null;
 let mainWindow: any = null;
 let proxy: Proxy | null = null;
-const v2rayBin = path.join(app.getPath('userData'), 'v2ray-core', 'v2ray');
-initLogger();
-const logger = log4js.getLogger('mainProcess');
+let service: Service | null = null;
 let cleanUp = false;
 const gotTheLock = app.requestSingleInstanceLock();
 if (!gotTheLock) {
@@ -29,96 +23,6 @@ if (!gotTheLock) {
   // If another instance of the app is already running, quit this instance
   app.quit();
 }
-
-const createTray = () => {
-  const menuIcon = nativeImage.createFromDataURL(
-    'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACQAAAAkCAYAAADhAJiYAAAAAXNSR0IArs4c6QAAAAlwSFlzAAALEwAACxMBAJqcGAAAAVlpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IlhNUCBDb3JlIDUuNC4wIj4KICAgPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4KICAgICAgPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIKICAgICAgICAgICAgeG1sbnM6dGlmZj0iaHR0cDovL25zLmFkb2JlLmNvbS90aWZmLzEuMC8iPgogICAgICAgICA8dGlmZjpPcmllbnRhdGlvbj4xPC90aWZmOk9yaWVudGF0aW9uPgogICAgICA8L3JkZjpEZXNjcmlwdGlvbj4KICAgPC9yZGY6UkRGPgo8L3g6eG1wbWV0YT4KTMInWQAACsZJREFUWAmtWFlsXFcZ/u82++Jt7IyT2Em6ZFHTpAtWIzspEgjEUhA8VNAiIYEQUvuABBIUwUMkQIVKPCIoEiABLShISEBbhFJwIGRpIKRpbNeJ7bh2HHvssR3PPnPnLnzfmRlju6EQqUc+c++c8y/fv54z1uQOh+/7Glh0TD59TE/TND7lnfa4/64OKsM071QoeZpA/y9WWvk/B4XCC06TUC+Xyw8HTXNQ1+Ww6PpOrMebewXxvBueJ6/XHOdMJBL5J9Y97m2R0SS/wweE6JxkGx5dilWr1S/7dXsEa2o4+LyFmcFcaL5zbX3Y9gh5hpeWYpSB9XV5/H678V89BGYDXnHJlCsWn4gHrGc1K9CXxferOdvPOOKUfF8cH7nUyCtklQZXih/VNNlmirk3GdBSoIcRswW7/vVkLPYi5W2Uze8bh7J+4wLfh4dViFx5/nmrUi7/MhGNvrCkBfpeWqnW/7BUdadqntQ8zwr6vhUV34xpYnDynWvcmwQNaclDXsqgLMqkocPDw7fNx7d5qIX+/PmJxKGD6VdDkeh7ztyqOFfrokGCEWiiZ1mp0uITnuKAosaT7+pNxMYTyefutcQfbA+b1XLpH5fnF97/yD335Fu6mqTqsclDINBVmI4fDxw80KPAvJSt1MZtMcLiGxYUu83p4UkgnJZlqcl3LAj3WnTkIS9lUBYNPJjueVWgg7qocyOgliFqjZsg8gq5tRdiieQTf1gq15Y8CUbRZtyWOzZwc8lEqS3PTCtgqd13ieO68BQ2uNl64tXAewktrFuX2mPdkWAxn3sxnmx7sqUTJGqso8MGS9tbXFz8DMH8bblUX3T9QARVi8RV8qljfcJy0zRlaf6mzHEuzEtmekqCoZB4rqp0OmudHtUnlEWZlE0d1EWd1N3EozourcO65pw4eTIZQTW9VazJtbqvw9XwKVFQMsKDBuNhtp4uvGGFI+IDgKnpMjYyIis3ZsQMBIR7pONsIaMsyqRs6ohY1rPUSd3EQFDqo+kdZ3Fh4aupbdu+99uFQr2A1CBs4uEAjZjIFUMHi4dVxMXzCdCXQj4vBrwVCofl0ulTcv/DAxJJJBUPc8mpoyI2JDw7bFyT+ifTcSubyXytJ51+roWBxwG9Q73WWjZ7eSUU3//nXM0NI+x0PBGrTSgsLS9JFuFxHFrvSqIrJV279gi6tjiVspTza3JjZhY+0CQZj0mlWJSeHTslCro6eFqymCcVVN77kkGjs1p4sy2VOoSlOrFwT+XR+PjkgGaZ+ycKVbRTYUdVrmaImCvzk1dlFCEJdHRJ284+ie/ol0h7p7jFvExcvCCXzp2Rqem3pAMAiqWS6JGYhFI9Mjo6KjevXVUyKEuFHrKpY6JQ8TXT3D8+OTkAHBw6o6LCFo9ag3o4JtlCyTHEt5AxKvS6YUi5kJeZG3Py0NAxlLcJ9xti+K7Mjo/JfGZRuvv6Ze+9+yWEhDZAvzg3JyhX2d6/S7q6e+TimdOS7ElLKBZDwqvmj6rztayr1fVI1IoXi4PAcYZY1tPEEO1wEVlXgRFBDcmIXTqJsS+XyhKLJ5A/OpIVXXptWUYv/UvaenfIocEhMQ2EzHHErlXFCgQl3paU1eVl6QAY8sQTCSmVihKJx1V/ogvgIYF/pACdcMBhqONoHhF88/2d+bojyA6cRvje2IdFjoSjUSnBS8hgyS9lZOzKFdmPxO3o6gQIGzwuDn1dVSCtCKPy1pZXlATXqUsVYMLRmKo87vP4Y1ioqwCdCegmMYx3W/VPn8RrSDwwIMMbcEjkYo29JZVOy+ybI7K4eksODx1VSqvligpReSVLgySM/FI5h2q062jNyL3s7FtoAyGJIlx1225UmwJF6aJRJ3XzHXO9bWvsJa3jQFlBJkz6iuXdu32HzM7MyP0PPNgAU6ko4Qzp6b+flr8MD9OYJg9CwtzL5+T65ITs2bsP3mGxN/ZbBcOn0sk20gAkLQ+huXpFi8vkoY9AoyDjxTR1mbo6Ltt275HpN0dlNxQE40mVM8Ajjxx9VAGhAvQR1akZFCq799ADysMuQqOxh2FNmamEaz51ItGLfFD9+oUJoZkLowHoFA2mljUacqOMflKuVmHpfmnfvlMuvXZeStmMBIMhcWEdjgFJtrUjXI0KchAuAg0ilxLJNoRVBxhIBm0TjjKAuqjTqTs3CQZ6QUUMGFW7eiWMUg6w+yo8YMW7DqtqlZLkUDV2ISfd29KyDwk9MjYmMyOXxQIIKuShqo4VGFNBEgeDQYqVam5N5tEePFQgURIUBCsd1EWd1XrtDUUMLARD9bKaK5ytQ2Gb75g8WMiEP6VkfnZGevv6UF1vSBW5E0PFDAweFRvlfun8WVmamhDNrkmweQ0pwaPt6M4m8mgKTTFXqcrV0ZH1FKBg6qAu6qTuJiCV1Cp2Q0NDr9Uq5Ym+oMEDlSewsoRwrVBEaij7AJ4s7zrOpumxEdm15y6558GHJVe1Zezy6zJx6aJkpq5JFB4z6zVZmBiX1VWUP0IY4CFMYcpQdZ3xqIs6oftCE5DHKwd0q/tzOV8svdDb3nk8VnG9qmgQC0ZURz8Ur91alXgSByZ6ES9kZZTr/PR16UOCh+7dq0CWyyXJ4xqCQ0nKt9YQSlPue2gAeYZzD7yNLk0wmqAreb2WYSxAJ8Dget64wxtEBlDaqVOn/K5dB67t6+t5MhoMJuc8w8UPKiQ9CQR9JK5czhZAQxPt7TKF3OiAIisUViAD2Lg5d0P2HDgoKeRaW0enyqVwBJcO5fFG5dqa7h406qaeX8384uTZL5w9+UqxhYHFp0YLIYA9ddfu3T+4UJF6Rg+YAc9D0+RoIGP1ULhpWspr10evyK7+ftWTrk9PS/++A9KZSm26cih2mMOErem6n/ZsZwA2TM/MPHXs2LEftnSTbh0Q36mIIbx44cLvOnu3f+xUwbWLmoHTCUlF6g2jBQo/GnFrnGNqSHdvr+rIKGMW1KahwEBdzHft98aNwMr8zd8/NDDwccihc0hLi3GubRjY0Bm6H19fPvnZI4c/fHd7PJ2peXYZ+WQ26JufZELjQ6lbAQtnWre0d3apY8TFIdtAo+Qri6mupsB49lBMC+QXF0YefObZT8j0eKWlswVjEyCCOXHihPGb575VCvVuf3lvetsH9rXF0rla3cnhpoIGjgsUPhR3I4TMKYJQV1Z6WO02aEjHa5mNe3OPW3OPRHVrbXFh9Ocvv/KR1372owx1Pf3005uc35Ddgtd8rsf06IdS5777zZ+mUqmPzjm6TPpmvayZOq4LyATeCzkanmiy4qEuC/yXiO8CSMRzvLs1x9phepLNZl868sy3Pyen/5hd1/EfRvWmuvSWNeaRS/RkPDI4+NjE1NSXEoXlpaNB1zqo20abi59/vu/UfM2pie7WUDVq8l3wTwnskeZ+zTbIQ17KoCzKpGzq2KqX32/roRbh8ePHdUzl0s9/5Rv9n/7go19MxCKfCkZiu3V06wrO5gocxL7Dgd/IEobEMH6rejg+auXidL5Y/vWv/vTX53/y/e/MkGajTH7fOt4RUJOY1df4RdtY6ICFRzqTySOhUOA+3Ai3o31H1ZbnlXBruFmt2iMrudy5xx9//BzWV7nXDBGN2xpjbt/5oGUEdhtO3iD47xZOvm8a5CHvpsV38wsUaMwBWsz3rbK5xr0mzdv2t9Jv/f5vhsF4J+Q63IUAAAAASUVORK5CYII='
-  );
-  tray = new Tray(menuIcon);
-
-  const contextMenu = Menu.buildFromTemplate([
-    {
-      label: 'Show Window',
-      click: () => {
-        if (mainWindow === null) {
-          createWindow();
-        } else {
-          if (BrowserWindow.getAllWindows().length === 0) createWindow();
-          mainWindow.show();
-        }
-      },
-    },
-    {
-      label: 'Quit',
-      click: () => {
-        app.quit();
-      },
-    },
-  ]);
-  tray.setToolTip('This is my application.');
-  tray.setContextMenu(contextMenu);
-};
-
-const init = () => {
-  const appVersion = app.getVersion();
-  if (store.get('appVersion') !== appVersion) {
-    store.set('appVersion', appVersion);
-  }
-  ipcMain.handle('update:checkForUpdate', () => {
-    autoUpdater.checkForUpdatesAndNotify();
-  });
-  ipcMain.handle('update:downloadUpdate', () => {
-    autoUpdater.downloadUpdate();
-  });
-  ipcMain.handle('update:quitAndInstall', () => {
-    autoUpdater.quitAndInstall();
-  });
-  ipcMain.handle('quit-app', () => {
-    app.quit();
-  });
-  ipcMain.handle('clipboard:paste', (event, data) => {
-    clipboard.writeText(data);
-  });
-  ipcMain.handle('autoLaunch:change', (event, status) => {
-    app.setLoginItemSettings({
-      openAtLogin: status,
-    });
-  });
-  v2rayManage.v2rayService('start');
-  const localPort = store.get('servers')[store.get('selectedServer')]?.inbounds[0].port;
-  const pacPort = store.get('servers')[store.get('selectedServer')]?.inbounds[1].port;
-  if (localPort && pacPort) {
-    const mode = (store.get('proxyMode') as Mode) ?? store.set('proxyMode', 'Manual');
-    console.log(mode);
-    proxy = Proxy.createProxy(process.platform, localPort, 11111, mode);
-    if (proxy) {
-      proxy.start();
-    }
-  } else {
-    store.set('proxyMode', 'Manual');
-  }
-  ipcMain.handle('proxyMode:change', (event, mode: Mode) => {
-    const localPort = store.get('servers')[store.get('selectedServer')]?.inbounds[0].port;
-    const pacPort = store.get('servers')[store.get('selectedServer')]?.inbounds[1].port;
-
-    console.log(mode, '1', localPort, '2', pacPort);
-    if (localPort && pacPort) {
-      proxy = proxy ?? Proxy.createProxy(process.platform, localPort, 11111, mode);
-      if (proxy) {
-        console.log(mode);
-        if (mode === 'Manual') {
-          proxy.stop();
-        } else {
-          proxy.switch(mode);
-        }
-        store.set('proxyMode', mode);
-      }
-    } else {
-      store.set('proxyMode', 'Manual');
-      proxy?.stop()
-    }
-  });
-};
 
 function createWindow(): void {
   // Create the browser window.
@@ -177,40 +81,60 @@ app.whenReady().then(async () => {
     optimizer.watchWindowShortcuts(window);
   });
   createWindow();
-  init();
-  createTray();
+  const { proxyInstance } = init();
+  proxy = proxyInstance;
+  createTray(mainWindow, createWindow);
   initStore();
   appUpdater(mainWindow);
 
-  const v2rayPackageStatus = fs.existsSync(v2rayBin.concat(process.platform === 'win32' ? '.exe' : ''));
+  const install = Install.createInstall(process.platform);
+  const v2rayPackageStatus = install.checkV2ray();
   store.set('v2rayInstallStatus', v2rayPackageStatus);
 
-  logger.error('v2rayPackageStatus', v2rayPackageStatus, v2rayBin);
+  logger.info(`v2rayPackageStatus: ${v2rayPackageStatus}`);
   ipcMain.on('v2ray:install', async () => {
-    if (!store.get('v2rayInstallStatus')) {
+    if (!v2rayPackageStatus) {
       try {
-        await v2rayManage.downloadV2rayPackage((num: number) => {
-          const mainWindow = BrowserWindow.getAllWindows()[0];
-          mainWindow.webContents.send('v2ary:downloadStatus', num);
+        await install.installV2ray((progress: number) => {
+          mainWindow.webContents.send('v2ary:downloadStatus', progress);
         });
-        v2rayManage.unzipV2rayPackage();
-        v2rayManage.setupV2rayPrivilege();
-        const mainWindow = BrowserWindow.getAllWindows()[0];
-        mainWindow.webContents.send('v2ray:unzipStatus', true);
+        mainWindow.webContents.send('v2ray:finishedInstall', true);
         store.set('v2rayInstallStatus', true);
-      } catch (error) {
-        store.set('v2rayInstallStatus', false);
+        service = new Service(process.platform);
+        try {
+          store.get('selectedServer') > -1 && service.start();
+        } catch (err) {
+          logger.error('service init', err);
+        }
+      } catch (err) {
+        logger.error('installV2ray', err);
       }
     }
   });
-
+  if (store.get('v2rayInstallStatus')) {
+    service = new Service(process.platform);
+    try {
+      store.get('selectedServer') > -1 && service.start();
+    } catch (err) {
+      logger.error('service init', err);
+    }
+  }
   // FIXME: DevTools bugs
   // installExtension(REACT_DEVELOPER_TOOLS)
   //   .then((name) => console.log(`Added Extension:  ${name}`))
   //   .catch((err) => console.log('An error occurred: ', err));
 
-  ipcMain.handle('v2ray:start', (event, data: JSON) => v2rayManage.v2rayService('start', data));
-  ipcMain.handle('v2ray:stop', () => v2rayManage.v2rayService('stop'));
+  ipcMain.handle('v2ray:start', (event, data: JSON) => {
+    service?.start(data);
+    const socksPort = data?.inbounds[0].port;
+    const httpPort = data?.inbounds[1].port;
+    logger.info(`socksPort: ${socksPort}, httpPort: ${httpPort}`);
+    proxy?.updatePort(httpPort, socksPort);
+    proxy?.stop();
+    proxy?.start();
+    console.log(proxy)
+  });
+  ipcMain.handle('v2ray:stop', () => service?.stop());
 
   app.on('activate', function () {
     // On macOS it's common to re-create a window in the app when the
@@ -241,7 +165,7 @@ app.on('before-quit', (event) => {
   Promise.resolve()
     .then(() => proxy?.stop())
     .then(() => {
-      v2rayManage.v2rayService('stop');
+      service?.stop();
       cleanUp = true;
     })
     .then(() => app.quit())

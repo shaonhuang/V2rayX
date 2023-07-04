@@ -8,6 +8,7 @@ import chalk from 'chalk';
 const { combine, simple, colorize } = format;
 
 export const logDir = app.getPath("logs");
+console.log(logDir, 'logDir')
 
 export const openLogDir = async () => {
   await open(logDir);
@@ -23,7 +24,7 @@ const timestamp = format((info) => {
 });
 
 const dailyTransport: DailyRotateFile = new DailyRotateFile({
-  filename: path.resolve(logDir, 'shadowsocks-electron-%DATE%.log'),
+  filename: path.resolve(logDir, 'v2rayx-electron-%DATE%.log'),
   datePattern: 'YYYY-MM-DD',
   zippedArchive: false,
   maxSize: '10m',

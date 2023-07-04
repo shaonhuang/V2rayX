@@ -14,10 +14,12 @@ export const setPacProxy = async (url: string) => {
 
 export const setGlobalProxy = async (host: string, port: number) => {
   const manualSet = await execAsync('gsettings set org.gnome.system.proxy mode manual');
-  const hostSet = await execAsync(`gsettings set org.gnome.system.proxy.socks host '${host}'`);
-  const portSet = await execAsync(`gsettings set org.gnome.system.proxy.socks port ${port}`);
+  const httpHostSet = await execAsync(`gsettings set org.gnome.system.proxy.http host '${host}'`);
+  const httpPortSet = await execAsync(`gsettings set org.gnome.system.proxy.http port ${port}`);
+  const httpsHostSet = await execAsync(`gsettings set org.gnome.system.proxy.https host '${host}'`);
+  const httpsPortSet = await execAsync(`gsettings set org.gnome.system.proxy.https port ${port}`);
   const bypassSet = await execAsync(
     `gsettings set org.gnome.system.proxy ignore-hosts "['${ignoredHosts}']"`
   );
-  return manualSet.code === 0 && hostSet.code === 0 && portSet.code === 0 && bypassSet.code === 0;
+  return manualSet.code === 0 && httpHostSet.code === 0 && httpPortSet.code === 0 && httpsHostSet.code === 0 && httpsPortSet.code === 0 && bypassSet.code === 0;
 };

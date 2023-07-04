@@ -200,6 +200,10 @@ const Servers = (): JSX.Element => {
 
   const handleDeleteItem = (key) => {
     servers.splice(key, 1);
+    if(key === window.electron.store.get('selectedServer')){
+      window.electron.store.set('selectedServer', -1);
+      setSeletedServer(-1)
+    }
     setServers(
       servers.map((i, idx) => {
         i.key = idx;
@@ -210,13 +214,15 @@ const Servers = (): JSX.Element => {
       'servers',
       window.electron.store.get('servers').filter((i, idx) => idx !== key)
     );
+    if(!window.electron.store.get('servers') || window.electron.store.get('selectedServer') === key) {
+        window.v2rayService.stopService();
+    }
   };
   const handleEditItem = (key) => {
     setEditIdx(key);
     setOpen(true);
     setDialogType('edit');
     setEdit(window.electron.store.get('servers')[key]);
-    debugger;
   };
   const handleLoading = () => {
     setLoading(true);

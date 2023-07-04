@@ -85,7 +85,7 @@ const AddServerDialog = (props: AddServerDialogProps) => {
   const [mode, setMode] = useState('import');
   const [importData, setImportData] = useState(
     process.env.NODE_ENV === 'development'
-      ? 'vmess://eyAidiI6IjIiLCAicHMiOiIiLCAiYWRkIjoiNDUuNzYuMTY4LjI1IiwgInBvcnQiOiI0NDMiLCAiaWQiOiI1NDM3NGNhMi0zMzg4LTRkZjItYTk5OS0wOGJiODFlZWZlZTciLCAiYWlkIjoiMCIsICJuZXQiOiJ3cyIsICJ0eXBlIjoibm9uZSIsICJob3N0IjoiaGloYWNrZXIuc2hvcCIsICJwYXRoIjoiL2hrY0hPeWVFSyIsICJ0bHMiOiJ0bHMiIH0='
+      ? 'vmess://eyAidiI6IjIiLCAicHMiOiIiLCAiYWRkIjoiNDUuNzcuNzEuMjAzIiwgInBvcnQiOiI0NDMiLCAiaWQiOiI5YmIwNTAyZS1mYjI2LTQyNWEtODZkNC05YmJhNDQxNjdlNTkiLCAiYWlkIjoiMCIsICJuZXQiOiJ3cyIsICJ0eXBlIjoibm9uZSIsICJob3N0IjoiaGloYWNrZXIuc2hvcCIsICJwYXRoIjoiL1FZQXA3VXpjIiwgInRscyI6InRscyIgfQ=='
       : ''
   );
   const [data, setData] = useState(props.type === 'add' ? {} : props.edit);

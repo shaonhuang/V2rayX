@@ -5,6 +5,11 @@ import react from '@vitejs/plugin-react';
 export default defineConfig({
   main: {
     plugins: [externalizeDepsPlugin({ exclude: ['load-json-file'] })],
+    resolve: {
+      alias: {
+        '@main': resolve('src/main'),
+      },
+    },
   },
   preload: {
     plugins: [externalizeDepsPlugin()],

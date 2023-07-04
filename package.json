@@ -38,7 +38,6 @@
     "jsqr": "^1.4.0",
     "load-json-file": "^7.0.1",
     "lodash": "^4.17.21",
-    "log4js": "^6.9.1",
     "object-hash": "^3.0.0",
     "open": "7.0.3",
     "react-json-view": "^1.21.3",
