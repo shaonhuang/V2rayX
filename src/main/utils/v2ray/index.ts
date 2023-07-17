@@ -6,9 +6,11 @@ import { v2rayBin, v2rayPath } from '@main/constant';
 export class Service {
   platform: NodeJS.Platform;
   v2ray: ChildProcessWithoutNullStreams | null;
+  status: boolean;
   constructor(platform: NodeJS.Platform) {
     this.platform = platform;
     this.v2ray = null;
+    this.status = false;
   }
   static createService(platform: NodeJS.Platform) {
     switch (platform) {
@@ -23,7 +25,7 @@ export class Service {
     }
   }
   start(data?: JSON) {
-    if(data) {
+    if (data) {
       fs.writeFileSync(path.join(v2rayPath, `tmp.json`), JSON.stringify(data));
       console.log('File written successfully.');
     }
@@ -41,13 +43,19 @@ export class Service {
         console.log(`child process exited with code ${code}`);
       });
       console.log('init finished');
+      this.status = true;
     } catch (err) {
       console.log(err);
+      this.status = false;
     }
   }
   stop() {
     this.v2ray?.kill();
     console.log('send kill');
+    this.status = false;
+  }
+  check() {
+    return this.status;
   }
 }
 export class WinService extends Service {

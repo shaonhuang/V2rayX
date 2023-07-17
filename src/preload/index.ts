@@ -1,5 +1,7 @@
-import { contextBridge, ipcRenderer } from 'electron';
+import { shell, contextBridge, ipcRenderer } from 'electron';
 import { electronAPI } from '@electron-toolkit/preload';
+
+electronAPI.shell = shell;
 
 // Custom APIs for renderer
 const api = {
@@ -28,6 +30,7 @@ if (process.contextIsolated) {
     contextBridge.exposeInMainWorld('v2rayService', {
       startService: (data: JSON) => ipcRenderer.invoke('v2ray:start', data),
       stopService: () => ipcRenderer.invoke('v2ray:stop'),
+      checkService: () => ipcRenderer.invoke('v2ray:check'),
     });
     contextBridge.exposeInMainWorld('update', {
       checkForUpdate: () => ipcRenderer.invoke('update:checkForUpdate'),

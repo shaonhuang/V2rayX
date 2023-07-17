@@ -4,6 +4,7 @@ import Navigation from './components/navigation/Navigation';
 import GernalSettings from './pages/Home';
 import Servers from './pages/servers/Servers';
 import About from './pages/About';
+import Logs from './pages/Logs';
 import { useAppSelector } from './store/hooks';
 
 function App() {
@@ -19,6 +20,8 @@ function App() {
               return <Servers />;
             case 'about':
               return <About />;
+            case 'logs':
+              return <Logs />;
             case 'home':
             default:
               return <GernalSettings />;

@@ -18,9 +18,10 @@ const Navigation = () => {
   const { tabName } = useAppSelector((state: RootState) => state.navTab);
   const dispatch = useAppDispatch();
   return (
-    <nav className="bg-blue-dark p-4 rounded-xl">
+    <nav className="rounded-xl bg-blue-dark p-4">
       <Stack spacing={4} direction="row" className="flex justify-center">
         <NavButton
+          className="w-20"
           variant={tabName === 'home' ? 'contained' : 'outlined'}
           onClick={() => dispatch(setNavTab('home'))}
         >
@@ -28,6 +29,7 @@ const Navigation = () => {
           <HomeIcon />
         </NavButton>
         <NavButton
+          className="w-20"
           variant={tabName === 'servers' ? 'contained' : 'outlined'}
           onClick={() => dispatch(setNavTab('servers'))}
         >
@@ -35,14 +37,15 @@ const Navigation = () => {
           <LinkIcon />
         </NavButton>
         <NavButton
+          className="w-20"
           variant={tabName === 'logs' ? 'contained' : 'outlined'}
           onClick={() => dispatch(setNavTab('logs'))}
-          disabled
         >
           Logs
           <LinkIcon />
         </NavButton>
         <NavButton
+          className="w-20"
           variant={tabName === 'settings' ? 'contained' : 'outlined'}
           onClick={() => dispatch(setNavTab('settings'))}
           disabled
@@ -51,6 +54,7 @@ const Navigation = () => {
           <LinkIcon />
         </NavButton>
         <NavButton
+          className="w-20"
           variant={tabName === 'about' ? 'contained' : 'outlined'}
           onClick={() => dispatch(setNavTab('about'))}
         >

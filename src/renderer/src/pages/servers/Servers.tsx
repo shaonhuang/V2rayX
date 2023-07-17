@@ -11,6 +11,7 @@ import {
   ListItemText,
   CircularProgress,
   Backdrop,
+  Chip,
 } from '@mui/material';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { Storage, Share, MoreHoriz, Add, Edit, Delete } from '@mui/icons-material';
@@ -40,7 +41,7 @@ const MoreOptionsList = (props) => {
       <ListItem disablePadding>
         <ListItemButton
           onClick={(e) => {
-            e.preventDefault();
+            // e.preventDefault();
             props.handleEdit(data.key);
           }}
         >
@@ -55,7 +56,7 @@ const MoreOptionsList = (props) => {
           component="a"
           href="#simple-list"
           onClick={(e) => {
-            e.preventDefault();
+            // e.preventDefault();
             props.handleDelete(data.key);
           }}
         >
@@ -71,7 +72,7 @@ const MoreOptionsList = (props) => {
 const ServerItem = (props: any) => {
   const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null);
   const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
-    event.preventDefault();
+    // event.preventDefault();
     setAnchorEl(event.currentTarget);
   };
 
@@ -97,7 +98,19 @@ const ServerItem = (props: any) => {
       {
         // placeholder for data usage status
       }
-      <span className="w-fit justify-self-center text-black-dim"> </span>
+      {props.seletedServer === props.index ? (
+        <Chip
+          label={props.running ? 'running' : 'failed'}
+          color={props.running ? 'success' : 'error'}
+          variant="outlined"
+          className="w-3/6 justify-self-center"
+        />
+      ) : (
+        <span className="w-fit justify-self-center text-black-dim"> </span>
+      )}
+      {
+        // <span className="w-fit justify-self-center text-black-dim"> </span>
+      }
       <ThemeProvider theme={theme}>
         <IconButton color="primary" className="w-fit justify-self-center" disabled>
           <Share className="justify-self-center" fontSize="medium" />
@@ -142,6 +155,7 @@ const Servers = (): JSX.Element => {
   const [edit, setEdit] = useState<JSON>({});
   const [dialogType, setDialogType] = useState<'add' | 'edit'>('add');
   const [loading, setLoading] = useState(false);
+  const [running, setRunning] = useState(false);
   const [seletedServer, setSeletedServer] = useState<number>(
     window.electron.store.get('selectedServer') ?? -1
   );
@@ -155,6 +169,8 @@ const Servers = (): JSX.Element => {
   const handleSelectServer = (key: number) => {
     setSeletedServer(key);
     window.electron.store.set('selectedServer', key);
+    window.v2rayService.stopService();
+    window.v2rayService.startService(window.electron.store.get('servers')[key]);
   };
 
   const handleAddOpen = () => {
@@ -168,6 +184,7 @@ const Servers = (): JSX.Element => {
       // FIXME: service
       window.v2rayService.stopService();
       window.v2rayService.startService(window.electron.store.get('servers')[seletedServer]);
+      setRunning(window.v2rayService.checkService());
       setLoading(false);
     }
   }, [seletedServer]);
@@ -184,6 +201,8 @@ const Servers = (): JSX.Element => {
         setServers([...servers, config]);
         window.v2rayService.stopService();
         window.v2rayService.startService(window.electron.store.get('servers')[seletedServer]);
+        // no init service untill selectedServer is choosed
+        window.v2rayService.stopService();
       } else {
         const storeServers = window.electron.store.get('servers');
         storeServers.splice(editIdx, 1, config);
@@ -193,6 +212,8 @@ const Servers = (): JSX.Element => {
         setServers(cloneDeep(servers));
         window.v2rayService.stopService();
         window.v2rayService.startService(window.electron.store.get('servers')[seletedServer]);
+        // no init service untill selectedServer is choosed
+        window.v2rayService.stopService();
       }
       setOpen(false);
     }
@@ -200,9 +221,16 @@ const Servers = (): JSX.Element => {
 
   const handleDeleteItem = (key) => {
     servers.splice(key, 1);
-    if(key === window.electron.store.get('selectedServer')){
+    if (
+      !window.electron.store.get('servers') ||
+      window.electron.store.get('selectedServer') === key
+    ) {
+      window.v2rayService.stopService();
+    }
+
+    if (key === window.electron.store.get('selectedServer')) {
       window.electron.store.set('selectedServer', -1);
-      setSeletedServer(-1)
+      setSeletedServer(-1);
     }
     setServers(
       servers.map((i, idx) => {
@@ -214,9 +242,6 @@ const Servers = (): JSX.Element => {
       'servers',
       window.electron.store.get('servers').filter((i, idx) => idx !== key)
     );
-    if(!window.electron.store.get('servers') || window.electron.store.get('selectedServer') === key) {
-        window.v2rayService.stopService();
-    }
   };
   const handleEditItem = (key) => {
     setEditIdx(key);
@@ -252,7 +277,10 @@ const Servers = (): JSX.Element => {
                 <ServerItem
                   className={seletedServer === i.key ? 'bg-sky-200' : 'bg-white'}
                   serverName="New Server"
+                  seletedServer={seletedServer}
                   key={idx}
+                  index={idx}
+                  running={running}
                   data={i}
                   onClick={(e) => {
                     e.preventDefault();

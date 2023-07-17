@@ -8,7 +8,6 @@ import chalk from 'chalk';
 const { combine, simple, colorize } = format;
 
 export const logDir = app.getPath("logs");
-console.log(logDir, 'logDir')
 
 export const openLogDir = async () => {
   await open(logDir);

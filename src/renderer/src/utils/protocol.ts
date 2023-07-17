@@ -1,5 +1,19 @@
 import { decode, encode } from 'js-base64';
 
+const isWindows = navigator.platform.includes('Win');
+let logsDir;
+window.electron.electronAPI.ipcRenderer.invoke('get-logs-path')
+  .then((logsPath) => {
+    // Use the logsPath in the renderer process
+    logsDir = logsPath;
+  })
+  .catch((error) => {
+    console.error(error);
+    // Handle any errors that occur during IPC communication
+    logsDir = '';
+  });
+
+
 // reference https://github.com/kyuuseiryuu/v2ray-tools.git
 
 const tryToParseJson = (str: string): any => {
@@ -209,9 +223,9 @@ const parseVmess2config = (obj: VmessV2) => {
   if (JSON.stringify(obj) === '{}') return {};
   const config: any = {
     log: {
-      error: '',
       loglevel: 'info',
-      access: '',
+      error: logsDir ? `${logsDir}${isWindows ? '\\':'/' }error.log`: '',
+      access: logsDir ? `${logsDir}${isWindows ? '\\':'/' }access.log` : '',
     },
     inbounds: [
       {
