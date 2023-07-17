@@ -29,9 +29,15 @@ const AboutPage = (): JSX.Element => {
               <span className="absolute right-[-4px] top-[-4px] h-2 w-2 rounded-full bg-blue-400"></span>
             ) : null}
           </Button>
-          <Button variant="outlined">HOMEPAGE</Button>
-          <Button variant="outlined">FEEDBACK</Button>
-          <Button variant="outlined">ROADMAP</Button>
+          <Button variant="outlined" onClick={()=>{
+            window.electron.electronAPI.shell.openExternal('https://github.com/shaonhuang/V2rayX')
+          }}>HOMEPAGE</Button>
+          <Button variant="outlined" onClick={()=>{
+            window.electron.electronAPI.shell.openExternal('https://t.me/V2rayX_electron')
+          }}>FEEDBACK</Button>
+          <Button variant="outlined" onClick={()=>{
+            window.electron.electronAPI.shell.openExternal('https://github.com/shaonhuang/V2rayX#ii-features')
+          }}>ROADMAP</Button>
         </div>
       </div>
     </section>

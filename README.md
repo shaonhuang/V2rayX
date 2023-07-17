@@ -55,7 +55,7 @@ V2ray GUI client with cross-platform desktop support powered by Electron⚛️, 
 - [ ] Dark / Light Mode
 - [x] Auto Start (Not support on Linux)
 - [ ] Server Share
-- [ ] Activity Logs
+- [x] Activity Logs
 
 ### ➣ In Testing
 

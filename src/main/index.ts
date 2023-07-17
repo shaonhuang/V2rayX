@@ -1,5 +1,6 @@
 import { app, shell, BrowserWindow, ipcMain } from 'electron';
 import { join } from 'path';
+import * as fs from 'fs';
 import { electronApp, optimizer, is } from '@electron-toolkit/utils';
 import icon from '../../resources/icon.png?asset';
 import { Proxy } from '@main/utils/proxy';
@@ -132,9 +133,18 @@ app.whenReady().then(async () => {
     proxy?.updatePort(httpPort, socksPort);
     proxy?.stop();
     proxy?.start();
-    console.log(proxy)
+    console.log(proxy);
   });
   ipcMain.handle('v2ray:stop', () => service?.stop());
+  ipcMain.handle('v2ray:check', () => service?.check());
+  ipcMain.handle('get-logs-path', () => {
+    return app.getPath('logs');
+  });
+  ipcMain.on('logs:get', (event, logName:string = 'access.log') => {
+    const logPath = join(app.getPath('logs'), logName);
+    const logs = fs.existsSync(logPath) ? fs.readFileSync(logPath, 'utf-8').split('\n').slice(-11,-1) : [];
+    event.reply('logs:get', logs);
+  });
 
   app.on('activate', function () {
     // On macOS it's common to re-create a window in the app when the

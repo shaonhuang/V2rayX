@@ -15,6 +15,7 @@ declare global {
     v2rayService: {
       startService: (data: JSON) => void;
       stopService: () => void;
+      checkService: () => boolean;
     };
     update: {
       checkForUpdate: () => void;
