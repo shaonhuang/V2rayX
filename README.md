@@ -81,7 +81,7 @@ V2ray GUI client with cross-platform desktop support powered by Electron⚛️, 
 - MacOS
   - dmg `x64/arm64`
   - zip `x64/arm64`
-- Windows
+- Windows 10/11
   - exe `x64/x86/arm64`
   - zip `x64/x86/arm64`
 
