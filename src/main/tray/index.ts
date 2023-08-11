@@ -1,5 +1,14 @@
-import { app, BrowserWindow, Tray, Menu, nativeImage, ipcMain, shell, ipcRenderer } from 'electron';
+import {
+  app,
+  BrowserWindow,
+  Tray,
+  Menu,
+  nativeImage,
+  shell,
+} from 'electron';
 import fs from 'fs';
+import { join } from 'node:path';
+import logger from '@main/utils/logs';
 const Store = require('electron-store');
 const store = new Store();
 let tray: any = null;
@@ -27,6 +36,13 @@ export const createTray = (mainWindow: Object, createWindow: Function) => {
     },
     {
       label: 'View config.json',
+      click: () => {
+        const config = join(app.getPath('userData'), 'v2ray-core', 'tmp.json');
+        if (fs.existsSync(config)) {
+          logger.info('config.json', config);
+          shell.openExternal(`file://${config}`);
+        }
+      }
     },
     {
       label: 'View log',

@@ -1,5 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
+  darkMode: 'class',
   content: [
     './src/**/**/**/**/*.{html,js,tsx}',
     './src/**/**/**/*.{html,js,tsx}',
@@ -30,6 +31,12 @@ module.exports = {
       borderRadius: {
         '4xl': '2rem',
       },
+    },
+  },
+  variants: {
+    extend: {
+      textOpacity: ['dark'],
+      backgroundColor: ['dark'],
     },
   },
   plugins: [],

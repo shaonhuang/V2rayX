@@ -1,4 +1,4 @@
-import { app, ipcMain, clipboard } from 'electron';
+import { app, ipcMain, clipboard, nativeTheme, BrowserWindow } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import { Mode } from '@main/constant/types';
 import { Proxy } from '@main/utils/proxy';
@@ -79,6 +79,19 @@ export const init = () => {
   }
   ipcMain.handle('proxyMode:change', (event, mode: Mode) => {
     changeProxyMode(mode);
+  });
+  ipcMain.handle('appearance:update', (event) => {});
+  ipcMain.on('appearance:system', (event) => {
+    const isDarkMode = nativeTheme.shouldUseDarkColors;
+    event.reply('appearance:system:fromMain', isDarkMode ? 'dark' : 'light');
+  });
+
+  nativeTheme.on('updated', () => {
+    if (store.get('appearance') === 'system') {
+      const isDarkMode = nativeTheme.shouldUseDarkColors;
+      const mainWindow = BrowserWindow.getAllWindows()[0];
+      mainWindow?.webContents?.send('appearance:system:fromMain', isDarkMode ? 'dark' : 'light');
+    }
   });
 
   global.eventEmitter.on('proxyMode:change', (mode: Mode) => {

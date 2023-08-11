@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from 'react';
-import { cloneDeep } from 'lodash';
 import { Button, IconButton } from '@mui/material';
 import FileOpenIcon from '@mui/icons-material/FileOpen';
 
@@ -58,8 +57,8 @@ const Index = (): JSX.Element => {
   }, [displayedLogs]);
 
   return (
-    <section className="flew-row flex items-center justify-around">
-      <div className="flex w-4/5 flex-col rounded-xl bg-white px-8 py-4">
+    <section className="flew-row flex items-center justify-around text-black dark:text-white">
+      <div className="flex w-4/5 flex-col rounded-xl bg-white px-8 py-4 dark:bg-slate-700">
         {isRunning ? (
           <div className='py-2'>
             <div>
@@ -113,7 +112,7 @@ const Index = (): JSX.Element => {
                 {displayedLogs.map((log, idx) => (
                   <p
                     key={idx}
-                    className="animate__animated animate__fadeInRight mx-4 my-2 rounded-lg bg-slate-100 px-4 py-2"
+                    className="animate__animated animate__fadeInRight mx-4 my-2 rounded-lg bg-slate-100 px-4 py-2 dark:text-black"
                   >
                     {log}
                   </p>

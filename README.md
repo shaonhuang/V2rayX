@@ -52,7 +52,7 @@ V2ray GUI client with cross-platform desktop support powered by Electron⚛️, 
 - [ ] Subscription Import
 - [ ] Language Detecting And Switching (zh-CN / en-US / ru-RU)
 - [ ] Configuration Backup / Recovery
-- [ ] Dark / Light Mode
+- [x] Dark / Light Mode
 - [x] Auto Start (Not support on Linux)
 - [ ] Server Share
 - [x] Activity Logs
@@ -61,7 +61,6 @@ V2ray GUI client with cross-platform desktop support powered by Electron⚛️, 
 
 - [ ] **PAC** Mode
 - [ ] QR-code Import
-- [ ] Dark / Light Mode
 - [ ] Server Share
 
 ### ➣ Comming Soon
@@ -90,6 +89,7 @@ V2ray GUI client with cross-platform desktop support powered by Electron⚛️, 
 ### Home Page
 
 ![home.png](./assets/home-page.png)
+![darkHome.png](./assets/dark-home-page.png)
 
 ### Server Page
 
@@ -99,9 +99,17 @@ V2ray GUI client with cross-platform desktop support powered by Electron⚛️, 
 
 ![addServer.png](./assets/add-server-page.png)
 
+### Logs Page
+
+![darkLogs.png](./assets/dark-logs.png)
+
 ### About Page
 
 ![about.png](./assets/about-page.png)
+
+### Tray Tool Bar
+
+![trayBar.png](./assets/tray-bar.png)
 
 ## VI. Downloads
 

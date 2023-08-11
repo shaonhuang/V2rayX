@@ -94,7 +94,7 @@ const ServerItem = (props: any) => {
         <Storage style={{}} className="m-auto" />
       </div>
       <span className="inline-flex w-fit items-center font-bold">{serverName}</span>
-      <span className="w-fit justify-self-center text-black-dim">{protocol}</span>
+      <span className="w-fit justify-self-center text-black-dim dark:text-white">{protocol}</span>
       {
         // placeholder for data usage status
       }
@@ -272,7 +272,7 @@ const Servers = (): JSX.Element => {
         <Button>import from screen</Button>
       </div>
       */}
-      <div className="flex flex-col items-center justify-center">
+      <div className="flex flex-col items-center justify-center text-black dark:text-white">
         {!servers.length ? (
           <></>
         ) : (
@@ -280,7 +280,7 @@ const Servers = (): JSX.Element => {
             (i, idx) =>
               i && (
                 <ServerItem
-                  className={seletedServer === i.key ? 'bg-sky-200' : 'bg-white'}
+                  className={seletedServer === i.key ? 'bg-sky-200 dark:bg-sky-700' : 'bg-white dark:bg-gray-400'}
                   serverName="New Server"
                   seletedServer={seletedServer}
                   key={idx}

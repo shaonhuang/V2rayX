@@ -1,4 +1,4 @@
-import nightMode from './Theme';
+import {nightMode} from './Theme';
 
 nightMode();
 
