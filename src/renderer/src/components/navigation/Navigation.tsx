@@ -18,7 +18,7 @@ const Navigation = () => {
   const { tabName } = useAppSelector((state: RootState) => state.navTab);
   const dispatch = useAppDispatch();
   return (
-    <nav className="rounded-xl bg-blue-dark p-4">
+    <nav className="rounded-xl bg-blue-dark p-4 dark:bg-blue-400/20">
       <Stack spacing={4} direction="row" className="flex justify-center">
         <NavButton
           className="w-20"

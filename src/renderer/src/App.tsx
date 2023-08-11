@@ -10,7 +10,7 @@ import { useAppSelector } from './store/hooks';
 function App() {
   const tabName = useAppSelector((state) => state.navTab.tabName);
   return (
-    <div className="App">
+    <div className="App h-screen bg-[#ebf2fc] dark:bg-slate-800">
       <Layout>
         <Navigation />
         <div className="h-14 w-full"></div>

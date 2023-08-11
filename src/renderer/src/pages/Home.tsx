@@ -5,14 +5,14 @@ import Radio from '@mui/material/Radio';
 import RadioGroup from '@mui/material/RadioGroup';
 import LightModeIcon from '@mui/icons-material/LightMode';
 import DarkModeIcon from '@mui/icons-material/DarkMode';
+import { nightMode } from '@renderer/components/Theme';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import IconButton from '@mui/material/IconButton';
 import SettingsBrightnessIcon from '@mui/icons-material/SettingsBrightness';
 import { platform } from '@renderer/constant/index';
-import { ipcRenderer } from 'electron';
 
 const label = { inputProps: { 'aria-label': 'Checkbox' } };
-const ApperanceButton = styled(Button)({
+const AppearanceButton = styled(Button)({
   display: 'flex',
   flexDirection: 'column',
   textTransform: 'none',
@@ -30,9 +30,7 @@ const GernalSettings = (): JSX.Element => {
     servers[selectedServer]?.inbounds?.[0]?.port ?? 1080
   );
   const socksCmdPaste =
-    platform === 'win32'
-      ? `set socks_proxy "socks5://127.0.0.1:${socksPort}"`
-      : `${socksPort}`
+    platform === 'win32' ? `set socks_proxy "socks5://127.0.0.1:${socksPort}"` : `${socksPort}`;
   const [httpPort, setHttpPort] = useState<number>(
     servers[selectedServer]?.inbounds?.[1]?.port ?? 1080
   );
@@ -44,17 +42,23 @@ const GernalSettings = (): JSX.Element => {
     window.electron.store.get('autoLaunch') ?? false
   );
   const [proxyMode, setProxyMode] = useState(window.electron.store.get('proxyMode') ?? 'Manual');
+  const [appearance, setAppearance] = useState(window.electron.store.get('appearance') ?? 'light');
   const handleChangePort = (e) => {
     setSocksPort(e.target.value);
   };
   window.electron.electronAPI.ipcRenderer.on('proxyMode:change', (event, mode: string) => {
     setProxyMode(mode);
   });
+  window.electron.electronAPI.ipcRenderer.on('appearance:system:fromMain', (event, appearance: string) => {
+    localStorage.setItem('theme', appearance);
+    nightMode();
+  });
+  window.electron.store.get('appearance') || localStorage.setItem('theme', 'light');
   return (
-    <section className="flex flex-row items-center justify-around">
+    <section className="flex flex-row items-center justify-around text-black dark:text-white">
       <div
-        className="grid items-center justify-around gap-x-3 rounded-xl p-9"
-        style={{ backgroundColor: 'white', gridTemplateColumns: '1fr 2fr' }}
+        className="grid items-center justify-around gap-x-3 rounded-xl bg-white p-9 dark:bg-slate-700"
+        style={{ gridTemplateColumns: '1fr 2fr' }}
       >
         <Title>Socks Port</Title>
         <div className="flex w-32 flex-row justify-self-end">
@@ -109,7 +113,7 @@ const GernalSettings = (): JSX.Element => {
           onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
             setProxyMode((event.target as HTMLInputElement).value);
             window.proxyMode.change(event.target.value);
-            console.log(event.target.value)
+            console.log(event.target.value);
           }}
         >
           <FormControlLabel value="PAC" control={<Radio />} disabled label="PAC" />
@@ -122,18 +126,42 @@ const GernalSettings = (): JSX.Element => {
         </span>
         <Title>Appearance</Title>
         <Stack direction="row" spacing={1} className="justify-self-end">
-          <ApperanceButton variant="contained">
+          <AppearanceButton
+            variant={appearance === 'light' ? 'contained' : 'outlined'}
+            onClick={() => {
+              localStorage.setItem('theme', 'light');
+              nightMode();
+              window.electron.store.set('appearance', 'light');
+
+              setAppearance('light');
+            }}
+          >
             <LightModeIcon />
             Light
-          </ApperanceButton>
-          <ApperanceButton variant="outlined" disabled>
+          </AppearanceButton>
+          <AppearanceButton
+            variant={appearance === 'dark' ? 'contained' : 'outlined'}
+            onClick={() => {
+              localStorage.setItem('theme', 'dark');
+              nightMode();
+              window.electron.store.set('appearance', 'dark');
+              setAppearance('dark');
+            }}
+          >
             <DarkModeIcon />
             Dark
-          </ApperanceButton>
-          <ApperanceButton variant="outlined" disabled>
+          </AppearanceButton>
+          <AppearanceButton
+            variant={appearance === 'system' ? 'contained' : 'outlined'}
+            onClick={() => {
+              window.electron.store.set('appearance', 'system');
+              window.electron.electronAPI.ipcRenderer.send('appearance:system');
+              setAppearance('system');
+            }}
+          >
             <SettingsBrightnessIcon />
             System
-          </ApperanceButton>
+          </AppearanceButton>
         </Stack>
       </div>
       {/*
