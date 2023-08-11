@@ -57,6 +57,8 @@ export const setGlobalProxy = async (host: string, port: number) => {
   const results = await Promise.all(
     services.map(async (service) => {
       const autoSet = await execAsync(`networksetup -setsocksfirewallproxystate '${service}' on`);
+      //http networksetup -setwebproxy 'Wi-Fi' '127.0.0.1' '1086'
+      //https networksetup -setsecurewebproxy 'Wi-Fi' '127.0.0.1' '1086'
       const urlSet = await execAsync(
         `networksetup -setsocksfirewallproxy '${service}' '${host}' ${port}`
       );

@@ -2,7 +2,8 @@ import { decode, encode } from 'js-base64';
 
 const isWindows = navigator.platform.includes('Win');
 let logsDir;
-window.electron.electronAPI.ipcRenderer.invoke('get-logs-path')
+window.electron.electronAPI.ipcRenderer
+  .invoke('get-logs-path')
   .then((logsPath) => {
     // Use the logsPath in the renderer process
     logsDir = logsPath;
@@ -12,7 +13,6 @@ window.electron.electronAPI.ipcRenderer.invoke('get-logs-path')
     // Handle any errors that occur during IPC communication
     logsDir = '';
   });
-
 
 // reference https://github.com/kyuuseiryuu/v2ray-tools.git
 
@@ -32,6 +32,7 @@ const v1ToV2Mapper = {
   remarks: 'ps',
   obfsParam: 'host',
   obfs: 'net',
+  alterId: 'aid',
 };
 
 const v2ToV1Mapper = {
@@ -40,10 +41,42 @@ const v2ToV1Mapper = {
   net: 'obfs',
 };
 
+const v2ToStdV2Mapper = {
+  security: 'scy',
+};
+
 const v1Converter = {};
 
 const v2Converter = {
   ps: (v) => encodeURIComponent(v),
+  net: (v) => {
+    if (['tcp', 'kcp', 'ws', 'h2', 'quic'].includes(v)) {
+      return v;
+    }
+    switch (v) {
+      case 'websocket':
+        return 'ws';
+      case 'http':
+        return 'h2';
+      default:
+        return v;
+    }
+  },
+  host: (v) => {
+    if (typeof JSON.parse(v) === 'object') {
+      const vObj = JSON.parse(v);
+      for (const key of Object.keys(vObj)) {
+        if (key.toLowerCase() === 'host') {
+          return vObj[key];
+        }
+      }
+      return v;
+    }
+    return v;
+  },
+};
+const v2ToStdV2Converter = {
+  scy: (v) => encodeURIComponent(v),
 };
 
 // https://github.com/v2ray/v2ray-core/issues/1139
@@ -122,7 +155,7 @@ export type VmessV2 = Partial<{
   port: number;
   id: string;
   aid: string;
-  net: string;
+  net: 'tcp' | 'kcp' | 'ws' | 'h2' | 'quic';
   type: string;
   host: string;
   path: string;
@@ -169,6 +202,7 @@ const parseV1Link = (v1Link: string): VmessV2 | undefined => {
     const newKey = v1ToV2Mapper[key] || key;
     search[newKey] = v2Converter[newKey] ? v2Converter[newKey](value) : value;
   });
+  console.log(search);
   return {
     v: '2',
     type,
@@ -183,7 +217,13 @@ const parseV2Link = (link: string): VmessV2 | undefined => {
   if (!isVMessLinkV2(link)) return;
   const s = decode(link.replace(/^vmess:\/\//i, ''));
   if (!s) return;
-  return JSON.parse(s);
+  const obj = JSON.parse(s);
+  const params = {};
+  Object.entries(obj).forEach(([key,value]) => {
+    const newKey = v2ToStdV2Mapper[key] || key;
+    params[newKey] = v2ToStdV2Converter[newKey] ? v2ToStdV2Converter[newKey](value) : value;
+  });
+  return params;
 };
 
 export const toV1Link = (link: string): string => {
@@ -224,8 +264,8 @@ const parseVmess2config = (obj: VmessV2) => {
   const config: any = {
     log: {
       loglevel: 'info',
-      error: logsDir ? `${logsDir}${isWindows ? '\\':'/' }error.log`: '',
-      access: logsDir ? `${logsDir}${isWindows ? '\\':'/' }access.log` : '',
+      error: logsDir ? `${logsDir}${isWindows ? '\\' : '/'}error.log` : '',
+      access: logsDir ? `${logsDir}${isWindows ? '\\' : '/'}access.log` : '',
     },
     inbounds: [
       {

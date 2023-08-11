@@ -57,6 +57,7 @@ function createWindow(): void {
   } else {
     mainWindow.loadFile(join(__dirname, '../renderer/index.html'));
   }
+
   // FIXME: remove this line before publishing
   if (is.dev) {
     const mainWindow = BrowserWindow.getAllWindows()[0];
@@ -134,16 +135,37 @@ app.whenReady().then(async () => {
     proxy?.stop();
     proxy?.start();
     console.log(proxy);
+    global.eventEmitter.emit('tray-v2ray:update', true);
   });
-  ipcMain.handle('v2ray:stop', () => service?.stop());
+  ipcMain.handle('v2ray:stop', () => {
+    service?.stop();
+    global.eventEmitter.emit('tray-v2ray:update', false);
+  });
   ipcMain.handle('v2ray:check', () => service?.check());
   ipcMain.handle('get-logs-path', () => {
     return app.getPath('logs');
   });
-  ipcMain.on('logs:get', (event, logName:string = 'access.log') => {
+  ipcMain.on('logs:get', (event, logName: string = 'access.log') => {
     const logPath = join(app.getPath('logs'), logName);
-    const logs = fs.existsSync(logPath) ? fs.readFileSync(logPath, 'utf-8').split('\n').slice(-11,-1) : [];
+    const logs = fs.existsSync(logPath)
+      ? fs.readFileSync(logPath, 'utf-8').split('\n').slice(-11, -1)
+      : [];
     event.reply('logs:get', logs);
+  });
+  global.eventEmitter.on('tray-v2ray:stop', () => {
+    service?.stop();
+    global.eventEmitter.emit('tray-v2ray:update', false);
+  });
+  global.eventEmitter.on('tray-v2ray:start', () => {
+    const data = store.get('servers')[store.get('selectedServer')];
+    service?.start(data);
+    const socksPort = data?.inbounds[0].port;
+    const httpPort = data?.inbounds[1].port;
+    logger.info(`socksPort: ${socksPort}, httpPort: ${httpPort}`);
+    proxy?.updatePort(httpPort, socksPort);
+    proxy?.stop();
+    proxy?.start();
+    global.eventEmitter.emit('tray-v2ray:update', true);
   });
 
   app.on('activate', function () {

@@ -9,6 +9,7 @@ import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import IconButton from '@mui/material/IconButton';
 import SettingsBrightnessIcon from '@mui/icons-material/SettingsBrightness';
 import { platform } from '@renderer/constant/index';
+import { ipcRenderer } from 'electron';
 
 const label = { inputProps: { 'aria-label': 'Checkbox' } };
 const ApperanceButton = styled(Button)({
@@ -46,6 +47,9 @@ const GernalSettings = (): JSX.Element => {
   const handleChangePort = (e) => {
     setSocksPort(e.target.value);
   };
+  window.electron.electronAPI.ipcRenderer.on('proxyMode:change', (event, mode: string) => {
+    setProxyMode(mode);
+  });
   return (
     <section className="flex flex-row items-center justify-around">
       <div
@@ -116,7 +120,7 @@ const GernalSettings = (): JSX.Element => {
         <span className="justify-self-end">
           <Checkbox {...label} disabled checked={true} />
         </span>
-        <Title>Apperancece</Title>
+        <Title>Appearance</Title>
         <Stack direction="row" spacing={1} className="justify-self-end">
           <ApperanceButton variant="contained">
             <LightModeIcon />

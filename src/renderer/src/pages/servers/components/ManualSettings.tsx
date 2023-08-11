@@ -438,7 +438,7 @@ const ManualSettings = (props: any) => {
               autoWidth
               label="security"
             >
-              <MenuItem value="">
+              <MenuItem value="none">
                 <em>None</em>
               </MenuItem>
               <MenuItem value={'tls'}>tls</MenuItem>
@@ -455,7 +455,7 @@ const ManualSettings = (props: any) => {
                   }
                 />
               }
-              label="allow insecuree"
+              label="allow insecure"
             />
           </FormGroup>
         </div>

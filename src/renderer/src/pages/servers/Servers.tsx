@@ -155,7 +155,7 @@ const Servers = (): JSX.Element => {
   const [edit, setEdit] = useState<JSON>({});
   const [dialogType, setDialogType] = useState<'add' | 'edit'>('add');
   const [loading, setLoading] = useState(false);
-  const [running, setRunning] = useState(false);
+  const [running, setRunning] = useState(window.v2rayService.checkService()?? false);
   const [seletedServer, setSeletedServer] = useState<number>(
     window.electron.store.get('selectedServer') ?? -1
   );
@@ -252,6 +252,11 @@ const Servers = (): JSX.Element => {
   const handleLoading = () => {
     setLoading(true);
   };
+
+  window.electron.electronAPI.ipcRenderer.on('v2ray:status', (event,status: boolean) => {
+    console.log(status,'running')
+    setRunning(status)
+  });
 
   return (
     <section className="">

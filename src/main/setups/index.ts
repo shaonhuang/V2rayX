@@ -5,8 +5,34 @@ import { Proxy } from '@main/utils/proxy';
 import { isLinux, isMacOS } from '@main/constant';
 const Store = require('electron-store');
 const store = new Store();
+const EventEmitter = require('events');
+
+// Create a custom event emitter
+global.eventEmitter = new EventEmitter();
 
 let proxy: Proxy | null = null;
+
+const changeProxyMode = (mode: Mode) => {
+  const socksPort = store.get('servers')[store.get('selectedServer')]?.inbounds[0].port;
+  const httpPort = store.get('servers')[store.get('selectedServer')]?.inbounds[1].port;
+
+  if (httpPort && socksPort) {
+    proxy =
+      proxy ??
+      Proxy.createProxy(process.platform, isMacOS || isLinux ? socksPort : httpPort, 11111, mode);
+    if (proxy) {
+      if (mode === 'Manual') {
+        proxy.stop();
+      } else {
+        proxy.switch(mode);
+      }
+      store.set('proxyMode', mode);
+    }
+  } else {
+    store.set('proxyMode', 'Manual');
+    proxy?.stop();
+  }
+};
 export const init = () => {
   const appVersion = app.getVersion();
   if (store.get('appVersion') !== appVersion) {
@@ -39,7 +65,12 @@ export const init = () => {
 
   if (socksPort && httpPort) {
     const mode = (store.get('proxyMode') as Mode) ?? store.set('proxyMode', 'Manual');
-    proxy = Proxy.createProxy(process.platform, isMacOS || isLinux ? socksPort : httpPort, 11111, mode);
+    proxy = Proxy.createProxy(
+      process.platform,
+      isMacOS || isLinux ? socksPort : httpPort,
+      11111,
+      mode
+    );
     if (proxy) {
       proxy.start();
     }
@@ -47,23 +78,12 @@ export const init = () => {
     store.set('proxyMode', 'Manual');
   }
   ipcMain.handle('proxyMode:change', (event, mode: Mode) => {
-    const socksPort = store.get('servers')[store.get('selectedServer')]?.inbounds[0].port;
-    const httpPort = store.get('servers')[store.get('selectedServer')]?.inbounds[1].port;
-
-    if (httpPort && socksPort) {
-      proxy = proxy ?? Proxy.createProxy(process.platform, isMacOS || isLinux ? socksPort : httpPort, 11111, mode);
-      if (proxy) {
-        if (mode === 'Manual') {
-          proxy.stop();
-        } else {
-          proxy.switch(mode);
-        }
-        store.set('proxyMode', mode);
-      }
-    } else {
-      store.set('proxyMode', 'Manual');
-      proxy?.stop();
-    }
+    changeProxyMode(mode);
   });
-  return {proxyInstance: proxy};
+
+  global.eventEmitter.on('proxyMode:change', (mode: Mode) => {
+    changeProxyMode(mode);
+  });
+
+  return { proxyInstance: proxy };
 };

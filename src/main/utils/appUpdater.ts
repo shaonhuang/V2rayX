@@ -1,8 +1,11 @@
 import { dialog } from 'electron';
 import logger from '@main/utils/logs';
 import { autoUpdater } from 'electron-updater';
+const ProgressBar = require('electron-progressbar');
 
 const AppUpdater = (mainWindow) => {
+  let progressBar;
+
   autoUpdater.autoDownload = false;
   autoUpdater.logger = logger;
   // if (process.env.NODE_ENV === 'development') {
@@ -47,19 +50,43 @@ const AppUpdater = (mainWindow) => {
 
   autoUpdater.on('download-progress', (progressObj) => {
     logger.info(`Download progress: ${progressObj.percent}%`);
+    progressBar = new ProgressBar({
+      indeterminate: false,
+      title: 'Download Progress',
+      text: 'Downloading...',
+      detail: 'Preparing download...',
+      browserWindow: {
+        webPreferences: {
+          nodeIntegration: true,
+        },
+        parent: mainWindow, // Replace mainWindow with your app's main window reference
+        modal: true,
+        closable: false,
+      },
+    });
+    const progressPercent = Math.round(progressObj.percent);
+    progressBar.value = progressPercent;
+    progressBar.detail = `Downloading... ${progressPercent}%`;
   });
 
   autoUpdater.on('update-downloaded', (info) => {
     logger.info('Update downloaded:', info.version);
     mainWindow.webContents.send('update-available', true);
-    dialog
-      .showMessageBox({
-        title: 'Install Updates',
-        message: 'Updates downloaded, application will be quit for update...',
-      })
-      .then(() => {
-        setImmediate(() => autoUpdater.quitAndInstall());
-      });
+    progressBar.detail = 'Download complete!';
+    progressBar.setCompleted();
+    setTimeout(() => {
+      progressBar.close();
+    }, 1000);
+    setTimeout(() => {
+      dialog
+        .showMessageBox({
+          title: 'Install Updates',
+          message: 'Updates downloaded, application will be quit for update...',
+        })
+        .then(() => {
+          setImmediate(() => autoUpdater.quitAndInstall());
+        });
+    }, 2000);
   });
 
   const checkForUpdates = () => {

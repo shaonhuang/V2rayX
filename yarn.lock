@@ -2881,6 +2881,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"electron-progressbar@npm:^2.1.0":
+  version: 2.1.0
+  resolution: "electron-progressbar@npm:2.1.0"
+  dependencies:
+    extend: ^3.0.1
+  checksum: f704811f858e8dc592d73afcc33430b6833813663c7d1fa8302912fc5e42e804842d26d0178826b659ef2b1f0a87b3124d9acc49be046c7f51988428d5483d7f
+  languageName: node
+  linkType: hard
+
 "electron-publish@npm:23.6.0":
   version: 23.6.0
   resolution: "electron-publish@npm:23.6.0"
@@ -3382,6 +3391,13 @@ __metadata:
   version: 2.0.3
   resolution: "esutils@npm:2.0.3"
   checksum: 22b5b08f74737379a840b8ed2036a5fb35826c709ab000683b092d9054e5c2a82c27818f12604bfc2a9a76b90b6834ef081edbc1c7ae30d1627012e067c6ec87
+  languageName: node
+  linkType: hard
+
+"extend@npm:^3.0.1":
+  version: 3.0.2
+  resolution: "extend@npm:3.0.2"
+  checksum: a50a8309ca65ea5d426382ff09f33586527882cf532931cb08ca786ea3146c0553310bda688710ff61d7668eba9f96b923fe1420cdf56a2c3eaf30fcab87b515
   languageName: node
   linkType: hard
 
@@ -4819,6 +4835,15 @@ __metadata:
   bin:
     loose-envify: cli.js
   checksum: 6517e24e0cad87ec9888f500c5b5947032cdfe6ef65e1c1936a0c48a524b81e65542c9c3edc91c97d5bddc806ee2a985dbc79be89215d613b1de5db6d1cfe6f4
+  languageName: node
+  linkType: hard
+
+"lowdb@npm:^6.0.1":
+  version: 6.0.1
+  resolution: "lowdb@npm:6.0.1"
+  dependencies:
+    steno: ^3.0.0
+  checksum: d555a5bcc2e4a963fae89209b693a6f2b7b69bae915ff67355537b7a14a4f6e44bc273467bc3d4d7e81660c1313587ee3bfebf044d50d3213a5e95ea7f07ded4
   languageName: node
   linkType: hard
 
@@ -6544,6 +6569,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"steno@npm:^3.0.0":
+  version: 3.0.0
+  resolution: "steno@npm:3.0.0"
+  checksum: fb928451a4f96342b496b71147fbca0a20a5daf7bfd23a4a1cec8640d3c6c67176809169e9a5801ea44490d448b5b7ecb151b9fba434872c2d65549847f39460
+  languageName: node
+  linkType: hard
+
 "string-width@npm:^1.0.2 || 2 || 3 || 4, string-width@npm:^4.1.0, string-width@npm:^4.2.0, string-width@npm:^4.2.3":
   version: 4.2.3
   resolution: "string-width@npm:4.2.3"
@@ -7143,6 +7175,7 @@ __metadata:
     electron: ^24.1.2
     electron-builder: ^23.6.0
     electron-is-dev: ^2.0.0
+    electron-progressbar: ^2.1.0
     electron-store: ^8.1.0
     electron-updater: ^5.3.0
     electron-vite: ^1.0.21
@@ -7155,6 +7188,7 @@ __metadata:
     jsqr: ^1.4.0
     load-json-file: ^7.0.1
     lodash: ^4.17.21
+    lowdb: ^6.0.1
     md5: ^2.3.0
     object-hash: ^3.0.0
     open: 7.0.3
