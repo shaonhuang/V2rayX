@@ -2,13 +2,13 @@ import { ElectronAPI } from '@electron-toolkit/preload';
 
 declare global {
   interface Window {
+    db: {
+      read: (key: string, query?: Object) => Promise<any>;
+      write: (key: string, data: any) => Promise<any>;
+    };
+    quit: () => void;
     electron: {
       electronAPI: IElectronAPI;
-      store: {
-        get: (key: string) => any;
-        set: (key: string | JSON, val?: any) => void;
-        delete: (key: string) => void;
-      };
     };
     api: IElectronAPI;
     serverFiles: IElectronAPI;
@@ -23,6 +23,7 @@ declare global {
       quitAndInstall: () => void;
     };
     clipboard: {
+      read: () => string;
       paste: (data: string) => void;
     };
     autoLaunch: {

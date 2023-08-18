@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useLayoutEffect } from 'react';
 import { DialogTitle, Dialog, Button, Box } from '@mui/material';
 import LinearProgress, { LinearProgressProps } from '@mui/material/LinearProgress';
 import Typography from '@mui/material/Typography';
 
-const InstallDialog = (props) => {
-  const [open, setOpen] = useState(!window.electron.store.get('v2rayInstallStatus'));
-
+const InstallDialog = () => {
+  const [install, setInstall] = useState(true);
+  const [open, setOpen] = useState(true);
   const [progress, setProgress] = useState(0);
   function LinearProgressWithLabel(props: LinearProgressProps & { value: number }) {
     return (
@@ -21,39 +21,55 @@ const InstallDialog = (props) => {
       </Box>
     );
   }
-  window.api.receive('v2ray:downloadStatus', (status) => {
-    setProgress(status * 100 > 99 ? 99 : status * 100);
-  });
-  window.api.receive('v2ray:finishedInstall', (status) => {
-    status ? setProgress(100) : null;
-  });
-
-  useEffect(() => {
-    window.api.send('v2ray:install', true);
+  useLayoutEffect(() => {
+    window.db.read('v2rayInstallStatus').then((status) => setOpen(!status));
+    window.api.receive('v2ray:downloadStatus', (status: number) => {
+      setProgress(status * 100 > 99 ? 99 : status * 100);
+    });
+    window.api.receive('v2ray:finishedInstall', (status: boolean) => {
+      status ? setProgress(100) : null;
+    });
   }, []);
   return (
     <Dialog open={open}>
       <DialogTitle>Setup V2ray Core</DialogTitle>
-      <section className="m-8 flex flex-col gap-4">
-        <div>{progress < 100 ? '正在下载' : '已经完成安装'}v2ray核心文件</div>
-        <Box sx={{ width: '100%' }}>
-          <LinearProgressWithLabel value={progress} />
-        </Box>
-        <div>
-          {progress >= 100 ? (
-            <Button onClick={() => setOpen(false)}>安装完成</Button>
-          ) : (
-            <Button
-              onClick={() => {
-                window.electron.electronAPI.ipcRenderer.invoke('quit-app');
-                window.electron.store.set('v2rayInstallStatus', false);
-              }}
-            >
-              退出软件
-            </Button>
-          )}
-        </div>
-      </section>
+      {install ? (
+        <section className="m-8">
+          <Button
+            onClick={() => {
+              window.api.send('v2ray:install', true);
+              setInstall(false);
+            }}
+          >
+            install V2ray-core
+          </Button>
+          <Button
+            onClick={() => window.db.write('v2rayInstallStatus', false).then(() => window.quit())}
+          >
+            Exit
+          </Button>
+        </section>
+      ) : (
+        <section className="m-8 flex flex-col gap-4">
+          <div>{progress < 100 ? 'Downloading' : 'Finished'} v2ray-core files</div>
+          <Box sx={{ width: '100%' }}>
+            <LinearProgressWithLabel value={progress} />
+          </Box>
+          <div>
+            {progress >= 100 ? (
+              <Button onClick={() => setOpen(false)}>Install Complete</Button>
+            ) : (
+              <Button
+                onClick={() =>
+                  window.db.write('v2rayInstallStatus', false).then(() => window.quit())
+                }
+              >
+                Exit
+              </Button>
+            )}
+          </div>
+        </section>
+      )}
     </Dialog>
   );
 };

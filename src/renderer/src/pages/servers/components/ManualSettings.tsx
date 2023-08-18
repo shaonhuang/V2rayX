@@ -72,7 +72,7 @@ const ManualSettings = (props: any) => {
       : outbounds?.[0]?.settings?.vnext?.[0]?.users?.[0]?.security;
   const [baseSettings, setBaseSettings] = useState<BaseSettings>({
     socket: inbounds?.[0]?.port ?? 1080,
-    http: inbounds?.[1]?.port ?? 1080,
+    http: inbounds?.[1]?.port ?? 1081,
     dns: '',
     mux: outbounds?.[0]?.mux?.enabled ?? false,
     concurrency: outbounds?.[0]?.mux?.concurrency ?? 8,

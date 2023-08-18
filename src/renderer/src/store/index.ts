@@ -1,12 +1,15 @@
 import { configureStore } from '@reduxjs/toolkit';
-import serversReducer from './serversSlice';
+import logger from 'redux-logger';
+import serversPageReducer from './serversPageSlice';
 import navTabReducer from './navigationSlice';
 
 const store = configureStore({
   reducer: {
     navTab: navTabReducer,
-    servers: serversReducer,
+    serversPage: serversPageReducer,
   },
+  middleware: (getDefaultMiddleware) => getDefaultMiddleware().concat(logger),
+  devTools: process.env.NODE_ENV !== 'production',
 });
 
 export default store;

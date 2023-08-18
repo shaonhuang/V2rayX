@@ -1,31 +1,33 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useLayoutEffect,useRef } from 'react';
 import { Button, IconButton } from '@mui/material';
 import FileOpenIcon from '@mui/icons-material/FileOpen';
+import { useAppSelector } from '@renderer/store/hooks';
+import { find } from 'lodash';
 
 const Index = (): JSX.Element => {
+  const [server,setServer] = useState({})
+  const serverState = useAppSelector((state) => state.serversPage.servers);
+  const currentServerId = useAppSelector((state) => state.serversPage.currentServerId);
   const [logs, setLogs] = useState<string[]>([]);
   const [displayedLogs, setDisplayedLogs] = useState<string[]>([]);
   const [logType, setLogType] = useState<string>('access');
   const scrollWindow = useRef<HTMLDivElement>(null);
-  const server = window.electron.store.get('servers')[window.electron.store.get('selectedServer')];
   const [isRunning, setIsRunning] = useState<boolean>(false);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     window.v2rayService.checkService().then((res) => {
       setIsRunning(res);
     });
+    setServer(find(serverState, { id: currentServerId })?.config);
   }, []);
   useEffect(() => {
     if (isRunning) {
+      window.electron.electronAPI.ipcRenderer.on('logs:get', (event, data) => {
+        setLogs([...data]);
+        setDisplayedLogs([]);
+      });
       const getLogs = () => {
-        window.electron.electronAPI.ipcRenderer.send(
-          'logs:get',
-          logType === 'access' ? 'access.log' : 'error.log'
-        );
-        window.electron.electronAPI.ipcRenderer.on('logs:get', (event, data) => {
-          setLogs([...data]);
-          setDisplayedLogs([]);
-        });
+        window.api.send('logs:get', logType === 'access' ? 'access.log' : 'error.log');
       };
       getLogs();
       const refresh = setInterval(() => {
@@ -59,8 +61,8 @@ const Index = (): JSX.Element => {
   return (
     <section className="flew-row flex items-center justify-around text-black dark:text-white">
       <div className="flex w-4/5 flex-col rounded-xl bg-white px-8 py-4 dark:bg-slate-700">
-        {isRunning ? (
-          <div className='py-2'>
+        {isRunning && currentServerId ? (
+          <div className="py-2">
             <div>
               <p>LOG LEVEL: {server?.log.loglevel}</p>
               <p>
@@ -105,10 +107,10 @@ const Index = (): JSX.Element => {
           <></>
         )}
         <div className="m-2">
-          {displayedLogs.length >= 1 ? (
+          {displayedLogs.length >= 1 && currentServerId ? (
             <div>
               <hr />
-              <div className="h-64 overflow-x-hidden overflow-y-scroll my-2" ref={scrollWindow}>
+              <div className="my-2 h-64 overflow-x-hidden overflow-y-scroll" ref={scrollWindow}>
                 {displayedLogs.map((log, idx) => (
                   <p
                     key={idx}
