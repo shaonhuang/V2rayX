@@ -11,10 +11,13 @@ import {
   Snackbar,
 } from '@mui/material';
 import MuiAlert, { AlertProps } from '@mui/material/Alert';
+import IconButton from '@mui/material/IconButton';
+import CloseIcon from '@mui/icons-material/Close';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
+import ContextMenu from '@renderer/components/ContextMenu';
 import { useEffect, useState } from 'react';
 import ReactJson from 'react-json-view';
-import * as _ from 'lodash';
+import { find } from 'lodash';
 
 import {
   VmessV1,
@@ -25,16 +28,18 @@ import {
   parseV1Link,
   parseV2Link,
   parseVmess2config,
+  fromJson2Vmess2,
+  objToV2Link,
   emptyVmessV2,
 } from '@renderer/utils/protocol';
 import ManualSettings from './ManualSettings';
+import { useAppSelector } from '@store/hooks';
 
 export interface AddServerDialogProps {
   open: boolean;
   type: 'add' | 'edit';
   edit: JSON;
-  idx: number;
-  onClose: (type: 'add' | 'edit', configObj: JSON) => void;
+  onClose: (event, configObj: JSON, configLink: string) => void;
 }
 
 const theme = createTheme({
@@ -79,6 +84,7 @@ const ImportSettings = (props: any) => {
 };
 
 const AddServerDialog = (props: AddServerDialogProps) => {
+  const template = useAppSelector((state) => state.serversPage.serverTemplate);
   const { onClose, open, type, edit } = props;
   const [errorType, setErrorType] = useState('empty');
   const [openNotice, setNoticeOpen] = React.useState(false);
@@ -88,40 +94,65 @@ const AddServerDialog = (props: AddServerDialogProps) => {
       ? 'vmess://eyAidiI6IjIiLCAicHMiOiIiLCAiYWRkIjoiNDUuNzcuNzEuMjAzIiwgInBvcnQiOiI0NDMiLCAiaWQiOiI5YmIwNTAyZS1mYjI2LTQyNWEtODZkNC05YmJhNDQxNjdlNTkiLCAiYWlkIjoiMCIsICJuZXQiOiJ3cyIsICJ0eXBlIjoibm9uZSIsICJob3N0IjoiaGloYWNrZXIuc2hvcCIsICJwYXRoIjoiL1FZQXA3VXpjIiwgInRscyI6InRscyIgfQ=='
       : ''
   );
-  const [data, setData] = useState(props.type === 'add' ? {} : props.edit);
+  const [jsonViewData, setJSONViewData] = useState(props.type === 'add' ? template : props.edit);
+  const servers = useAppSelector((state) => state.serversPage.servers);
 
   const handleImportUrl = () => {
     if (isVMessLink(importData)) {
       const vmessObj: VmessV1 | VmessV2 = isVMessLinkV1(importData)
         ? parseV1Link(importData)
         : parseV2Link(importData);
-      setData(parseVmess2config(vmessObj));
+      setJSONViewData(parseVmess2config(vmessObj));
       setMode('import');
     } else {
       setErrorType('invalid');
       setImportData('');
-      setData({});
+      setJSONViewData({});
       setNoticeOpen(true);
     }
   };
-
-  const hanleConfigChange = (configObj: JSON) => {
-    setData(configObj);
+  const handleCut = () => {
+    window.clipboard.paste(importData);
+    setImportData('');
+  };
+  const handleCopy = () => {
+    window.clipboard.paste(importData);
+  };
+  const handlePaste = () => {
+    window.clipboard.read().then((data) => {
+      setImportData(data);
+    });
   };
 
-  const handleFinish = (vmessObj) => {
-    if (JSON.stringify(vmessObj) === '{}') {
+  const handleManualConfigChange = (configObj: JSON) => {
+    setJSONViewData(configObj);
+  };
+
+  const handleSave = (configObj) => {
+    const hash = window.electron.electronAPI.hash(configObj);
+    if (JSON.stringify(configObj) === '{}') {
       setErrorType('empty');
       setNoticeOpen(true);
-      onClose(type, vmessObj);
       return;
-    } else if (vmessObj.inbounds[0].port === vmessObj.inbounds[1].port) {
+    } else if (configObj.inbounds[0].port === configObj.inbounds[1].port) {
       setErrorType('invalid');
       setNoticeOpen(true);
       return;
+    } else if (find(servers, { id: hash })) {
+      setErrorType('repeated');
+      setNoticeOpen(true);
+      return;
     }
-    onClose(type, vmessObj);
-    setData({});
+    // TODO: regenerate link through vmessObj
+    setJSONViewData({});
+    // FIXME: should save Link to const data
+    const link =
+      importData !== ''
+        ? window.electron.electronAPI.hash(parseV2Link(importData)) === fromJson2Vmess2(configObj)
+          ? importData
+          : objToV2Link(fromJson2Vmess2(configObj))
+        : objToV2Link(fromJson2Vmess2(configObj));
+    onClose(null, configObj, link);
   };
 
   const handleNoticeText = (errorType) => {
@@ -130,6 +161,8 @@ const AddServerDialog = (props: AddServerDialogProps) => {
         return 'Please fill in the form or Import a link';
       case 'invalid':
         return 'Invalid import link';
+      case 'repeated':
+        return 'Repeated server';
       default:
         return 'error';
     }
@@ -144,7 +177,7 @@ const AddServerDialog = (props: AddServerDialogProps) => {
 
   useEffect(() => {
     if (type === 'edit') {
-      setData(edit);
+      setJSONViewData(edit);
     }
   }, [type, edit]);
   return (
@@ -158,6 +191,21 @@ const AddServerDialog = (props: AddServerDialogProps) => {
         <div className="w-[600px]  overflow-x-hidden bg-sky-100 p-6">
           <DialogTitle className="text-center text-gray-700">
             <span className="">Configure Server</span>
+            <IconButton
+              aria-label="close"
+              onClick={(event) => {
+                onClose(event, {}, '');
+                setJSONViewData({});
+              }}
+              sx={{
+                position: 'absolute',
+                right: 8,
+                top: 8,
+                color: (theme) => theme.palette.grey[500],
+              }}
+            >
+              <CloseIcon />
+            </IconButton>
           </DialogTitle>
           <div className="flex flex-col items-center overflow-x-hidden rounded-xl bg-sky-300 p-6">
             <FormControl
@@ -174,6 +222,11 @@ const AddServerDialog = (props: AddServerDialogProps) => {
                 }}
                 endAdornment={
                   <InputAdornment position="end">
+                    <ContextMenu
+                      handleCutImportData={handleCut}
+                      handleCopyImportData={handleCopy}
+                      handlePasteImportData={handlePaste}
+                    />
                     <Button onClick={() => handleImportUrl()}>Import</Button>
                   </InputAdornment>
                 }
@@ -186,9 +239,9 @@ const AddServerDialog = (props: AddServerDialogProps) => {
               </div>
               <div>
                 {mode === 'import' ? (
-                  <ImportSettings data={data} />
+                  <ImportSettings data={jsonViewData} />
                 ) : (
-                  <ManualSettings data={data} handleDataSave={hanleConfigChange} />
+                  <ManualSettings data={jsonViewData} handleDataSave={handleManualConfigChange} />
                 )}
               </div>
             </div>
@@ -197,10 +250,10 @@ const AddServerDialog = (props: AddServerDialogProps) => {
             <RoundedButton
               className="w-12"
               onClick={() => {
-                handleFinish(data);
+                handleSave(jsonViewData);
               }}
             >
-              Finish
+              Save
             </RoundedButton>
           </div>
         </div>

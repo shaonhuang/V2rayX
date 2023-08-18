@@ -1,5 +1,5 @@
 import { Checkbox, Stack, Button, Input, FormGroup, FormControlLabel } from '@mui/material';
-import { useState } from 'react';
+import { useState, useEffect, useLayoutEffect } from 'react';
 import styled from '@emotion/styled';
 import Radio from '@mui/material/Radio';
 import RadioGroup from '@mui/material/RadioGroup';
@@ -9,7 +9,12 @@ import { nightMode } from '@renderer/components/Theme';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import IconButton from '@mui/material/IconButton';
 import SettingsBrightnessIcon from '@mui/icons-material/SettingsBrightness';
-import { platform } from '@renderer/constant/index';
+import Notice from '@renderer/components/Notice';
+import { platform } from '@renderer/constant';
+import { useAppSelector } from '@renderer/store/hooks';
+import { find } from 'lodash';
+import { readFromDb } from '@renderer/store/serversPageSlice';
+import { useDispatch } from 'react-redux';
 
 const label = { inputProps: { 'aria-label': 'Checkbox' } };
 const AppearanceButton = styled(Button)({
@@ -22,38 +27,61 @@ const Title = styled.div(() => ({
 }));
 
 const GernalSettings = (): JSX.Element => {
-  const [selectedServer, setSelectedServer] = useState<string>(
-    window.electron.store.get('selectedServer') ?? ''
-  );
-  const [servers, setServers] = useState<Array<Object>>(window.electron.store.get(`servers`) ?? []);
-  const [socksPort, setSocksPort] = useState<number>(
-    servers[selectedServer]?.inbounds?.[0]?.port ?? 1080
-  );
-  const socksCmdPaste =
-    platform === 'win32' ? `set socks_proxy "socks5://127.0.0.1:${socksPort}"` : `${socksPort}`;
-  const [httpPort, setHttpPort] = useState<number>(
-    servers[selectedServer]?.inbounds?.[1]?.port ?? 1080
-  );
-  const httpCmdPaste =
-    platform === 'win32'
-      ? `set http_proxy=http://127.0.0.1:${httpPort}`
-      : `export http_proxy=http://127.0.0.1:${httpPort};export https_proxy=http://127.0.0.1:${httpPort};`;
-  const [autoLaunch, setAutoLaunch] = useState<boolean>(
-    window.electron.store.get('autoLaunch') ?? false
-  );
-  const [proxyMode, setProxyMode] = useState(window.electron.store.get('proxyMode') ?? 'Manual');
-  const [appearance, setAppearance] = useState(window.electron.store.get('appearance') ?? 'light');
+  const dispatch = useDispatch();
+  const currentServerId = useAppSelector((state) => state.serversPage.currentServerId);
+  const serversState = useAppSelector((state) => state.serversPage.servers);
+  const [socksCmdPaste, setSocksCmdPaste] = useState('');
+  const [httpCmdPaste, setHttpCmdPaste] = useState('');
+  const [socksPort, setSocksPort] = useState<number>(1080);
+  const [httpPort, setHttpPort] = useState<number>(1080);
+  const [autoLaunch, setAutoLaunch] = useState<boolean>(false);
+  const [proxyMode, setProxyMode] = useState('Manual');
+  const [appearance, setAppearance] = useState('');
+
   const handleChangePort = (e) => {
     setSocksPort(e.target.value);
   };
-  window.electron.electronAPI.ipcRenderer.on('proxyMode:change', (event, mode: string) => {
-    setProxyMode(mode);
-  });
-  window.electron.electronAPI.ipcRenderer.on('appearance:system:fromMain', (event, appearance: string) => {
-    localStorage.setItem('theme', appearance);
-    nightMode();
-  });
-  window.electron.store.get('appearance') || localStorage.setItem('theme', 'light');
+
+  useLayoutEffect(() => {
+    dispatch(readFromDb());
+  }, []);
+  useLayoutEffect(() => {
+    const config = find(serversState, { id: currentServerId })?.config;
+    const socksPort = config?.inbounds?.[0]?.port ?? 1080;
+    const httpPort = config?.inbounds?.[1]?.port ?? 1080;
+    setSocksPort(socksPort);
+    setHttpPort(httpPort);
+    setSocksCmdPaste(
+      platform === 'win32' ? `set socks_proxy "socks5://127.0.0.1:${socksPort}"` : `${socksPort}`
+    );
+    setHttpCmdPaste(
+      platform === 'win32'
+        ? `set http_proxy=http://127.0.0.1:${httpPort}`
+        : `export http_proxy=http://127.0.0.1:${httpPort};export https_proxy=http://127.0.0.1:${httpPort};`
+    );
+  }, [currentServerId]);
+
+  useEffect(() => {
+    window.db.read('settings').then((res) => {
+      setProxyMode(res.proxyMode);
+      setAppearance(res.appearance);
+      localStorage.setItem('theme', res.appearance);
+    });
+    window.db
+      .read('autoLaunch')
+      .then((res) => setAutoLaunch(res))
+      .catch((err) => {
+        console.error(err);
+      });
+    window.api.receive('proxyMode:change', (mode: string) => {
+      setProxyMode(mode);
+    });
+    window.api.receive('appearance:system:fromMain', (appearance: string) => {
+      localStorage.setItem('theme', appearance);
+      nightMode();
+    });
+  }, []);
+
   return (
     <section className="flex flex-row items-center justify-around text-black dark:text-white">
       <div
@@ -63,26 +91,30 @@ const GernalSettings = (): JSX.Element => {
         <Title>Socks Port</Title>
         <div className="flex w-32 flex-row justify-self-end">
           <Input className="w-24" value={socksPort} onChange={handleChangePort} disabled />
-          <IconButton
-            color="primary"
-            onClick={() => {
-              window.clipboard.paste(socksCmdPaste);
-            }}
-          >
-            <ContentCopyIcon />
-          </IconButton>
+          <Notice message={`${socksCmdPaste} Command has been paste to clipboard`} direction="left">
+            <IconButton
+              color="primary"
+              onClick={() => {
+                window.clipboard.paste(socksCmdPaste);
+              }}
+            >
+              <ContentCopyIcon />
+            </IconButton>
+          </Notice>
         </div>
         <Title>Http Port</Title>
         <div className="flex w-32 flex-row justify-self-end">
           <Input className="w-24" value={httpPort} onChange={handleChangePort} disabled />
-          <IconButton
-            color="primary"
-            onClick={() => {
-              window.clipboard.paste(httpCmdPaste);
-            }}
-          >
-            <ContentCopyIcon />
-          </IconButton>
+          <Notice message={`${httpCmdPaste} Command has been paste to clipboard`} direction="left">
+            <IconButton
+              color="primary"
+              onClick={() => {
+                window.clipboard.paste(httpCmdPaste);
+              }}
+            >
+              <ContentCopyIcon />
+            </IconButton>
+          </Notice>
         </div>
         <Title>Startup</Title>
         <span className="justify-self-end">
@@ -90,9 +122,15 @@ const GernalSettings = (): JSX.Element => {
             {...label}
             checked={autoLaunch}
             onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
-              window.electron.store.set('autoLaunch', event.target.checked);
-              setAutoLaunch(event.target.checked);
-              window.autoLaunch.change(event.target.checked);
+              window.db
+                .write('autoLaunch', event.target.checked)
+                .then(() => {
+                  setAutoLaunch(!event.target.checked);
+                  window.autoLaunch.change(!event.target.checked);
+                })
+                .catch((err) => {
+                  console.error(err);
+                });
             }}
           />
           Launch V2rayX at Login
@@ -113,26 +151,25 @@ const GernalSettings = (): JSX.Element => {
           onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
             setProxyMode((event.target as HTMLInputElement).value);
             window.proxyMode.change(event.target.value);
-            console.log(event.target.value);
+            window.db
+              .read('settings')
+              .then((res) => window.db.write('settings', { ...res, proxyMode: event.target.value }));
           }}
         >
           <FormControlLabel value="PAC" control={<Radio />} disabled label="PAC" />
           <FormControlLabel value="Global" control={<Radio />} label="Global" />
           <FormControlLabel value="Manual" control={<Radio />} label="Manual" />
         </RadioGroup>
-        <Title>Menu bar icon</Title>
-        <span className="justify-self-end">
-          <Checkbox {...label} disabled checked={true} />
-        </span>
         <Title>Appearance</Title>
-        <Stack direction="row" spacing={1} className="justify-self-end">
+        <Stack direction="row" spacing={1} className="justify-self-end pt-2">
           <AppearanceButton
             variant={appearance === 'light' ? 'contained' : 'outlined'}
             onClick={() => {
               localStorage.setItem('theme', 'light');
               nightMode();
-              window.electron.store.set('appearance', 'light');
-
+              window.db.read('settings').then((res) => {
+                window.db.write('settings', { ...res, appearance: 'light' });
+              });
               setAppearance('light');
             }}
           >
@@ -144,7 +181,9 @@ const GernalSettings = (): JSX.Element => {
             onClick={() => {
               localStorage.setItem('theme', 'dark');
               nightMode();
-              window.electron.store.set('appearance', 'dark');
+              window.db.read('settings').then((res) => {
+                window.db.write('settings', { ...res, appearance: 'light' });
+              });
               setAppearance('dark');
             }}
           >
@@ -154,8 +193,10 @@ const GernalSettings = (): JSX.Element => {
           <AppearanceButton
             variant={appearance === 'system' ? 'contained' : 'outlined'}
             onClick={() => {
-              window.electron.store.set('appearance', 'system');
-              window.electron.electronAPI.ipcRenderer.send('appearance:system');
+              window.db.read('settings').then((res) => {
+                window.db.write('settings', { ...res, appearance: 'system' });
+              });
+              window.api.send('v2rayx:appearance:system');
               setAppearance('system');
             }}
           >

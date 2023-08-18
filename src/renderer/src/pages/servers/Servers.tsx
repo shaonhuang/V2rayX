@@ -1,9 +1,6 @@
-import { useEffect, useState } from 'react';
+import { BaseSyntheticEvent, useEffect, useState } from 'react';
 import {
-  Button,
-  IconButton,
   Fab,
-  Popover,
   List,
   ListItem,
   ListItemIcon,
@@ -13,10 +10,17 @@ import {
   Backdrop,
   Chip,
 } from '@mui/material';
+import ScreenShareIcon from '@mui/icons-material/ScreenShare';
+import IosShareIcon from '@mui/icons-material/IosShare';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { Storage, Share, MoreHoriz, Add, Edit, Delete } from '@mui/icons-material';
 import AddServerDialog from './components/AddServer';
+import Notice from '@renderer/components/Notice';
 import { cloneDeep } from 'lodash';
+import { find } from 'lodash';
+import { useAppSelector, useAppDispatch } from '@store/hooks';
+import { setServersState, setCurrentServerId } from '@store/serversPageSlice';
+import PopoverMenu from '@renderer/components/PopoverMenu';
 
 const theme = createTheme({
   palette: {
@@ -34,55 +38,8 @@ const Block = (props: any) => (
     <p>{props.title}</p>
   </div>
 );
-const MoreOptionsList = (props) => {
-  const { data } = props;
-  return (
-    <List>
-      <ListItem disablePadding>
-        <ListItemButton
-          onClick={(e) => {
-            // e.preventDefault();
-            props.handleEdit(data.key);
-          }}
-        >
-          <ListItemIcon>
-            <Edit />
-          </ListItemIcon>
-          <ListItemText primary="Edit" />
-        </ListItemButton>
-      </ListItem>
-      <ListItem disablePadding>
-        <ListItemButton
-          component="a"
-          href="#simple-list"
-          onClick={(e) => {
-            // e.preventDefault();
-            props.handleDelete(data.key);
-          }}
-        >
-          <ListItemIcon>
-            <Delete />
-          </ListItemIcon>
-          <ListItemText primary="Delete" />
-        </ListItemButton>
-      </ListItem>
-    </List>
-  );
-};
+
 const ServerItem = (props: any) => {
-  const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null);
-  const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
-    // event.preventDefault();
-    setAnchorEl(event.currentTarget);
-  };
-
-  const handleClose = () => {
-    setAnchorEl(null);
-  };
-
-  const open = Boolean(anchorEl);
-  const id = open ? 'simple-popover' : undefined;
-  const serverName = 'New Server';
   const protocol = props.data.outbounds[0].protocol.toUpperCase() ?? 'Vmess';
   return (
     <div
@@ -93,14 +50,14 @@ const ServerItem = (props: any) => {
       <div className="ml-3 mr-6 inline-flex h-12 w-12 items-center rounded-xl bg-purple-600">
         <Storage style={{}} className="m-auto" />
       </div>
-      <span className="inline-flex w-fit items-center font-bold">{serverName}</span>
+      <span className="inline-flex w-fit items-center font-bold">{props.serverName}</span>
       <span className="w-fit justify-self-center text-black-dim dark:text-white">{protocol}</span>
       {
         // placeholder for data usage status
       }
-      {props.seletedServer === props.index ? (
+      {props.isSeleted ? (
         <Chip
-          label={props.running ? 'running' : 'failed'}
+          label={props.running ? 'running' : 'stopped'}
           color={props.running ? 'success' : 'error'}
           variant="outlined"
           className="w-3/6 justify-self-center"
@@ -112,38 +69,65 @@ const ServerItem = (props: any) => {
         // <span className="w-fit justify-self-center text-black-dim"> </span>
       }
       <ThemeProvider theme={theme}>
-        <IconButton color="primary" className="w-fit justify-self-center" disabled>
+        <PopoverMenu>
           <Share className="justify-self-center" fontSize="medium" />
-        </IconButton>
-        <IconButton
-          color="secondary"
-          className="mr justify-self-end"
-          style={{ marginRight: '1.2rem' }}
-          aria-describedby={id}
-          onClick={handleClick}
-        >
+          <List>
+            <ListItem disablePadding>
+              <ListItemButton
+                disabled
+                onClick={() => {
+                  props.handleQR(props.index);
+                }}
+              >
+                <ListItemIcon>
+                  <ScreenShareIcon />
+                </ListItemIcon>
+                <ListItemText primary="Share QR Code" />
+              </ListItemButton>
+            </ListItem>
+            <ListItem disablePadding>
+              <ListItemButton
+                onClick={() => {
+                  props.handleLink(props.index);
+                }}
+              >
+                <ListItemIcon>
+                  <IosShareIcon />
+                </ListItemIcon>
+                <ListItemText primary="Share Link" />
+              </ListItemButton>
+            </ListItem>
+          </List>
+        </PopoverMenu>
+        <PopoverMenu>
           <MoreHoriz className="justify-self-end" fontSize="large" />
-        </IconButton>
-        <Popover
-          id={id}
-          open={open}
-          anchorEl={anchorEl}
-          onClose={handleClose}
-          anchorOrigin={{
-            vertical: 'top',
-            horizontal: 'center',
-          }}
-          transformOrigin={{
-            vertical: 'bottom',
-            horizontal: 'center',
-          }}
-        >
-          <MoreOptionsList
-            data={props.data}
-            handleDelete={props.handleDelete}
-            handleEdit={props.handleEdit}
-          />
-        </Popover>
+          <List>
+            <ListItem disablePadding>
+              <ListItemButton
+                onClick={() => {
+                  props.handleEdit(props.index);
+                }}
+              >
+                <ListItemIcon>
+                  <Edit />
+                </ListItemIcon>
+                <ListItemText primary="Edit" />
+              </ListItemButton>
+            </ListItem>
+            <ListItem disablePadding>
+              <ListItemButton
+                onClick={() => {
+                  props.handleDelete(props.index);
+                }}
+              >
+                <ListItemIcon>
+                  <Delete />
+                </ListItemIcon>
+                <ListItemText primary="Delete" />
+              </ListItemButton>
+            </ListItem>
+          </List>
+        </PopoverMenu>
       </ThemeProvider>
     </div>
   );
@@ -155,22 +139,21 @@ const Servers = (): JSX.Element => {
   const [edit, setEdit] = useState<JSON>({});
   const [dialogType, setDialogType] = useState<'add' | 'edit'>('add');
   const [loading, setLoading] = useState(false);
-  const [running, setRunning] = useState(window.v2rayService.checkService()?? false);
-  const [seletedServer, setSeletedServer] = useState<number>(
-    window.electron.store.get('selectedServer') ?? -1
-  );
-  const [servers, setServers] = useState<Array<JSON>>(
-    window.electron.store.get(`servers`).map((i, idx) => {
-      i.key = idx;
-      return i;
-    })
-  );
+  const [running, setRunning] = useState(false);
+  const [seletedServer, setSeletedServer] = useState<string>('');
+  const serversState = useAppSelector((state) => state.serversPage.servers);
+  const currentServerId = useAppSelector((state) => state.serversPage.currentServerId);
+  const serviceRunningState = useAppSelector((state) => state.serversPage.serviceRunningState);
+  const [servers, setServers] = useState<Array<JSON>>([]);
+  const dispatch = useAppDispatch();
 
-  const handleSelectServer = (key: number) => {
-    setSeletedServer(key);
-    window.electron.store.set('selectedServer', key);
-    window.v2rayService.stopService();
-    window.v2rayService.startService(window.electron.store.get('servers')[key]);
+  const handleSelectServer = (id: string) => {
+    setSeletedServer(id);
+    dispatch(setCurrentServerId(id));
+    if (serviceRunningState) {
+      window.v2rayService.stopService();
+      window.v2rayService.startService(find(servers, { id: id }).config);
+    }
   };
 
   const handleAddOpen = () => {
@@ -178,85 +161,82 @@ const Servers = (): JSX.Element => {
     setDialogType('add');
   };
 
-  useEffect(() => {
-    if (seletedServer > -1) {
-      setLoading(true);
-      // FIXME: service
-      window.v2rayService.stopService();
-      window.v2rayService.startService(window.electron.store.get('servers')[seletedServer]);
-      setRunning(window.v2rayService.checkService());
-      setLoading(false);
+  const saveToDb = (type: 'add' | 'edit', serverConfig: JSON, currentLink: string) => {
+    let newServers;
+    const newServerItem = {
+      id: window.electron.electronAPI.hash(serverConfig),
+      ps: serverConfig.other?.ps
+        ? serverConfig.other?.ps
+        : serverConfig.outbounds[0].settings.vnext[0].address,
+      config: serverConfig,
+      link: currentLink,
+    };
+    if (type === 'add') {
+      newServers = [...serversState, newServerItem];
+    } else {
+      newServers = cloneDeep(servers);
+      newServers.splice(editIdx, 1, newServerItem);
     }
-  }, [seletedServer]);
-
-  const handleClose = function (type: 'add' | 'edit', config: JSON) {
-    if (arguments[1] === 'backdropClick' || arguments[1] === 'escapeKeyDown') {
-      setOpen(false);
-      return;
-    }
-    if (typeof config === 'object' && JSON.stringify(config) !== '{}') {
-      if (type === 'add') {
-        window.electron.store.set('servers', [...window.electron.store.get('servers'), config]);
-        config = { ...config, key: servers.length };
-        setServers([...servers, config]);
-        window.v2rayService.stopService();
-        window.v2rayService.startService(window.electron.store.get('servers')[seletedServer]);
-        // no init service untill selectedServer is choosed
-        window.v2rayService.stopService();
-      } else {
-        const storeServers = window.electron.store.get('servers');
-        storeServers.splice(editIdx, 1, config);
-        window.electron.store.set('servers', storeServers);
-        config = { ...config, key: editIdx };
-        servers.splice(editIdx, 1, config);
-        setServers(cloneDeep(servers));
-        window.v2rayService.stopService();
-        window.v2rayService.startService(window.electron.store.get('servers')[seletedServer]);
-        // no init service untill selectedServer is choosed
-        window.v2rayService.stopService();
-      }
-      setOpen(false);
-    }
+    dispatch(setServersState(newServers));
+    setServers(newServers);
+    const selectedServerConfig = find(newServers, { id: currentServerId })?.config;
+    window.v2rayService.stopService();
+    window.v2rayService.startService(selectedServerConfig);
+    // no init service untill selectedServer is choosed
+    window.v2rayService.stopService();
   };
 
-  const handleDeleteItem = (key) => {
-    servers.splice(key, 1);
-    if (
-      !window.electron.store.get('servers') ||
-      window.electron.store.get('selectedServer') === key
-    ) {
-      window.v2rayService.stopService();
+  const handleDialogClose = (event: BaseSyntheticEvent, configObj: JSON, configLink: string) => {
+    setOpen(false);
+    if (!event) {
+      saveToDb(dialogType, configObj, configLink);
     }
-
-    if (key === window.electron.store.get('selectedServer')) {
-      window.electron.store.set('selectedServer', -1);
-      setSeletedServer(-1);
-    }
-    setServers(
-      servers.map((i, idx) => {
-        i.key = idx;
-        return i;
-      })
-    );
-    window.electron.store.set(
-      'servers',
-      window.electron.store.get('servers').filter((i, idx) => idx !== key)
-    );
   };
-  const handleEditItem = (key) => {
-    setEditIdx(key);
+  const handleQRItem = () => {};
+  const handleLinkItem = (idx: number) => {
+    window.clipboard.paste(servers[idx]?.link);
+  };
+
+  const handleDeleteItem = (idx: number) => {
+    const newServers = cloneDeep(servers);
+    newServers.splice(idx, 1);
+    if (currentServerId === servers[idx].id) {
+      window.v2rayService.stopService();
+      dispatch(setCurrentServerId(''));
+      setSeletedServer('');
+    }
+    dispatch(setServersState(newServers));
+    setServers(newServers);
+  };
+  const handleEditItem = (idx: number) => {
+    setEditIdx(idx);
     setOpen(true);
     setDialogType('edit');
-    setEdit(window.electron.store.get('servers')[key]);
+    setEdit(servers[idx].config);
   };
   const handleLoading = () => {
     setLoading(true);
   };
 
-  window.electron.electronAPI.ipcRenderer.on('v2ray:status', (event,status: boolean) => {
-    console.log(status,'running')
-    setRunning(status)
-  });
+  // useEffect(() => {
+  //   if (currentServerId!== '') {
+  //     setLoading(true);
+  //     // FIXME: service
+  //     window.v2rayService.stopService();
+  //     window.v2rayService.startService(find(servers, { id: seletedServer }).config);
+  //     window.v2rayService.checkService().then((res) => setRunning(res));
+  //     setLoading(false);
+  //   }
+  // }, [currentServerId]);
+
+  useEffect(() => {
+    setSeletedServer(currentServerId);
+    window.api.receive('v2ray:status', (status: boolean) => {
+      setRunning(status);
+    });
+    window.v2rayService.checkService().then((res) => setRunning(res));
+    setServers(serversState);
+  }, []);
 
   return (
     <section className="">
@@ -280,19 +260,25 @@ const Servers = (): JSX.Element => {
             (i, idx) =>
               i && (
                 <ServerItem
-                  className={seletedServer === i.key ? 'bg-sky-200 dark:bg-sky-700' : 'bg-white dark:bg-gray-400'}
-                  serverName="New Server"
-                  seletedServer={seletedServer}
+                  className={
+                    seletedServer === i.id
+                      ? 'bg-sky-200 dark:bg-sky-700'
+                      : 'bg-white dark:bg-gray-400'
+                  }
+                  serverName={i.ps}
+                  isSeleted={seletedServer === i.id}
                   key={idx}
                   index={idx}
                   running={running}
-                  data={i}
+                  data={i.config}
                   onClick={(e) => {
                     e.preventDefault();
                     if (e.target === e.currentTarget) {
-                      handleSelectServer(i.key);
+                      handleSelectServer(i.id);
                     }
                   }}
+                  handleQR={handleQRItem}
+                  handleLink={handleLinkItem}
                   handleDelete={handleDeleteItem}
                   handleEdit={handleEditItem}
                 ></ServerItem>
@@ -305,7 +291,7 @@ const Servers = (): JSX.Element => {
           <Add />
         </Fab>
       </div>
-      <AddServerDialog open={open} type={dialogType} onClose={handleClose} edit={edit} />
+      <AddServerDialog open={open} type={dialogType} onClose={handleDialogClose} edit={edit} />
       <Backdrop
         sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
         open={loading}

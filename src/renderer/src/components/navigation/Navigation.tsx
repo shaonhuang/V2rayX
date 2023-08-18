@@ -4,9 +4,9 @@ import Button from '@mui/material/Button';
 import HomeIcon from '@mui/icons-material/Home';
 import LinkIcon from '@mui/icons-material/Link';
 import SettingsIcon from '@mui/icons-material/Settings';
-import { setNavTab } from '../../store/navigationSlice';
-import { useAppSelector, useAppDispatch } from '../../store/hooks';
-import type { RootState } from '../../store/index';
+import { setNavTab } from '@store/navigationSlice';
+import { useAppSelector, useAppDispatch } from '@store/hooks';
+import type { RootState } from '@store/index';
 const NavButton = styled(Button)({
   display: 'flex',
   flexDirection: 'column',

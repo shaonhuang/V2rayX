@@ -84,7 +84,7 @@ const v2ToStdV2Converter = {
   VmessV1
   vmess://base64(security:uuid@host:port)?[urlencode(parameters)]
   其中 base64、urlencode 为函数，security 为加密方式，parameters 是以 & 为分隔符的参数列表，
-  例如：network=kcp&aid=32&remark=服务器1 经过 urlencode 后为 network=kcp&aid=32&remark=%E6%9C%8D%E5%8A%A1%E5%99%A81
+  例如：network=kcp&aid=32&remarks=服务器1 经过 urlencode 后为 network=kcp&aid=32&remarks=%E6%9C%8D%E5%8A%A1%E5%99%A81
   可选参数（参数名称不区分大小写）：
   network - 可选的值为 "tcp"、 "kcp"、"ws"、"h2" 等
   wsPath - WebSocket 的协议路径
@@ -100,7 +100,7 @@ const v2ToStdV2Converter = {
   tlsServer - TLS 的服务器端证书的域名
   mux - 是否启用 mux，为 0 或 1
   muxConcurrency - mux 的 最大并发连接数
-  remark - 备注名称
+  remarks - 备注名称
   导入配置时，不在列表中的参数一般会按照 Core 的默认值处理。
 */
 
@@ -202,7 +202,6 @@ const parseV1Link = (v1Link: string): VmessV2 | undefined => {
     const newKey = v1ToV2Mapper[key] || key;
     search[newKey] = v2Converter[newKey] ? v2Converter[newKey](value) : value;
   });
-  console.log(search);
   return {
     v: '2',
     type,
@@ -219,7 +218,7 @@ const parseV2Link = (link: string): VmessV2 | undefined => {
   if (!s) return;
   const obj = JSON.parse(s);
   const params = {};
-  Object.entries(obj).forEach(([key,value]) => {
+  Object.entries(obj).forEach(([key, value]) => {
     const newKey = v2ToStdV2Mapper[key] || key;
     params[newKey] = v2ToStdV2Converter[newKey] ? v2ToStdV2Converter[newKey](value) : value;
   });
@@ -323,35 +322,38 @@ const parseVmess2config = (obj: VmessV2) => {
     protocol: 'vmess',
     streamSettings: {
       wsSettings: {
-        path: '/hkcHOyeEK',
+        path: '',
         headers: {
-          host: 'hihacker.shop',
+          host: '',
         },
       },
       tlsSettings: {
-        serverName: 'hihacker.shop',
+        serverName: '',
         allowInsecure: false,
       },
-      security: 'tls',
-      network: 'ws',
+      security: '',
+      network: '',
     },
     tag: 'proxy',
     settings: {
       vnext: [
         {
-          address: '45.76.168.25',
+          address: '',
           users: [
             {
-              id: '54374ca2-3388-4df2-a999-08bb81eefee7',
+              id: '',
               alterId: 0,
               level: 0,
-              security: 'aes-128-gcm',
+              security: '',
             },
           ],
           port: 443,
         },
       ],
     },
+  };
+  const other = {
+    ps: decodeURIComponent(obj.ps ?? ''),
   };
   outbounds.streamSettings.wsSettings.path = obj.path;
   outbounds.streamSettings.wsSettings.headers.host = obj.host;
@@ -368,7 +370,38 @@ const parseVmess2config = (obj: VmessV2) => {
   };
   outbounds.settings.vnext[0].port = Number(obj.port);
   config.outbounds = [outbounds, ...outboundsInjection];
+  config.other = other;
   return config;
+};
+const fromJson2Vmess2 = (json: any): VmessV2 => {
+  const { outbounds, other } = json;
+  const {settings, streamSettings} = outbounds[0];
+  const ps = encodeURIComponent(other.ps),
+    add = settings.vnext[0].address,
+    port = settings.vnext[0].port,
+    tls = streamSettings.security,
+    net = streamSettings.network,
+    scy = settings.vnext[0].users[0].security,
+    id = settings.vnext[0].users[0].id,
+    aid = settings.vnext[0].users[0].alterId,
+    type = 'none',
+    host = streamSettings.wsSettings.headers.host,
+    path = streamSettings.wsSettings.path;
+
+  return {
+    v: '2',
+    ps,
+    add,
+    port,
+    id,
+    aid,
+    net,
+    type,
+    host,
+    path,
+    tls,
+    scy,
+  };
 };
 
 const emptyVmessV2 = (): VmessV2 => {
@@ -480,5 +513,6 @@ export {
   objToV1Link,
   objToV2Link,
   parseVmess2config,
+  fromJson2Vmess2,
   emptyVmessV2,
 };

@@ -5,7 +5,7 @@ import GernalSettings from './pages/Home';
 import Servers from './pages/servers/Servers';
 import About from './pages/About';
 import Logs from './pages/Logs';
-import { useAppSelector } from './store/hooks';
+import { useAppSelector } from '@store/hooks';
 
 function App() {
   const tabName = useAppSelector((state) => state.navTab.tabName);
