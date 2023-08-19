@@ -47,7 +47,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
         uses: nick-fields/retry@v2
         with:
-          timeout_seconds: 15
+          timeout_minutes: 15
           max_attempts: 3
           retry_on: error
           command: yarn electron-builder -m -p always
@@ -87,7 +87,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
         uses: nick-fields/retry@v2
         with:
-          timeout_seconds: 15
+          timeout_minutes: 15
           max_attempts: 3
           retry_on: error
           command: yarn electron-builder -w -p always
@@ -133,7 +133,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
         uses: nick-fields/retry@v2
         with:
-          timeout_seconds: 15
+          timeout_minutes: 15
           max_attempts: 3
           retry_on: error
           command: yarn electron-builder -l -p always
