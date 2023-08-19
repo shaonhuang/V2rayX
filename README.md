@@ -54,14 +54,14 @@ V2ray GUI client with cross-platform desktop support powered by Electron⚛️, 
 - [ ] Configuration Backup / Recovery
 - [x] Dark / Light Mode
 - [x] Auto Start (Not support on Linux)
-- [ ] Server Share
+- [x] Server Share
 - [x] Activity Logs
 
 ### ➣ In Testing
 
 - [ ] **PAC** Mode
 - [ ] QR-code Import
-- [ ] Server Share
+- [x] Server Share
 
 ### ➣ Comming Soon
 
@@ -69,7 +69,7 @@ V2ray GUI client with cross-platform desktop support powered by Electron⚛️, 
 
 ## IV. Supported Platforms & Arch
 
-![system](https://img.shields.io/badge/system-win%20%7C%20mac%20%7C%20linux-green)
+![system](https://img.shields.io/badge/system-win%20%7C%20mac%20%7C%20linux-green) [![Publish](https://github.com/shaonhuang/V2rayX/actions/workflows/publish.yml/badge.svg)](https://github.com/shaonhuang/V2rayX/actions/workflows/publish.yml)
 
 > More architectures will be supported if necessary, just give me an issue.
 
