@@ -45,7 +45,12 @@ jobs:
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_ID_PASS: ${{ secrets.APPLE_ID_PASS }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
-        run: yarn electron-builder -m -p always
+        uses: nick-fields/retry@v2
+        with:
+          timeout_seconds: 15
+          max_attempts: 3
+          retry_on: error
+          command: yarn electron-builder -m -p always
 
   win-publish:
     # To enable auto publishing to github, update your electron publisher
@@ -80,7 +85,12 @@ jobs:
       - name: Pack for Windows and release
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
-        run: yarn electron-builder -w -p always
+        uses: nick-fields/retry@v2
+        with:
+          timeout_seconds: 15
+          max_attempts: 3
+          retry_on: error
+          command: yarn electron-builder -w -p always
 
   linux-publish:
     # To enable auto publishing to github, update your electron publisher
@@ -121,4 +131,9 @@ jobs:
       - name: Pack for Linux and release
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
-        run: yarn electron-builder -l -p always
+        uses: nick-fields/retry@v2
+        with:
+          timeout_seconds: 15
+          max_attempts: 3
+          retry_on: error
+          command: yarn electron-builder -l -p always
