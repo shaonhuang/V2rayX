@@ -89,6 +89,9 @@ jobs:
 
     runs-on: ${{ matrix.os }}
 
+    env:
+      SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.STORE_LOGIN }}
+
     strategy:
       matrix:
         os: [ubuntu-latest]
@@ -101,6 +104,9 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: 18
+
+      - name: Install Snapcraft
+        uses: samuelmeuli/action-snapcraft@v2
 
       - name: Install latest Yarn
         run: npm install -g yarn@berry
