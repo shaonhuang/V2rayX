@@ -44,7 +44,7 @@ const ServerItem = (props: any) => {
   return (
     <div
       className={`m-2 grid h-16 w-5/6 items-center rounded-xl ${props.className}`}
-      style={{ gridTemplateColumns: '0.5fr 1.5fr 1fr 1fr 1fr 1fr' }}
+      style={{ gridTemplateColumns: '0.5fr 1.5fr 0.5fr 1.5fr 1fr 1fr' }}
       onClick={props.onClick}
     >
       <div className="ml-3 mr-6 inline-flex h-12 w-12 items-center rounded-xl bg-purple-600">

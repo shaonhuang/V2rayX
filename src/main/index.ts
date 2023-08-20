@@ -43,7 +43,9 @@ app.whenReady().then(async () => {
     mainWindow.webContents.openDevTools();
   }
   // load services
-  createTray(mainWindow, createWindow);
+  if(db.chain.get('v2rayInstallStatus').value()) {
+    createTray(mainWindow, createWindow);
+  }
   appUpdater(mainWindow);
   // check v2ray package install status
   const install = Install.createInstall(process.platform);

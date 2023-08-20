@@ -167,6 +167,11 @@ validatedIpcMain.on('v2rayx:service:selected', (event) => emitter.emit('tray-v2r
 
 validatedIpcMain.on('v2rayx:service:empty', (event) => emitter.emit('tray-v2ray:update', false));
 
+validatedIpcMain.on('v2rayx:restart-app', () => {
+  app.relaunch();
+  app.quit();
+});
+
 const mountChannels = (channels: any[]) => {
   channels.forEach(({ channel, listener }) => {
     validatedIpcMain.handle(`v2rayx:${channel}`, listener);
@@ -193,6 +198,7 @@ const startUp = async () => {
             .find({ id: db.chain.get('currentServerId').value() })
             .value()?.config
         );
+        emitter.emit('tray-v2ray:update', true);
       }
     } catch (err) {
       logger.error('service init', err);

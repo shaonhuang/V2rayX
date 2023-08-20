@@ -80,6 +80,8 @@ const GernalSettings = (): JSX.Element => {
       nightMode();
     });
     window.api.send('v2rayx:appearance:system');
+    // To start and refresh Tray menu
+    window.v2rayService.checkService();
   }, []);
 
   return (

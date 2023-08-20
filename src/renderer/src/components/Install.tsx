@@ -1,7 +1,7 @@
-import { useState, useLayoutEffect } from 'react';
-import { DialogTitle, Dialog, Button, Box } from '@mui/material';
+import { Box, Button, Dialog, DialogTitle } from '@mui/material';
 import LinearProgress, { LinearProgressProps } from '@mui/material/LinearProgress';
 import Typography from '@mui/material/Typography';
+import { useLayoutEffect, useState } from 'react';
 
 const InstallDialog = () => {
   const [install, setInstall] = useState(true);
@@ -57,7 +57,14 @@ const InstallDialog = () => {
           </Box>
           <div>
             {progress >= 100 ? (
-              <Button onClick={() => setOpen(false)}>Install Complete</Button>
+              <Button
+                onClick={() => {
+                  window.api.send('v2rayx:restart-app');
+                  setOpen(false);
+                }}
+              >
+                Install Complete Restart APP
+              </Button>
             ) : (
               <Button
                 onClick={() =>

@@ -1,5 +1,5 @@
-import { shell, contextBridge, ipcRenderer, app } from 'electron';
 import { electronAPI } from '@electron-toolkit/preload';
+import { contextBridge, ipcRenderer, shell } from 'electron';
 const hash = require('object-hash');
 
 electronAPI.shell = shell;
@@ -16,6 +16,7 @@ const customApi = {
       'logs:get',
       'v2rayx:service:empty',
       'v2rayx:service:selected',
+      'v2rayx:restart-app',
     ];
     if (validChannels.includes(channel)) {
       ipcRenderer.send(channel, data);
