@@ -15,12 +15,11 @@ import IosShareIcon from '@mui/icons-material/IosShare';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { Storage, Share, MoreHoriz, Add, Edit, Delete } from '@mui/icons-material';
 import AddServerDialog from './components/AddServer';
-import Notice from '@renderer/components/Notice';
-import { cloneDeep } from 'lodash';
-import { find } from 'lodash';
+import { find, cloneDeep } from 'lodash';
 import { useAppSelector, useAppDispatch } from '@store/hooks';
 import { setServersState, setCurrentServerId } from '@store/serversPageSlice';
 import PopoverMenu from '@renderer/components/PopoverMenu';
+import { Server, Servers, VmessObjConfiguration } from '@renderer/constant/types';
 
 const theme = createTheme({
   palette: {
@@ -33,11 +32,11 @@ const theme = createTheme({
   },
 });
 
-const Block = (props: any) => (
-  <div className="h-20 w-52 rounded-xl" style={{ backgroundColor: 'white' }}>
-    <p>{props.title}</p>
-  </div>
-);
+// const Block = (props: any) => (
+//   <div className="h-20 w-52 rounded-xl" style={{ backgroundColor: 'white' }}>
+//     <p>{props.title}</p>
+//   </div>
+// );
 
 const ServerItem = (props: any) => {
   const protocol = props.data.outbounds[0].protocol.toUpperCase() ?? 'Vmess';
@@ -133,10 +132,10 @@ const ServerItem = (props: any) => {
   );
 };
 
-const Servers = (): JSX.Element => {
+const Index = (): JSX.Element => {
   const [editIdx, setEditIdx] = useState(-1);
   const [open, setOpen] = useState(false);
-  const [edit, setEdit] = useState<JSON>({});
+  const [edit, setEdit] = useState<VmessObjConfiguration>({} as VmessObjConfiguration);
   const [dialogType, setDialogType] = useState<'add' | 'edit'>('add');
   const [loading, setLoading] = useState(false);
   const [running, setRunning] = useState(false);
@@ -144,7 +143,7 @@ const Servers = (): JSX.Element => {
   const serversState = useAppSelector((state) => state.serversPage.servers);
   const currentServerId = useAppSelector((state) => state.serversPage.currentServerId);
   const serviceRunningState = useAppSelector((state) => state.serversPage.serviceRunningState);
-  const [servers, setServers] = useState<Array<JSON>>([]);
+  const [servers, setServers] = useState<Servers>([]);
   const dispatch = useAppDispatch();
 
   const handleSelectServer = (id: string) => {
@@ -154,7 +153,7 @@ const Servers = (): JSX.Element => {
     // FIXME: logic mess up
     if (serviceRunningState) {
       window.v2rayService.stopService();
-      window.v2rayService.startService(find(servers, { id: id }).config);
+      window.v2rayService.startService(find(servers, { id: id })?.config);
     }
     window.v2rayService.stopService();
     // to refrsh tray icon menu
@@ -166,9 +165,13 @@ const Servers = (): JSX.Element => {
     setDialogType('add');
   };
 
-  const saveToDb = (type: 'add' | 'edit', serverConfig: JSON, currentLink: string) => {
+  const saveToDb = (
+    type: 'add' | 'edit',
+    serverConfig: VmessObjConfiguration,
+    currentLink: string,
+  ) => {
     let newServers;
-    const newServerItem = {
+    const newServerItem: Server = {
       id: window.electron.electronAPI.hash(serverConfig),
       ps: serverConfig.other?.ps
         ? serverConfig.other?.ps
@@ -188,7 +191,11 @@ const Servers = (): JSX.Element => {
     window.api.send('v2rayx:service:selected');
   };
 
-  const handleDialogClose = (event: BaseSyntheticEvent, configObj: JSON, configLink: string) => {
+  const handleDialogClose = (
+    event: BaseSyntheticEvent,
+    configObj: VmessObjConfiguration,
+    configLink: string,
+  ) => {
     setOpen(false);
     if (!event) {
       saveToDb(dialogType, configObj, configLink);
@@ -217,7 +224,7 @@ const Servers = (): JSX.Element => {
     setEditIdx(idx);
     setOpen(true);
     setDialogType('edit');
-    setEdit(servers[idx].config);
+    setEdit(servers[idx]?.config);
   };
   const handleLoading = () => {
     setLoading(true);
@@ -228,6 +235,8 @@ const Servers = (): JSX.Element => {
     window.api.receive('v2ray:status', (status: boolean) => {
       setRunning(status);
     });
+    // FIXME: type error
+    // @ts-ignore
     window.v2rayService.checkService().then((res) => setRunning(res));
     setServers(serversState);
   }, []);
@@ -276,7 +285,7 @@ const Servers = (): JSX.Element => {
                   handleDelete={handleDeleteItem}
                   handleEdit={handleEditItem}
                 ></ServerItem>
-              )
+              ),
           )
         )}
       </div>
@@ -296,4 +305,4 @@ const Servers = (): JSX.Element => {
     </section>
   );
 };
-export default Servers;
+export default Index;

@@ -7,6 +7,7 @@ import { Proxy } from '@main/lib/proxy';
 import { Service } from '@main/lib/v2ray';
 import logger from '@lib/logs';
 import emitter from '@lib/event-emitter';
+import { VmessObjConfiguration } from '@lib/constant/types';
 
 const gotTheLock = app.requestSingleInstanceLock();
 let proxy: Proxy | null = null;
@@ -76,11 +77,11 @@ const changeProxyMode = async (mode: Mode) => {
       } else {
         proxy.switch(mode);
       }
-      db.chain.set('settings.proxyMode', mode);
+      db.data = db.chain.set('settings.proxyMode', mode).value();
       await db.write();
     }
   } else {
-    db.chain.set('settings.proxyMode', 'Manual');
+    db.data = db.chain.set('settings.proxyMode', 'Manual').value();
     await db.write();
     logger.warn('httpPort or socksPort is invalid');
     proxy?.stop();
@@ -88,8 +89,8 @@ const changeProxyMode = async (mode: Mode) => {
 };
 
 const writeAppVersion = async () => {
-  db.chain.set('appVersion', app.getVersion());
-  await db.write();
+    db.data = db.chain.set('appVersion', app.getVersion()).value();
+    await db.write();
 };
 
 const registerChannels = [
@@ -115,11 +116,11 @@ const registerChannels = [
   },
   {
     channel: 'clipboard:paste',
-    listener: (event: IpcMainEvent, data) => clipboard.writeText(data),
+    listener: (_: IpcMainEvent, data) => clipboard.writeText(data),
   },
   {
     channel: 'db:read',
-    listener: async (event: IpcMainEvent, key, query) => {
+    listener: async (_: IpcMainEvent, key) => {
       await db.read();
       const value = db.chain.get(key).value();
       return value;
@@ -127,7 +128,7 @@ const registerChannels = [
   },
   {
     channel: 'db:write',
-    listener: async (event: IpcMainEvent, key, data) => {
+    listener: async (_: IpcMainEvent, key, data) => {
       try {
         db.data[key] = data;
         return await db.write();
@@ -138,13 +139,13 @@ const registerChannels = [
   },
   {
     channel: 'autoLaunch:change',
-    listener: (event: IpcMainEvent, status: boolean) => {
+    listener: (_: IpcMainEvent, status: boolean) => {
       app.setLoginItemSettings({ openAtLogin: status });
     },
   },
   {
     channel: 'proxyMode:change',
-    listener: (event, mode: Mode) => changeProxyMode(mode),
+    listener: (_, mode: Mode) => changeProxyMode(mode),
   },
 ];
 
@@ -163,9 +164,9 @@ validatedIpcMain.on('v2rayx:appearance:system', (event) => {
   event.reply('appearance:system:fromMain', isDarkMode ? 'dark' : 'light');
 });
 
-validatedIpcMain.on('v2rayx:service:selected', (event) => emitter.emit('tray-v2ray:update', false));
+validatedIpcMain.on('v2rayx:service:selected', (_) => emitter.emit('tray-v2ray:update', false));
 
-validatedIpcMain.on('v2rayx:service:empty', (event) => emitter.emit('tray-v2ray:update', false));
+validatedIpcMain.on('v2rayx:service:empty', (_) => emitter.emit('tray-v2ray:update', false));
 
 validatedIpcMain.on('v2rayx:restart-app', () => {
   app.relaunch();
@@ -178,7 +179,7 @@ const mountChannels = (channels: any[]) => {
   });
 };
 
-ipcMain.handle('proxyMode:change', (event, mode: Mode) => {
+ipcMain.handle('proxyMode:change', (_, mode: Mode) => {
   changeProxyMode(mode);
 });
 
@@ -196,7 +197,7 @@ const startUp = async () => {
           db.chain
             .get('servers')
             .find({ id: db.chain.get('currentServerId').value() })
-            .value()?.config
+            .value()?.config,
         );
         emitter.emit('tray-v2ray:update', true);
       }
@@ -204,7 +205,7 @@ const startUp = async () => {
       logger.error('service init', err);
     }
   }
-  ipcMain.handle('v2rayx:v2ray:start', (event, data: JSON) => {
+  ipcMain.handle('v2rayx:v2ray:start', (_, data: VmessObjConfiguration) => {
     service?.start(data);
     const socksPort = data?.inbounds[0].port;
     const httpPort = data?.inbounds[1].port;

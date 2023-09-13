@@ -1,4 +1,3 @@
 const platform = window.electron.electronAPI.process.platform;
-export {
-  platform
-}
+
+export { platform };

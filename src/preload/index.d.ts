@@ -13,9 +13,9 @@ declare global {
     api: IElectronAPI;
     serverFiles: IElectronAPI;
     v2rayService: {
-      startService: (data: JSON) => void;
+      startService: (data: any) => void;
       stopService: () => void;
-      checkService: () => boolean;
+      checkService: () => boolean | Promise<boolean>;
     };
     update: {
       checkForUpdate: () => void;

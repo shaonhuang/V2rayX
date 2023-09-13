@@ -1,4 +1,4 @@
-import { Checkbox, Stack, Button, Input, FormGroup, FormControlLabel } from '@mui/material';
+import { Checkbox, Stack, Button, Input, FormControlLabel } from '@mui/material';
 import { useState, useEffect, useLayoutEffect } from 'react';
 import styled from '@emotion/styled';
 import Radio from '@mui/material/Radio';
@@ -15,6 +15,7 @@ import { useAppSelector } from '@renderer/store/hooks';
 import { find } from 'lodash';
 import { readFromDb } from '@renderer/store/serversPageSlice';
 import { useDispatch } from 'react-redux';
+import { AppDispatch } from '@renderer/store';
 
 const label = { inputProps: { 'aria-label': 'Checkbox' } };
 const AppearanceButton = styled(Button)({
@@ -27,7 +28,7 @@ const Title = styled.div(() => ({
 }));
 
 const GernalSettings = (): JSX.Element => {
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
   const currentServerId = useAppSelector((state) => state.serversPage.currentServerId);
   const serversState = useAppSelector((state) => state.serversPage.servers);
   const [socksCmdPaste, setSocksCmdPaste] = useState('');
@@ -46,18 +47,20 @@ const GernalSettings = (): JSX.Element => {
     dispatch(readFromDb());
   }, []);
   useLayoutEffect(() => {
+    //FIXME: type error
+    // @ts-ignore
     const config = find(serversState, { id: currentServerId })?.config;
-    const socksPort = config?.inbounds?.[0]?.port ?? 1080;
-    const httpPort = config?.inbounds?.[1]?.port ?? 1080;
+    const socksPort = parseInt(config?.inbounds?.[0]?.port ?? '1080');
+    const httpPort = parseInt(config?.inbounds?.[1]?.port ?? '1080');
     setSocksPort(socksPort);
     setHttpPort(httpPort);
     setSocksCmdPaste(
-      platform === 'win32' ? `set socks_proxy "socks5://127.0.0.1:${socksPort}"` : `${socksPort}`
+      platform === 'win32' ? `set socks_proxy "socks5://127.0.0.1:${socksPort}"` : `${socksPort}`,
     );
     setHttpCmdPaste(
       platform === 'win32'
         ? `set http_proxy=http://127.0.0.1:${httpPort}`
-        : `export http_proxy=http://127.0.0.1:${httpPort};export https_proxy=http://127.0.0.1:${httpPort};`
+        : `export http_proxy=http://127.0.0.1:${httpPort};export https_proxy=http://127.0.0.1:${httpPort};`,
     );
   }, [currentServerId]);
 
@@ -65,6 +68,7 @@ const GernalSettings = (): JSX.Element => {
     window.db.read('settings').then((res) => {
       setProxyMode(res.proxyMode);
       setAppearance(res.appearance);
+      res.appearance === 'system' && window.api.send('v2rayx:appearance:system');
     });
     window.db
       .read('autoLaunch')
@@ -79,7 +83,6 @@ const GernalSettings = (): JSX.Element => {
       localStorage.setItem('theme', appearance);
       nightMode();
     });
-    window.api.send('v2rayx:appearance:system');
     // To start and refresh Tray menu
     window.v2rayService.checkService();
   }, []);
@@ -184,7 +187,7 @@ const GernalSettings = (): JSX.Element => {
               localStorage.setItem('theme', 'dark');
               nightMode();
               window.db.read('settings').then((res) => {
-                window.db.write('settings', { ...res, appearance: 'light' });
+                window.db.write('settings', { ...res, appearance: 'dark' });
               });
               setAppearance('dark');
             }}

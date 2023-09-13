@@ -2,7 +2,11 @@ import { electronAPI } from '@electron-toolkit/preload';
 import { contextBridge, ipcRenderer, shell } from 'electron';
 const hash = require('object-hash');
 
+// FIXME: fix this
+// @ts-ignore
 electronAPI.shell = shell;
+// FIXME: fix this
+// @ts-ignore
 electronAPI.hash = hash;
 
 // Custom APIs for renderer
@@ -17,6 +21,7 @@ const customApi = {
       'v2rayx:service:empty',
       'v2rayx:service:selected',
       'v2rayx:restart-app',
+      'v2rayx:checkForUpdateClick',
     ];
     if (validChannels.includes(channel)) {
       ipcRenderer.send(channel, data);
@@ -35,7 +40,7 @@ const customApi = {
     ];
     if (validChannels.includes(channel)) {
       // Deliberately strip event as it includes `sender`
-      ipcRenderer.on(channel, (event, ...args) => func(...args));
+      ipcRenderer.on(channel, (_, ...args) => func(...args));
     }
   },
 };
@@ -67,7 +72,7 @@ if (process.contextIsolated) {
   try {
     contextBridge.exposeInMainWorld('api', customApi);
     contextBridge.exposeInMainWorld('v2rayService', {
-      startService: (data: JSON) => ipcRenderer.invoke('v2rayx:v2ray:start', data),
+      startService: (data: any) => ipcRenderer.invoke('v2rayx:v2ray:start', data),
       stopService: () => ipcRenderer.invoke('v2rayx:v2ray:stop'),
       checkService: () => ipcRenderer.invoke('v2rayx:v2ray:check'),
     });

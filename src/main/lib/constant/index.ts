@@ -29,7 +29,7 @@ export const v2rayPath = path.join(app.getPath('userData'), v2rayPackageName);
 export const v2rayBin = path.join(
   app.getPath('userData'),
   'v2ray-core',
-  `v2ray${isWindows ? '.exe' : ''}`
+  `v2ray${isWindows ? '.exe' : ''}`,
 );
 export const pathRuntime = path.join(appDataPath, 'runtime/');
 export const pathExecutable = isDev

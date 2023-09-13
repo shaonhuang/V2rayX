@@ -8,7 +8,7 @@ let tray: any = null;
 
 export const createTray = (mainWindow: Object, createWindow: Function) => {
   const menuIcon = nativeImage.createFromDataURL(
-    'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAASpJREFUOE+lk7FKA0EQhv85FSuLu/MRXAJqKTY2prZII4KtlazY2oiQSsgDZE8LX8BYiC9ginRWFhHC3htoNhFbb0cuGrnoeXuH2+3y/98M/84Q/nko9YftuMXEJxVYfbC9MUe15gQQqPgRHu+bQ/E0uV/oVVj0i4AMdEdS1L8AmqdiI8Wvt79AqdYJYMYzgA5bdMbHopvp8NpIse4EfFanByNXNv0o3iLmXrbbMoBx8o4Nu2hfFxLqAVSrBPCAxosUd34U3xJzI5uHMwMCTodSnIdR3GLmHXjY+/4ppbkQECqthlLIINIHYFz9rBy4AKkhL7QpyAlYuhws54WWGgtDtAnq83P0lhDO8kLLnQNf6XsCtivsAmZHuT1ogrxdAGslIbPLVNKUK/sAFubAEc0R7fYAAAAASUVORK5CYII='
+    'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAASpJREFUOE+lk7FKA0EQhv85FSuLu/MRXAJqKTY2prZII4KtlazY2oiQSsgDZE8LX8BYiC9ginRWFhHC3htoNhFbb0cuGrnoeXuH2+3y/98M/84Q/nko9YftuMXEJxVYfbC9MUe15gQQqPgRHu+bQ/E0uV/oVVj0i4AMdEdS1L8AmqdiI8Wvt79AqdYJYMYzgA5bdMbHopvp8NpIse4EfFanByNXNv0o3iLmXrbbMoBx8o4Nu2hfFxLqAVSrBPCAxosUd34U3xJzI5uHMwMCTodSnIdR3GLmHXjY+/4ppbkQECqthlLIINIHYFz9rBy4AKkhL7QpyAlYuhws54WWGgtDtAnq83P0lhDO8kLLnQNf6XsCtivsAmZHuT1ogrxdAGslIbPLVNKUK/sAFubAEc0R7fYAAAAASUVORK5CYII=',
   );
   tray = new Tray(menuIcon);
 
@@ -56,7 +56,7 @@ export const createTray = (mainWindow: Object, createWindow: Function) => {
       type: 'radio',
       checked: false,
       click: async () => {
-        db.chain.set('settings.proxyMode', 'PAC');
+        db.data = db.chain.set('settings.proxyMode', 'PAC').value();
         await db.write();
         const mainWindow = BrowserWindow.getAllWindows()[0];
         mainWindow?.webContents?.send('proxyMode:change', 'PAC');
@@ -68,7 +68,7 @@ export const createTray = (mainWindow: Object, createWindow: Function) => {
       type: 'radio',
       checked: false,
       click: async () => {
-        db.chain.set('settings.proxyMode', 'Global');
+        db.data = db.chain.set('settings.proxyMode', 'Global').value();
         await db.write();
         const mainWindow = BrowserWindow.getAllWindows()[0];
         mainWindow?.webContents?.send('proxyMode:change', 'Global');
@@ -80,7 +80,7 @@ export const createTray = (mainWindow: Object, createWindow: Function) => {
       type: 'radio',
       checked: false,
       click: async () => {
-        db.chain.set('settings.proxyMode', 'Manual');
+        db.data = db.chain.set('settings.proxyMode', 'Manual').value();
         await db.write();
         const mainWindow = BrowserWindow.getAllWindows()[0];
         mainWindow?.webContents?.send('proxyMode:change', 'Manual');

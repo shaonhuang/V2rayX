@@ -108,7 +108,7 @@ const getVersionNumber = async () => {
 
 const downloadV2ray = async (version: string, cb: Function) => {
   const url = `https://github.com/v2fly/v2ray-core/releases/download/${version}/v2ray-${v2rayPlatform.get(
-    platform
+    platform,
   )}-${v2rayArch.get(process.arch)}.zip`;
   const zipFile = is.dev ? path.join('./', 'v2ray.zip') : path.join(tmpdir(), 'v2ray.zip');
   if (!fs.existsSync(zipFile)) {
@@ -124,7 +124,7 @@ const downloadV2ray = async (version: string, cb: Function) => {
           const progress = receivedBytes / totalBytes;
           cb(progress);
           logger.info(
-            `Download progress: ${progress * 100}% (${receivedBytes}/${totalBytes} bytes)`
+            `Download progress: ${progress * 100}% (${receivedBytes}/${totalBytes} bytes)`,
           );
         });
         response.on('end', (_) => {

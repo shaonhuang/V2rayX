@@ -13,17 +13,7 @@ import { SelectChangeEvent } from '@mui/material/Select';
 import { cloneDeep } from 'lodash';
 import { useState, useEffect } from 'react';
 
-import {
-  VmessV1,
-  VmessV2,
-  isVMessLink,
-  isVMessLinkV1,
-  isVMessLinkV2,
-  parseV1Link,
-  parseV2Link,
-  parseVmess2config,
-  emptyVmessV2,
-} from '@renderer/utils/protocol';
+import { emptyVmessV2 } from '@renderer/utils/protocol';
 
 export interface Settings {
   protocol: string;
@@ -114,7 +104,7 @@ const ManualSettings = (props: any) => {
           cloneDeep({
             ...settings,
             [value]: e.target.type === 'checkbox' ? e.target.checked : e.target.value,
-          })
+          }),
         );
         break;
       case 'baseSettings':
@@ -122,7 +112,7 @@ const ManualSettings = (props: any) => {
           cloneDeep({
             ...baseSettings,
             [value]: e.target.type === 'checkbox' ? e.target.checked : e.target.value,
-          })
+          }),
         );
         break;
     }

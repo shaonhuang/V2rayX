@@ -23,7 +23,7 @@ function TransitionDown(props: TransitionProps) {
 export default function DirectionSnackbar(props: any) {
   const [open, setOpen] = useState(false);
   const [transition, setTransition] = useState<ComponentType<TransitionProps> | undefined>(
-    undefined
+    undefined,
   );
 
   const handleClick = (Transition: ComponentType<TransitionProps>) => () => {

@@ -7,7 +7,7 @@ import chalk from 'chalk';
 
 const { combine, simple, colorize } = format;
 
-export const logDir = app.getPath("logs");
+export const logDir = app.getPath('logs');
 
 export const openLogDir = async () => {
   await open(logDir);
@@ -27,21 +27,19 @@ const dailyTransport: DailyRotateFile = new DailyRotateFile({
   datePattern: 'YYYY-MM-DD',
   zippedArchive: false,
   maxSize: '10m',
-  maxFiles: '30d'
+  maxFiles: '30d',
 });
 
 const logger = winston.createLogger({
-  level: "info",
-  transports: [
-    dailyTransport
-  ]
+  level: 'info',
+  transports: [dailyTransport],
 });
 
-if (process.env.NODE_ENV !== "production") {
+if (process.env.NODE_ENV !== 'production') {
   logger.add(
     new winston.transports.Console({
-      format: combine(colorize(), timestamp(), simple())
-    })
+      format: combine(colorize(), timestamp(), simple()),
+    }),
   );
 }
 

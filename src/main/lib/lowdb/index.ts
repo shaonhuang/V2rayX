@@ -6,8 +6,6 @@ import { existsSync, mkdirSync } from 'fs';
 import { JSONFile } from 'lowdb/node';
 import { Mode } from '@lib/constant/types';
 
-const appVersion = app.getVersion();
-
 type Server = {
   id: number;
   item: JSON;
@@ -38,7 +36,7 @@ const defaultData: Data = {
   autoLaunch: false,
   servers: [],
   currentServerId: '',
-  appVersion: appVersion,
+  appVersion: '',
   settings: {
     appearance: 'light',
     proxyMode: 'Manual',

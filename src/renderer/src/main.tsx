@@ -13,5 +13,5 @@ ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
       <App />
       <InstallDialog />
     </Provider>
-  </React.StrictMode>
+  </React.StrictMode>,
 );

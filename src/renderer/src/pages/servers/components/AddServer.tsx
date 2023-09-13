@@ -16,30 +16,28 @@ import CloseIcon from '@mui/icons-material/Close';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import ContextMenu from '@renderer/components/ContextMenu';
 import { useEffect, useState } from 'react';
-import ReactJson from 'react-json-view';
+import ReactJson, { ThemeKeys } from 'react-json-view';
 import { find, isEqual } from 'lodash';
 
 import {
-  VmessV1,
   VmessV2,
   isVMessLink,
   isVMessLinkV1,
-  isVMessLinkV2,
   parseV1Link,
   parseV2Link,
   parseVmess2config,
   fromJson2Vmess2,
   objToV2Link,
-  emptyVmessV2,
 } from '@renderer/utils/protocol';
 import ManualSettings from './ManualSettings';
 import { useAppSelector } from '@store/hooks';
+import { VmessObjConfiguration } from '@renderer/constant/types';
 
 export interface AddServerDialogProps {
   open: boolean;
   type: 'add' | 'edit';
-  edit: JSON;
-  onClose: (event, configObj: JSON, configLink: string) => void;
+  edit: VmessObjConfiguration;
+  onClose: (event, configObj: JSON | any, configLink: string) => void;
 }
 
 const theme = createTheme({
@@ -65,6 +63,9 @@ const Alert = React.forwardRef<HTMLDivElement, AlertProps>(function Alert(props,
 
 const ImportSettings = (props: any) => {
   const data = props.data ?? {};
+  const [theme, _] = useState<ThemeKeys>(
+    localStorage.theme === 'light' ? 'summerfruit:inverted' : 'summerfruit',
+  );
   const copyData = (data) => {
     window.clipboard.paste(JSON.stringify(data.src));
   };
@@ -73,7 +74,7 @@ const ImportSettings = (props: any) => {
       {
         <ReactJson
           src={data}
-          theme="summerfruit"
+          theme={theme}
           collapsed={false}
           displayObjectSize={true}
           enableClipboard={copyData}
@@ -95,14 +96,15 @@ const AddServerDialog = (props: AddServerDialogProps) => {
   const [importData, setImportData] = useState(
     process.env.NODE_ENV === 'development'
       ? 'vmess://eyAidiI6IjIiLCAicHMiOiIiLCAiYWRkIjoiNDUuNzcuNzEuMjAzIiwgInBvcnQiOiI0NDMiLCAiaWQiOiI5YmIwNTAyZS1mYjI2LTQyNWEtODZkNC05YmJhNDQxNjdlNTkiLCAiYWlkIjoiMCIsICJuZXQiOiJ3cyIsICJ0eXBlIjoibm9uZSIsICJob3N0IjoiaGloYWNrZXIuc2hvcCIsICJwYXRoIjoiL1FZQXA3VXpjIiwgInRscyI6InRscyIgfQ=='
-      : ''
+      : '',
   );
   const [jsonViewData, setJSONViewData] = useState(props.type === 'add' ? template : props.edit);
   const servers = useAppSelector((state) => state.serversPage.servers);
 
   const handleImportUrl = () => {
+    // FIXME: fix any
     if (isVMessLink(importData)) {
-      const vmessObj: VmessV1 | VmessV2 = isVMessLinkV1(importData)
+      const vmessObj: VmessV2 | any = isVMessLinkV1(importData)
         ? parseV1Link(importData)
         : parseV2Link(importData);
       setJSONViewData(parseVmess2config(vmessObj));
@@ -122,6 +124,8 @@ const AddServerDialog = (props: AddServerDialogProps) => {
     window.clipboard.paste(importData);
   };
   const handlePaste = () => {
+    // FIXME: fix any
+    // @ts-ignore
     window.clipboard.read().then((data) => {
       setImportData(data);
     });
@@ -154,7 +158,7 @@ const AddServerDialog = (props: AddServerDialogProps) => {
       importData !== '' &&
       isEqual(
         isVMessLinkV1(importData) ? parseV1Link(importData) : parseV2Link(importData),
-        fromJson2Vmess2(configObj)
+        fromJson2Vmess2(configObj),
       )
     ) {
       link = importData;
@@ -177,7 +181,7 @@ const AddServerDialog = (props: AddServerDialogProps) => {
     }
   };
 
-  const handleNoticeClose = (event?: React.SyntheticEvent | Event, reason?: string) => {
+  const handleNoticeClose = (_, reason?: string) => {
     if (reason === 'clickaway') {
       return;
     }
@@ -196,13 +200,15 @@ const AddServerDialog = (props: AddServerDialogProps) => {
           {handleNoticeText(errorType)}
         </Alert>
       </Snackbar>
-      <Dialog onClose={onClose} open={open}>
+      <Dialog onClose={() => props.onClose(null, {}, '')} open={open}>
         <div className="w-[600px]  overflow-x-hidden bg-sky-100 p-6">
           <DialogTitle className="text-center text-gray-700">
             <span className="">Configure Server</span>
             <IconButton
               aria-label="close"
               onClick={(event) => {
+                // FIXME: fix ts error
+                // @ts-ignore
                 onClose(event, {}, '');
                 setJSONViewData({});
               }}

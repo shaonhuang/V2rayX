@@ -14,6 +14,11 @@ module.exports = {
     sourceType: 'module',
     ecmaVersion: 2021,
   },
+  settings: {
+    react: {
+      version: 'detect',
+    },
+  },
   plugins: ['@typescript-eslint'],
   extends: [
     'eslint:recommended',

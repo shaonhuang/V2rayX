@@ -1,10 +1,12 @@
 import { dialog } from 'electron';
+import { validatedIpcMain } from '@lib/bridge';
 import logger from '@lib/logs';
 import { autoUpdater } from 'electron-updater';
 const ProgressBar = require('electron-progressbar');
 
 const AppUpdater = (mainWindow) => {
   let progressBar;
+  let checkForUpdateClick = false;
 
   autoUpdater.autoDownload = false;
   autoUpdater.logger = logger;
@@ -19,43 +21,48 @@ const AppUpdater = (mainWindow) => {
 
   autoUpdater.on('update-available', (info) => {
     logger.info('Update available.', info);
-    dialog
-      .showMessageBox({
-        type: 'info',
-        title: 'Found Updates',
-        message: 'Found updates, do you want update now?',
-        buttons: ['Sure', 'No'],
-      })
-      .then((buttonIndex) => {
-        logger.info('buttonIndex', buttonIndex);
-        if (buttonIndex.response === 0) {
-          autoUpdater.downloadUpdate();
-          progressBar = new ProgressBar({
-            indeterminate: false,
-            title: 'Download Progress',
-            text: 'Downloading...',
-            detail: 'Preparing download...',
-            browserWindow: {
-              webPreferences: {
-                nodeIntegration: true,
+    mainWindow.webContents.send('update-available', true);
+    if (checkForUpdateClick) {
+      dialog
+        .showMessageBox({
+          type: 'info',
+          title: 'Found Updates',
+          message: 'Found updates, do you want update now?',
+          buttons: ['Sure', 'No'],
+        })
+        .then((buttonIndex) => {
+          logger.info('buttonIndex', buttonIndex);
+          if (buttonIndex.response === 0) {
+            autoUpdater.downloadUpdate();
+            progressBar = new ProgressBar({
+              indeterminate: false,
+              title: 'Download Progress',
+              text: 'Downloading...',
+              detail: 'Preparing download...',
+              browserWindow: {
+                webPreferences: {
+                  nodeIntegration: true,
+                },
+                parent: mainWindow, // Replace mainWindow with your app's main window reference
+                modal: true,
+                closable: false,
               },
-              parent: mainWindow, // Replace mainWindow with your app's main window reference
-              modal: true,
-              closable: false,
-            },
-          });
-        } else {
-        }
-      });
+            });
+          } else {
+          }
+        });
+    }
   });
 
   autoUpdater.on('update-not-available', (info) => {
     logger.info('Update not available.', info);
     mainWindow.webContents.send('update-available', false);
-    dialog.showMessageBox({
-      title: 'Updates not found',
-      message: 'Current version is up-to-date.',
-    });
+    if (checkForUpdateClick) {
+      dialog.showMessageBox({
+        title: 'Updates not found',
+        message: 'Current version is up-to-date.',
+      });
+    }
   });
 
   autoUpdater.on('error', (err) => {
@@ -71,7 +78,6 @@ const AppUpdater = (mainWindow) => {
 
   autoUpdater.on('update-downloaded', (info) => {
     logger.info('Update downloaded:', info.version);
-    mainWindow.webContents.send('update-available', true);
     progressBar.detail = 'Download complete!';
     progressBar.setCompleted();
     setTimeout(() => {
@@ -88,9 +94,12 @@ const AppUpdater = (mainWindow) => {
         });
     }, 2000);
   });
+  validatedIpcMain.on('v2rayx:checkForUpdateClick', (_) => {
+    checkForUpdateClick = true;
+  });
 
   const checkForUpdates = () => {
-    logger.info('call check update');
+    logger.info('call for checking update');
     return autoUpdater.checkForUpdates();
   };
   checkForUpdates();

@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
 import Button from '@mui/material/Button';
-import styled from '@emotion/styled';
 import icon from '../public/icon.png';
 
 const AboutPage = (): JSX.Element => {
   const [version, setVersion] = useState('0.0.0');
   const [updateAvailable, setUpdateAvailable] = useState(false);
   const handleCheckUpdate = () => {
+    window.api.send('v2rayx:checkForUpdateClick')
     if (!updateAvailable) {
       window.update.checkForUpdate();
     } else {
@@ -57,7 +57,7 @@ const AboutPage = (): JSX.Element => {
             variant="outlined"
             onClick={() => {
               window.electron.electronAPI.shell.openExternal(
-                'https://github.com/shaonhuang/V2rayX#ii-features'
+                'https://github.com/shaonhuang/V2rayX#ii-features',
               );
             }}
           >

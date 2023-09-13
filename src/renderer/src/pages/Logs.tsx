@@ -1,11 +1,12 @@
-import { useState, useEffect, useLayoutEffect,useRef } from 'react';
+import { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { Button, IconButton } from '@mui/material';
 import FileOpenIcon from '@mui/icons-material/FileOpen';
 import { useAppSelector } from '@renderer/store/hooks';
 import { find } from 'lodash';
+import { Server, VmessObjConfiguration, EmptyObject } from '@renderer/constant/types';
 
 const Index = (): JSX.Element => {
-  const [server,setServer] = useState({})
+  const [server, setServer] = useState<VmessObjConfiguration | EmptyObject>({});
   const serverState = useAppSelector((state) => state.serversPage.servers);
   const currentServerId = useAppSelector((state) => state.serversPage.currentServerId);
   const [logs, setLogs] = useState<string[]>([]);
@@ -15,14 +16,17 @@ const Index = (): JSX.Element => {
   const [isRunning, setIsRunning] = useState<boolean>(false);
 
   useLayoutEffect(() => {
+    const server: Server | any = find(serverState, { id: currentServerId });
+    // FIXME: type error
+    // @ts-ignore
     window.v2rayService.checkService().then((res) => {
       setIsRunning(res);
     });
-    setServer(find(serverState, { id: currentServerId })?.config);
+    setServer(server?.config);
   }, []);
   useEffect(() => {
     if (isRunning) {
-      window.electron.electronAPI.ipcRenderer.on('logs:get', (event, data) => {
+      window.electron.electronAPI.ipcRenderer.on('logs:get', (_, data) => {
         setLogs([...data]);
         setDisplayedLogs([]);
       });
@@ -72,7 +76,7 @@ const Index = (): JSX.Element => {
                   className=""
                   onClick={() => {
                     window.electron.electronAPI.shell
-                      .openPath(server.log[logType === 'access' ? 'access' : 'error'])
+                      .openPath(server?.log[logType === 'access' ? 'access' : 'error'])
                       .then(() => {
                         // File opened successfully
                         console.log('File opened');

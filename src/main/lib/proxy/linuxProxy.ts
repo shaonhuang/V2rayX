@@ -18,14 +18,14 @@ export const setGlobalProxy = async (host: string, httpPort: number, socksPort: 
   const httpPortSet = await execAsync(`gsettings set org.gnome.system.proxy.http port ${httpPort}`);
   const httpsHostSet = await execAsync(`gsettings set org.gnome.system.proxy.https host '${host}'`);
   const httpsPortSet = await execAsync(
-    `gsettings set org.gnome.system.proxy.https port ${httpPort}`
+    `gsettings set org.gnome.system.proxy.https port ${httpPort}`,
   );
   const socksHostSet = await execAsync(`gsettings set org.gnome.system.proxy.socks host '${host}'`);
   const socksPortSet = await execAsync(
-    `gsettings set org.gnome.system.proxy.socks port ${socksPort}`
+    `gsettings set org.gnome.system.proxy.socks port ${socksPort}`,
   );
   const bypassSet = await execAsync(
-    `gsettings set org.gnome.system.proxy ignore-hosts "['${ignoredHosts}']"`
+    `gsettings set org.gnome.system.proxy ignore-hosts "['${ignoredHosts}']"`,
   );
   return (
     manualSet.code === 0 &&

@@ -69,7 +69,7 @@ class ValidatedIpcMain {
    */
   handle(
     channel: string,
-    listener: (event: IpcMainInvokeEvent, ...args: any[]) => Promise<unknown>
+    listener: (event: IpcMainInvokeEvent, ...args: any[]) => Promise<unknown>,
   ): this {
     unsafeIpcMain.handle(channel, (event: IpcMainInvokeEvent, ...args: any[]) => {
       if (this.validateEvent(channel, event)) {
@@ -109,7 +109,7 @@ class ValidatedIpcMain {
   private validateEvent(channel: string, event: IpcMainEvent | IpcMainInvokeEvent): boolean {
     if (!channel || !channel.startsWith('v2rayx:')) {
       error(
-        `Refused to handle ipcMain event for channel '${channel}' because the channel is unknown.`
+        `Refused to handle ipcMain event for channel '${channel}' because the channel is unknown.`,
       );
       return false; // unexpected channel
     }
@@ -132,14 +132,14 @@ class ValidatedIpcMain {
       host = new URL(url).host;
     } catch (err) {
       error(
-        `Refused to handle ipcMain event for channel '${channel}' because of a malformed URL '${url}'.`
+        `Refused to handle ipcMain event for channel '${channel}' because of a malformed URL '${url}'.`,
       );
       return false; // unexpected URL
     }
 
     if (sender.parent !== null) {
       error(
-        `Refused to handle ipcMain event for channel '${channel}' because sender of origin '${host}' is not a main frame.`
+        `Refused to handle ipcMain event for channel '${channel}' because sender of origin '${host}' is not a main frame.`,
       );
       return false; // unexpected frame
     }

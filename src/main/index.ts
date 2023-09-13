@@ -43,7 +43,7 @@ app.whenReady().then(async () => {
     mainWindow.webContents.openDevTools();
   }
   // load services
-  if(db.chain.get('v2rayInstallStatus').value()) {
+  if (db.chain.get('v2rayInstallStatus').value()) {
     createTray(mainWindow, createWindow);
   }
   appUpdater(mainWindow);

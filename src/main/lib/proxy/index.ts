@@ -19,7 +19,7 @@ export class Proxy {
     httpPort: number,
     socksPort: number,
     pacPort: number,
-    mode: Mode
+    mode: Mode,
   ) {
     this.platform = platform;
     this.status = 'off';
@@ -34,7 +34,7 @@ export class Proxy {
     httpPort: number,
     socksPort: number,
     pacPort: number,
-    mode: Mode
+    mode: Mode,
   ): Proxy | null {
     if (mode === 'Manual') return null;
     switch (platform) {

@@ -1,10 +1,11 @@
 import { createSlice, PayloadAction, createAsyncThunk } from '@reduxjs/toolkit';
+import { Servers } from '@renderer/constant/types';
 
 interface ServersPageState {
   serverTemplate?: Object;
   currentServerId: string;
   serviceRunningState: boolean;
-  servers: any[];
+  servers: Servers;
 }
 
 export const readFromDb = createAsyncThunk('readFromDb', async () => {

@@ -253,7 +253,7 @@ const objToV1Link = (obj: VmessV2): string => {
     searchParams.append(newKey, newValue);
   });
   return `vmess://${encode(`${type}:${id}@${add}:${port}`)}?${decodeURIComponent(
-    searchParams.toString()
+    searchParams.toString(),
   )}`;
 };
 
@@ -378,7 +378,7 @@ const parseVmess2config = (obj: VmessV2) => {
 };
 const fromJson2Vmess2 = (json: any): VmessV2 => {
   const { outbounds, other } = json;
-  const {settings, streamSettings} = outbounds[0];
+  const { settings, streamSettings } = outbounds[0];
   const ps = encodeURIComponent(other.ps),
     add = settings.vnext[0].address,
     port = settings.vnext[0].port,
