@@ -17,7 +17,7 @@ import { ThemeProvider, createTheme } from '@mui/material/styles';
 import ContextMenu from '@renderer/components/ContextMenu';
 import { useEffect, useState } from 'react';
 import ReactJson from 'react-json-view';
-import { find } from 'lodash';
+import { find, isEqual } from 'lodash';
 
 import {
   VmessV1,
@@ -65,15 +65,18 @@ const Alert = React.forwardRef<HTMLDivElement, AlertProps>(function Alert(props,
 
 const ImportSettings = (props: any) => {
   const data = props.data ?? {};
+  const copyData = (data) => {
+    window.clipboard.paste(JSON.stringify(data.src));
+  };
   return (
-    <section className="min-h-[100px] text-left">
+    <section className="mx-4 min-h-[100px] text-left">
       {
         <ReactJson
           src={data}
-          theme="solarized"
+          theme="summerfruit"
           collapsed={false}
           displayObjectSize={true}
-          enableClipboard={true}
+          enableClipboard={copyData}
           indentWidth={4}
           displayDataTypes={true}
           iconStyle="triangle"
@@ -146,12 +149,18 @@ const AddServerDialog = (props: AddServerDialogProps) => {
     // TODO: regenerate link through vmessObj
     setJSONViewData({});
     // FIXME: should save Link to const data
-    const link =
-      importData !== ''
-        ? window.electron.electronAPI.hash(parseV2Link(importData)) === fromJson2Vmess2(configObj)
-          ? importData
-          : objToV2Link(fromJson2Vmess2(configObj))
-        : objToV2Link(fromJson2Vmess2(configObj));
+    let link = '';
+    if (
+      importData !== '' &&
+      isEqual(
+        isVMessLinkV1(importData) ? parseV1Link(importData) : parseV2Link(importData),
+        fromJson2Vmess2(configObj)
+      )
+    ) {
+      link = importData;
+    } else {
+      link = objToV2Link(fromJson2Vmess2(configObj));
+    }
     onClose(null, configObj, link);
   };
 

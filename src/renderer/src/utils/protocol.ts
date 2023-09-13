@@ -63,6 +63,7 @@ const v2Converter = {
     }
   },
   host: (v) => {
+    try {
     if (typeof JSON.parse(v) === 'object') {
       const vObj = JSON.parse(v);
       for (const key of Object.keys(vObj)) {
@@ -72,8 +73,10 @@ const v2Converter = {
       }
       return v;
     }
+    } catch (e) {}
     return v;
   },
+  tls: (v) => v === '1'? 'tls': ''
 };
 const v2ToStdV2Converter = {
   scy: (v) => encodeURIComponent(v),
