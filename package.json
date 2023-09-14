@@ -1,6 +1,6 @@
 {
   "name": "v2rayx",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "description": "An Electron application with React and TypeScript",
   "main": "./out/main/index.js",
   "author": "shaonhuang",
