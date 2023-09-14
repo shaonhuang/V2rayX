@@ -35,7 +35,6 @@ const customApi = {
       'appearance:system:fromMain',
       'proxyMode:change',
       'logs:get',
-      'update-available',
       'v2ray:status',
     ];
     if (validChannels.includes(channel)) {

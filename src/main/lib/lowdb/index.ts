@@ -24,6 +24,7 @@ type Data = {
   appVersion: string;
   settings: Settings;
   serviceRunningState: boolean;
+  updateAvailableVersion: string;
 };
 
 // Extend Low class with a new `chain` field
@@ -42,6 +43,7 @@ const defaultData: Data = {
     proxyMode: 'Manual',
   },
   serviceRunningState: false,
+  updateAvailableVersion: '',
 };
 
 const userData = app.getPath('userData');

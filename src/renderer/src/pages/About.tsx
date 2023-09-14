@@ -1,25 +1,26 @@
 import { useState, useEffect } from 'react';
 import Button from '@mui/material/Button';
 import icon from '../public/icon.png';
+import { platform } from '@renderer/constant';
+import { versionCompare } from '@renderer/utils/tools';
 
 const AboutPage = (): JSX.Element => {
   const [version, setVersion] = useState('0.0.0');
   const [updateAvailable, setUpdateAvailable] = useState(false);
   const handleCheckUpdate = () => {
-    window.api.send('v2rayx:checkForUpdateClick')
-    if (!updateAvailable) {
-      window.update.checkForUpdate();
-    } else {
-      window.update.downloadUpdate();
-      window.update.quitAndInstall();
-    }
+    platform === 'darwin' &&
+      window.electron.electronAPI.shell.openExternal(
+        'https://github.com/shaonhuang/V2rayX/releases',
+      );
+    window.api.send('v2rayx:checkForUpdateClick');
+    window.update.checkForUpdate();
   };
   useEffect(() => {
     window.db.read('appVersion').then((version) => {
       setVersion(version);
     });
-    window.api.receive('update-available', (status) => {
-      setUpdateAvailable(status);
+    window.db.read('updateAvailableVersion').then((latestVersion) => {
+      setUpdateAvailable(versionCompare(latestVersion, version));
     });
   }, []);
   return (

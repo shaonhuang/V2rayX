@@ -1,6 +1,8 @@
-import { dialog } from 'electron';
 import { validatedIpcMain } from '@lib/bridge';
+import { isMacOS } from '@lib/constant';
 import logger from '@lib/logs';
+import db from '@lib/lowdb';
+import { dialog } from 'electron';
 import { autoUpdater } from 'electron-updater';
 const ProgressBar = require('electron-progressbar');
 
@@ -19,10 +21,11 @@ const AppUpdater = (mainWindow) => {
     logger.info('Checking for update...');
   });
 
-  autoUpdater.on('update-available', (info) => {
+  autoUpdater.on('update-available', async (info) => {
     logger.info('Update available.', info);
-    mainWindow.webContents.send('update-available', true);
-    if (checkForUpdateClick) {
+    db.data = db.chain.set('updateAvailableVersion', info.version).value();
+    await db.write();
+    if (checkForUpdateClick && !isMacOS) {
       dialog
         .showMessageBox({
           type: 'info',
@@ -54,9 +57,10 @@ const AppUpdater = (mainWindow) => {
     }
   });
 
-  autoUpdater.on('update-not-available', (info) => {
+  autoUpdater.on('update-not-available', async (info) => {
     logger.info('Update not available.', info);
-    mainWindow.webContents.send('update-available', false);
+    db.data = db.chain.set('updateAvailableVersion', info.version).value();
+    await db.write();
     if (checkForUpdateClick) {
       dialog.showMessageBox({
         title: 'Updates not found',

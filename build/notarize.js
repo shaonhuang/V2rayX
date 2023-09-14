@@ -5,7 +5,8 @@ module.exports = async (context) => {
 
   console.log('aftersign hook triggered, start to notarize app.');
 
-  if (!process.env.CI) {
+  // Don't have apple membership, so skip notarizing
+  if (!process.env.CI || true) {
     console.log(`skipping notarizing, not in CI.`);
     return;
   }
@@ -26,7 +27,7 @@ module.exports = async (context) => {
       appBundleId: appId,
       appPath: `${appOutDir}/${appName}.app`,
       appleId: process.env.APPLE_ID,
-      appleIdPassword: process.env.APPLEIDPASS,
+      appleIdPassword: process.env.APPLE_ID_PASS,
     });
   } catch (error) {
     console.error(error);
