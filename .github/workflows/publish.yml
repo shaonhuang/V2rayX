@@ -18,7 +18,7 @@ jobs:
 
     strategy:
       matrix:
-        os: [macos-latest]
+        os: [macos-13]
 
     steps:
       - name: Checkout git repo
@@ -39,7 +39,11 @@ jobs:
         run: |
           yarn electron-vite build
 
-      - name: Codesign and Pack for Mac and release
+      - name: Fix Clean Up issue
+        run: |
+          sudo mdutil -a -i off
+
+      - name: Cancel code sign and Pack for Mac and release
         env:
           # These values are used for auto updates signing
           APPLE_ID: ${{ secrets.APPLE_ID }}
