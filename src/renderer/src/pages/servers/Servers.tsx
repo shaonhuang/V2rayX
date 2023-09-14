@@ -242,8 +242,8 @@ const Index = (): JSX.Element => {
   }, []);
 
   return (
-    <section className="">
-      <div className="m-auto mb-12 flex w-max flex-row gap-8">
+    <section className="flex flex-1 flex-col items-center justify-center">
+      <div className="mb-12 flex w-max flex-row gap-8">
         {/*
         <Block title="Network Speed"></Block>
         <Block title="Connection"></Block>
@@ -255,44 +255,46 @@ const Index = (): JSX.Element => {
         <Button>import from screen</Button>
       </div>
       */}
-      <div className="flex flex-col items-center justify-center text-black dark:text-white">
-        {!servers.length ? (
-          <></>
-        ) : (
-          servers.map(
-            (i, idx) =>
-              i && (
-                <ServerItem
-                  className={
-                    seletedServer === i.id
-                      ? 'bg-sky-200 dark:bg-sky-700'
-                      : 'bg-white dark:bg-gray-400'
-                  }
-                  serverName={i.ps}
-                  isSeleted={seletedServer === i.id}
-                  key={idx}
-                  index={idx}
-                  running={running}
-                  data={i.config}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    if (e.target === e.currentTarget) {
-                      handleSelectServer(i.id);
+      <div className='w-full'>
+        <div className="flex flex-col items-center justify-center text-black dark:text-white">
+          {!servers.length ? (
+            <></>
+          ) : (
+            servers.map(
+              (i, idx) =>
+                i && (
+                  <ServerItem
+                    className={
+                      seletedServer === i.id
+                        ? 'bg-sky-200 dark:bg-sky-700'
+                        : 'bg-white dark:bg-gray-400'
                     }
-                  }}
-                  handleQR={handleQRItem}
-                  handleLink={handleLinkItem}
-                  handleDelete={handleDeleteItem}
-                  handleEdit={handleEditItem}
-                ></ServerItem>
-              ),
-          )
-        )}
-      </div>
-      <div className="float-left ml-6">
-        <Fab color="primary" aria-label="add" onClick={handleAddOpen}>
-          <Add />
-        </Fab>
+                    serverName={i.ps}
+                    isSeleted={seletedServer === i.id}
+                    key={idx}
+                    index={idx}
+                    running={running}
+                    data={i.config}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      if (e.target === e.currentTarget) {
+                        handleSelectServer(i.id);
+                      }
+                    }}
+                    handleQR={handleQRItem}
+                    handleLink={handleLinkItem}
+                    handleDelete={handleDeleteItem}
+                    handleEdit={handleEditItem}
+                  ></ServerItem>
+                ),
+            )
+          )}
+        </div>
+        <div className="float-left ml-6">
+          <Fab color="primary" aria-label="add" onClick={handleAddOpen}>
+            <Add />
+          </Fab>
+        </div>
       </div>
       <AddServerDialog open={open} type={dialogType} onClose={handleDialogClose} edit={edit} />
       <Backdrop

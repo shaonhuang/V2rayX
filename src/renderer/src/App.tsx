@@ -13,7 +13,6 @@ function App() {
     <div className="App h-screen bg-[#ebf2fc] dark:bg-slate-800">
       <Layout>
         <Navigation />
-        <div className="h-14 w-full"></div>
         {(function (tabName: string): JSX.Element {
           switch (tabName) {
             case 'servers':

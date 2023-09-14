@@ -7,6 +7,6 @@ interface LayoutProps {
 }
 const Layout = (props: LayoutProps) => {
   const { children } = props;
-  return <div className="container mx-auto max-h-screen py-6">{children}</div>;
+  return <div className="container mx-auto h-full py-6 flex flex-col">{children}</div>;
 };
 export default Layout;

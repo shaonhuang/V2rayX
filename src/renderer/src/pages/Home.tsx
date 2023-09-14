@@ -88,7 +88,7 @@ const GernalSettings = (): JSX.Element => {
   }, []);
 
   return (
-    <section className="flex flex-row items-center justify-around text-black dark:text-white">
+    <section className="flex flex-row items-center justify-around text-black dark:text-white flex-1">
       <div
         className="grid items-center justify-around gap-x-3 rounded-xl bg-white p-9 dark:bg-slate-700"
         style={{ gridTemplateColumns: '1fr 2fr' }}
