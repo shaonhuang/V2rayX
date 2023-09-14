@@ -39,12 +39,14 @@ jobs:
         run: |
           yarn electron-vite build
 
-      - name: Pack for Mac and release
+      - name: Codesign and Pack for Mac and release
         env:
           # These values are used for auto updates signing
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_ID_PASS: ${{ secrets.APPLE_ID_PASS }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          CSC_LINK: ${{ secrets.CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
         uses: nick-fields/retry@v2
         with:
           timeout_minutes: 15
