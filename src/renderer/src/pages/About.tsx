@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useLayoutEffect } from 'react';
 import Button from '@mui/material/Button';
 import icon from '../public/icon.png';
 import { platform } from '@renderer/constant';
@@ -19,10 +19,12 @@ const AboutPage = (): JSX.Element => {
     window.db.read('appVersion').then((version) => {
       setVersion(version);
     });
+  }, []);
+  useEffect(() => {
     window.db.read('updateAvailableVersion').then((latestVersion) => {
       setUpdateAvailable(versionCompare(latestVersion, version));
     });
-  }, []);
+  }, [version]);
   return (
     <section className="flex flex-row items-center justify-around">
       <div className="items-center justify-around rounded-xl bg-white p-9 text-black dark:bg-slate-700 dark:text-white">
