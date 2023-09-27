@@ -3009,9 +3009,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"electron-vite@npm:^1.0.27":
-  version: 1.0.27
-  resolution: "electron-vite@npm:1.0.27"
+"electron-vite@npm:^1.0.28":
+  version: 1.0.28
+  resolution: "electron-vite@npm:1.0.28"
   dependencies:
     "@babel/core": ^7.22.8
     "@babel/plugin-transform-arrow-functions": ^7.22.5
@@ -3027,7 +3027,7 @@ __metadata:
       optional: true
   bin:
     electron-vite: bin/electron-vite.js
-  checksum: e73c62dfbe2891e6b610efaa99a21ca692943569c6ebe2617267b47cb2323a011be610ffe0ece41bd788a9e2a83830389ed6757bd338477650c2a5cb9c4fd40f
+  checksum: b16adbf4ea95dc16b970935fab53de14bfdc08f0d8664e2192f7510fdc7d411338c903e2b2700f1996c49583c1181a19e1787b1e1e4c9af98666e4399014cd92
   languageName: node
   linkType: hard
 
@@ -7588,7 +7588,7 @@ __metadata:
     electron-progressbar: ^2.1.0
     electron-store: ^8.1.0
     electron-updater: ^6.1.4
-    electron-vite: ^1.0.27
+    electron-vite: ^1.0.28
     eslint: ^8.48.0
     eslint-config-prettier: ^9.0.0
     eslint-plugin-prettier: ^5.0.0
