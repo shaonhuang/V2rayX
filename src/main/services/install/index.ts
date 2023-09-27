@@ -1,69 +1,5 @@
-// import fs from 'fs-extra';
-// import path from 'path';
-// import { session } from 'electron';
-// import isDev from 'electron-is-dev';
-//
-// import logger from '../logs';
-// // import { pac } from '../core';
-// import { getChromeExtensionsPath } from '../utils/utils';
-// // import { pacDir } from '../config';
-//
-// const loadExtensionsManually = (paths: string[]) => {
-//   paths.forEach(async (_path) => {
-//     if (fs.existsSync(_path)) {
-//       await session.defaultSession.loadExtension(_path);
-//     }
-//   })
-// }
-//
-// const loadExtensionsWithInstaller = async () => {
-//   // eslint-disable-next-line @typescript-eslint/no-var-requires
-//   const installExtension = require('electron-devtools-installer');
-//   const { REDUX_DEVTOOLS, REACT_DEVELOPER_TOOLS } = installExtension;
-//
-//   installExtension([REDUX_DEVTOOLS, REACT_DEVELOPER_TOOLS])
-//     .then((name: string) => console.log(`Added Extension:  ${name}`))
-//     .catch((err: Error) => console.log('An error occurred: ', err));
-// }
-//
-// export const setupAfterInstall = async (manually?: boolean) => {
-//   if (manually && isDev) {
-//     // react / redux devtool
-//     getChromeExtensionsPath([
-//       'fmkadmapgofadopljbjfkapdkoienihi',
-//       'lmhkpmbekcpmknklioeibfkpmmfibljd'
-//     ]).then(async (paths) => {
-//       if (paths && paths.length) {
-//         loadExtensionsManually(paths)
-//       }
-//     });
-//   } else if (!manually && isDev) {
-//     loadExtensionsWithInstaller();
-//   }
-// };
-//
-// export const setupIfFirstRun = async () => {
-//   try {
-//     // const firstRun = !(await fs.pathExists(path.resolve(pacDir, "pac.txt")));
-//     const { PacServer: PS } = pac;
-//
-//     // if (!firstRun) {
-//     //   return;
-//     // }
-//
-//     logger.info("First run detected");
-//
-//     // const data = await fs.readFile(path.resolve(pacDir, "gfwlist.txt"));
-//     // const text = data.toString("ascii");
-//     // await PS.generatePacWithoutPort(text);
-//   } catch (err) {
-//     logger.error((err as any).message ?? err);
-//   }
-// };
-//
-//
 const admZip = require('adm-zip');
-const { net } = require('electron');
+const { net, dialog, app } = require('electron');
 import * as fs from 'fs';
 import { tmpdir } from 'os';
 import * as path from 'path';
@@ -106,47 +42,89 @@ const getVersionNumber = async () => {
   return info?.['tag_name'];
 };
 
+const makeRequest = async (url, requestOptions, cb) => {
+  return new Promise((res, rej) => {
+    const request = net.request(url);
+    const data: Array<Uint8Array> = [];
+
+    request.on('response', (response: any) => {
+      const totalBytes = parseInt(response.headers['content-length'], 10);
+      let receivedBytes = 0;
+
+      response.on('data', (chunk) => {
+        data.push(chunk);
+        receivedBytes += chunk.length;
+        const progress = receivedBytes / totalBytes;
+        cb(progress);
+        logger.info(`Download progress: ${progress * 100}% (${receivedBytes}/${totalBytes} bytes)`);
+      });
+      response.on('end', (_) => {
+        logger.info('Download completed');
+        cb(1);
+        const buffer: Uint8Array = Buffer.concat(data);
+        res(buffer);
+      });
+      setTimeout(
+        () => {
+          !response && requestOptions?.timeout ? rej('Task Timed out') : response;
+        },
+        requestOptions?.timeout,
+      );
+    });
+
+    request.on('error', (err: any) => {
+      logger.error(`Cannot download ${url}: ${err}`);
+      rej(err);
+    });
+
+    // use the request.end() method to send the request.
+    logger.info(url);
+    request.end();
+  });
+};
+
 const downloadV2ray = async (version: string, cb: Function) => {
+  // https://ghproxy.com/ is a proxy for github -- useage : url+github-url
   const url = `https://github.com/v2fly/v2ray-core/releases/download/${version}/v2ray-${v2rayPlatform.get(
     platform,
   )}-${v2rayArch.get(process.arch)}.zip`;
+  // Define RequestOptions with timeout
+  const requestOptions = {
+    timeout: 5000, // 5 seconds
+  };
+
   const zipFile = is.dev ? path.join('./', 'v2ray.zip') : path.join(tmpdir(), 'v2ray.zip');
-  if (!fs.existsSync(zipFile)) {
-    const request = net.request(url);
-    const data: Array<any> = [];
-    await new Promise((res, rej) => {
-      request.on('response', (response: any) => {
-        const totalBytes = parseInt(response.headers['content-length'], 10);
-        let receivedBytes = 0;
-        response.on('data', (chunk) => {
-          data.push(chunk);
-          receivedBytes += chunk.length;
-          const progress = receivedBytes / totalBytes;
-          cb(progress);
-          logger.info(
-            `Download progress: ${progress * 100}% (${receivedBytes}/${totalBytes} bytes)`,
-          );
-        });
-        response.on('end', (_) => {
-          logger.info('Download completed');
-          cb(1);
-          const buffer = Buffer.concat(data);
-          res(buffer);
-        });
-      });
-      request.on('error', (err: any) => {
-        logger.error(`Cannot download ${url}: ${err}`);
-        rej(err);
-      });
-      request.end();
-    })
-      .then((buffer: any) => {
+  if (!fs.existsSync(zipFile) || true) {
+    try {
+      // First request
+      const buffer: any = await makeRequest(`https://ghproxy.com/${url}`, requestOptions, cb);
+      fs.writeFileSync(zipFile, buffer);
+    } catch (err) {
+      // Handle timeout error
+      logger.error(err);
+      try {
+        // Second request
+        const buffer: any = await makeRequest(url, requestOptions, cb);
         fs.writeFileSync(zipFile, buffer);
-      })
-      .catch((err: any) => {
-        logger.error(err);
-        throw err;
-      });
+      } catch (error) {
+        // Handle second request error
+        logger.error(error);
+        dialog
+          .showMessageBox({
+            type: 'info',
+            title: 'Download Request Timeout',
+            message:
+              'Please check the network connection and download the path to v2ray-core from GitHub releases',
+            buttons: ['OK'],
+          })
+          .then((result) => {
+            // Handle dialog response
+            logger.info(result);
+            app.quit();
+          });
+        throw error;
+      }
+    }
   }
 };
 
