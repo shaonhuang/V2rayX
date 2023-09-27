@@ -59,7 +59,7 @@ V2ray GUI client with cross-platform desktop support powered by Electron⚛️, 
 
 ### ➣ In Testing
 
-- [ ] **PAC** Mode
+- [x] **PAC** Mode
 - [ ] QR-code Import
 - [x] Server Share
 

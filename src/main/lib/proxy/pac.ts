@@ -1,14 +1,9 @@
 import http from 'http';
 import fs from 'fs';
 import path from 'path';
-import fetch from 'node-fetch';
 import fsExtra from 'fs-extra';
-import URL from 'url';
-
 import logger from '@main/lib/logs';
 import { globalPacConf, pacDir, userPacConf } from '@main/lib/constant';
-import { request } from '../http-request';
-import { Settings } from '../types';
 
 export function debounce<params extends any[]>(fn: (...args: params) => any, timeout: number) {
   let timer: NodeJS.Timeout;
@@ -22,7 +17,7 @@ export function debounce<params extends any[]>(fn: (...args: params) => any, tim
 }
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const socks = require('socks');
+
 let server: PacServer | null;
 
 export class PacServer {
@@ -82,12 +77,15 @@ export class PacServer {
     }
   }
 
-  static async generateFullPac(localPort: number) {
+  static async generateFullPac(httpPort: number, socks5Port: number) {
     logger.info('Generating full PAC file...');
 
     try {
       const data = await fsExtra.readFile(path.resolve(pacDir, 'pac.txt'));
-      const pac = data.toString('ascii').replace(/__PORT__/g, localPort.toString());
+      const pac = data
+        .toString('ascii')
+        .replace(/__HTTP__PORT__/g, httpPort.toString())
+        .replace(/__SOCKS5__PORT__/g, socks5Port.toString());
 
       await fsExtra.writeFile(path.resolve(pacDir, 'proxy.pac'), pac);
       logger.info('Generated done.');
@@ -96,68 +94,68 @@ export class PacServer {
     }
   }
 
-  static async downloadAndGeneratePac(url: string, text: string, settings: Settings) {
-    if (!url && !text) {
-      throw new Error('invalid_parameter');
-    }
-
-    logger.info(`Downloading GFWList from ${url}...`);
-
-    return new Promise<string>((resolve, reject) => {
-      if (text) {
-        logger.info('Parsing GFWList base64 text and generating PAC file without port');
-        resolve(text);
-      }
-      if (url) {
-        logger.info('Downloading GFWList and generating PAC file without port');
-        const parsedUrl = URL.parse(url);
-        const host = parsedUrl.hostname;
-        const protocol = parsedUrl.protocol;
-        const port = parsedUrl.port ?? (protocol === 'https:' ? 443 : 80);
-
-        return fetch(url)
-          .then((response) => {
-            return response.text();
-          })
-          .then((text) => {
-            resolve(text);
-          })
-          .catch(() => {
-            const agentConf = {
-              ipaddress: '127.0.0.1',
-              port: settings.localPort,
-              type: 5,
-            };
-
-            return request({
-              url,
-              method: 'GET',
-              agent: new socks.Agent({
-                proxy: agentConf,
-                target: { host, port },
-                authentication: {
-                  username: '',
-                  password: '',
-                },
-              }),
-            }).then((rsp) => {
-              if (rsp.error) {
-                return reject(new Error(rsp.error.message));
-              }
-              resolve(rsp.data);
-            });
-          });
-      }
-    })
-      .then((base64: string) => {
-        const base64Text = Buffer.from(base64, 'base64').toString('ascii');
-        return PacServer.generatePacWithoutPort(base64Text);
-      })
-      .catch((err: any) => {
-        logger.error(err?.toString() ?? err);
-        return Promise.reject(err);
-      });
-  }
+  // static async downloadAndGeneratePac(url: string, text: string, settings: Settings) {
+  //   if (!url && !text) {
+  //     throw new Error('invalid_parameter');
+  //   }
+  //
+  //   logger.info(`Downloading GFWList from ${url}...`);
+  //
+  //   return new Promise<string>((resolve, reject) => {
+  //     if (text) {
+  //       logger.info('Parsing GFWList base64 text and generating PAC file without port');
+  //       resolve(text);
+  //     }
+  //     if (url) {
+  //       logger.info('Downloading GFWList and generating PAC file without port');
+  //       const parsedUrl = URL.parse(url);
+  //       const host = parsedUrl.hostname;
+  //       const protocol = parsedUrl.protocol;
+  //       const port = parsedUrl.port ?? (protocol === 'https:' ? 443 : 80);
+  //
+  //       return fetch(url)
+  //         .then((response) => {
+  //           return response.text();
+  //         })
+  //         .then((text) => {
+  //           resolve(text);
+  //         })
+  //         .catch(() => {
+  //           const agentConf = {
+  //             ipaddress: '127.0.0.1',
+  //             port: settings.localPort,
+  //             type: 5,
+  //           };
+  //
+  //           return request({
+  //             url,
+  //             method: 'GET',
+  //             agent: new socks.Agent({
+  //               proxy: agentConf,
+  //               target: { host, port },
+  //               authentication: {
+  //                 username: '',
+  //                 password: '',
+  //               },
+  //             }),
+  //           }).then((rsp) => {
+  //             if (rsp.error) {
+  //               return reject(new Error(rsp.error.message));
+  //             }
+  //             resolve(rsp.data);
+  //           });
+  //         });
+  //     }
+  //   })
+  //     .then((base64: string) => {
+  //       const base64Text = Buffer.from(base64, 'base64').toString('ascii');
+  //       return PacServer.generatePacWithoutPort(base64Text);
+  //     })
+  //     .catch((err: any) => {
+  //       logger.error(err?.toString() ?? err);
+  //       return Promise.reject(err);
+  //     });
+  // }
 
   constructor(pacPort: number, pacFile: string) {
     logger.info('Starting PAC server');

@@ -1,6 +1,7 @@
 import { app, BrowserWindow, ipcMain } from 'electron';
 import { join } from 'path';
 import * as fs from 'fs';
+import emitter from '@lib/event-emitter';
 import { electronApp, optimizer, is } from '@electron-toolkit/utils';
 
 import { Proxy } from '@main/lib/proxy';
@@ -12,6 +13,7 @@ import { createTray } from '@main/services/tray';
 import db from '@main/lib/lowdb/index';
 import { createWindow } from '@main/services/browser';
 import startUp from './bootstrap';
+import { electronApp as electronHookApp } from './bootstrap';
 
 let mainWindow: any = null;
 let proxy: Proxy | null = null;
@@ -102,24 +104,13 @@ app.on('window-all-closed', () => {
 // code. You can also put them in separate files and require them here.
 app.on('before-quit', (event) => {
   // Perform some actions before quitting
-  logger.info('before-quit', proxy);
+  electronHookApp.beforeQuit(app);
 
   // Prevent the application from quitting immediately
   cleanUp || event.preventDefault();
 
-  Promise.resolve()
-    .then(() => {
-      if (proxy) {
-        try {
-          proxy?.stop();
-        } catch (error) {
-          logger.error('proxy stop', error);
-        }
-      }
-    })
-    .then(() => {
-      service?.stop();
-      cleanUp = true;
-    })
-    .then(() => app.quit());
+  emitter.on('cleanUp:refresh', (status) => {
+    cleanUp = status;
+    app.quit()
+  });
 });

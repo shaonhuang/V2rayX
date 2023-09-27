@@ -1,18 +1,37 @@
-import { IpcMainEvent, app, clipboard, BrowserWindow, nativeTheme, ipcMain } from 'electron';
 import { validatedIpcMain } from '@lib/bridge';
-import { autoUpdater } from 'electron-updater';
+import { appDataPath, pacDir, pathExecutable, pathRuntime } from '@lib/constant';
+import { Mode, VmessObjConfiguration } from '@lib/constant/types';
+import emitter from '@lib/event-emitter';
+import registryHooks from '@lib/hooks';
+import logger from '@lib/logs';
 import db from '@lib/lowdb';
-import { Mode } from '@lib/constant/types';
+import { PacServer as PS } from '@lib/proxy/pac';
+import App from '@main/app';
 import { Proxy } from '@main/lib/proxy';
 import { Service } from '@main/lib/v2ray';
-import logger from '@lib/logs';
-import emitter from '@lib/event-emitter';
-import { VmessObjConfiguration } from '@lib/constant/types';
+import { BrowserWindow, IpcMainEvent, app, clipboard, ipcMain, nativeTheme } from 'electron';
+import { autoUpdater } from 'electron-updater';
+import * as fs from 'fs-extra';
+import { resolve } from 'path';
+import { checkPortAvailability } from './lib/utils';
+
+logger.info(`appDataPath: ${appDataPath}`);
+logger.info(`pathRuntime: ${pathRuntime}`);
+logger.info(`pathExecutable: ${pathExecutable}`);
+
+// for this moment, slowly transfor bootstrap to hooks life cycles
+
+export const electronApp = new App();
+
+registryHooks(electronApp);
+
+electronApp.beforeReady(app);
 
 const gotTheLock = app.requestSingleInstanceLock();
 let proxy: Proxy | null = null;
 let cleanUp = false;
 let service: Service | null = null;
+let pacPort: number;
 
 const checkForRepeatedStart = () => {
   if (!gotTheLock) {
@@ -43,9 +62,23 @@ const initProxyMode = async () => {
   const httpPort = config?.inbounds[1].port;
   const mode = db.chain.get('settings.proxyMode').value() as Mode;
   if (socksPort && httpPort) {
-    // const mode = (store.get('proxyMode') as Mode) ?? store.set('proxyMode', 'Manual');
-    const randomPort = Math.floor(Math.random() * (65535 - 1024 + 1)) + 1024;
-    proxy = Proxy.createProxy(process.platform, httpPort, socksPort, randomPort, mode);
+    await (async () => {
+      let findAPort = false;
+      while (!findAPort) {
+        const randomPort = Math.floor(Math.random() * (65535 - 1024 + 1)) + 1024;
+        try {
+          const res = await checkPortAvailability(randomPort);
+          logger.info(res);
+          pacPort = randomPort;
+          findAPort = true;
+        } catch (error) {
+          logger.error(error);
+          findAPort = false;
+        }
+      }
+    })();
+
+    proxy = Proxy.createProxy(process.platform, httpPort, socksPort, pacPort, mode);
     if (proxy) {
       proxy.start();
     }
@@ -54,6 +87,24 @@ const initProxyMode = async () => {
   }
 
   return proxy;
+};
+
+const setupPACFile = async () => {
+  try {
+    const firstRun = !(await fs.pathExists(resolve(pacDir, 'pac.txt')));
+
+    if (!firstRun) {
+      return;
+    }
+
+    logger.info('First run detected');
+
+    const data = await fs.readFile(resolve(pacDir, 'gfwlist.txt'));
+    const text = data.toString('ascii');
+    await PS.generatePacWithoutPort(text);
+  } catch (err) {
+    logger.error((err as any).message ?? err);
+  }
 };
 
 const changeProxyMode = async (mode: Mode) => {
@@ -68,9 +119,9 @@ const changeProxyMode = async (mode: Mode) => {
 
   // [1] is http proxy port
   const httpPort = config?.inbounds[1].port;
-  const randomPort = Math.floor(Math.random() * (65535 - 1024 + 1)) + 1024;
+
   if (httpPort && socksPort) {
-    proxy = proxy ?? Proxy.createProxy(process.platform, httpPort, socksPort, randomPort, mode);
+    proxy = proxy ?? Proxy.createProxy(process.platform, httpPort, socksPort, pacPort, mode);
     if (proxy) {
       if (mode === 'Manual') {
         proxy.stop();
@@ -89,8 +140,8 @@ const changeProxyMode = async (mode: Mode) => {
 };
 
 const writeAppVersion = async () => {
-    db.data = db.chain.set('appVersion', app.getVersion()).value();
-    await db.write();
+  db.data = db.chain.set('appVersion', app.getVersion()).value();
+  await db.write();
 };
 
 const registerChannels = [
@@ -186,6 +237,7 @@ ipcMain.handle('proxyMode:change', (_, mode: Mode) => {
 const startUp = async () => {
   checkForRepeatedStart();
   mountChannels(registerChannels);
+  await setupPACFile();
   proxy = await initProxyMode();
   // TODD: auto start proxy
   await db.read();
@@ -210,8 +262,7 @@ const startUp = async () => {
     const socksPort = data?.inbounds[0].port;
     const httpPort = data?.inbounds[1].port;
     logger.info(`socksPort: ${socksPort}, httpPort: ${httpPort}`);
-    const randomPort = Math.floor(Math.random() * (65535 - 1024 + 1)) + 1024;
-    proxy?.updatePort(httpPort, socksPort, randomPort);
+    proxy?.updatePort(httpPort, socksPort, pacPort);
     proxy?.stop();
     proxy?.start();
     emitter.emit('tray-v2ray:update', true);
@@ -229,6 +280,7 @@ const startUp = async () => {
   });
   emitter.on('v2ray:stop', () => {
     service?.stop();
+    emitter.emit('v2ray:status', service?.check() ?? false);
     emitter.emit('tray-v2ray:update', false);
   });
   emitter.on('v2ray:start', (data) => {
@@ -236,13 +288,18 @@ const startUp = async () => {
     const socksPort = data?.inbounds[0].port;
     const httpPort = data?.inbounds[1].port;
     logger.info(`socksPort: ${socksPort}, httpPort: ${httpPort}`);
-    const randomPort = Math.floor(Math.random() * (65535 - 1024 + 1)) + 1024;
-    proxy?.updatePort(httpPort, socksPort, randomPort);
+    proxy?.updatePort(httpPort, socksPort, pacPort);
     proxy?.stop();
     proxy?.start();
     emitter.emit('tray-v2ray:update', true);
   });
+
   emitter.on('proxyMode:change', (mode: Mode) => changeProxyMode(mode));
+  emitter.on('proxy:stop', () => {
+    proxy.stop().then(() => {
+      emitter.emit('proxy:status', false);
+    });
+  });
   await writeAppVersion();
   return { preStartProxy: proxy, preStartService: service, repeatedStart: cleanUp };
 };

@@ -1,6 +1,6 @@
 {
   "name": "v2rayx",
-  "version": "0.1.9",
+  "version": "0.2.0",
   "description": "An Electron application with React and TypeScript",
   "main": "./out/main/index.js",
   "author": "shaonhuang",
@@ -27,6 +27,7 @@
   "dependencies": {
     "@electron-toolkit/preload": "^2.0.0",
     "@electron-toolkit/utils": "^2.0.0",
+    "@sentry/electron": "^4.11.0",
     "@types/object-hash": "^3.0.2",
     "@types/redux-logger": "^3.0.9",
     "adm-zip": "^0.5.10",
@@ -37,7 +38,6 @@
     "electron-store": "^8.1.0",
     "electron-updater": "^6.1.4",
     "eventemitter3": "^5.0.1",
-    "fs-extra": "^11.1.1",
     "http": "^0.0.1-security",
     "jsqr": "^1.4.0",
     "load-json-file": "^7.0.1",
@@ -47,6 +47,7 @@
     "object-hash": "^3.0.0",
     "react-json-view": "^1.21.3",
     "redux-logger": "^3.0.6",
+    "tapable": "^2.2.1",
     "winston": "^3.10.0",
     "winston-daily-rotate-file": "^4.7.1"
   },

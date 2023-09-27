@@ -161,7 +161,7 @@ const GernalSettings = (): JSX.Element => {
               .then((res) => window.db.write('settings', { ...res, proxyMode: event.target.value }));
           }}
         >
-          <FormControlLabel value="PAC" control={<Radio />} disabled label="PAC" />
+          <FormControlLabel value="PAC" control={<Radio />} label="PAC" />
           <FormControlLabel value="Global" control={<Radio />} label="Global" />
           <FormControlLabel value="Manual" control={<Radio />} label="Manual" />
         </RadioGroup>

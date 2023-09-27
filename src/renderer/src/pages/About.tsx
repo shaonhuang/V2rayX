@@ -9,6 +9,7 @@ const AboutPage = (): JSX.Element => {
   const [updateAvailable, setUpdateAvailable] = useState(false);
   const handleCheckUpdate = () => {
     platform === 'darwin' &&
+      updateAvailable &&
       window.electron.electronAPI.shell.openExternal(
         'https://github.com/shaonhuang/V2rayX/releases',
       );

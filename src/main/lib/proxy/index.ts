@@ -1,9 +1,8 @@
 import * as networksetup from './macProxy';
 import * as gsettings from './linuxProxy';
 import * as sysproxy from './winProxy';
-// import { PacServer as PS } from './pac';
+import { PacServer as PS } from './pac';
 import { Mode, ProxyStatus } from '@lib/constant/types';
-// import { setupIfFirstRun } from '../install';
 import logger from '@lib/logs';
 
 export class Proxy {
@@ -75,18 +74,19 @@ export class LinuxProxy extends Proxy {
 
   public async start() {
     if (this.mode === 'Global') {
-      await gsettings.setGlobalProxy('127.0.0.1', this.httpPort ?? 1080, this.socksPort ?? 1087);
-    } else if (this.mode === 'PAC' && false) {
-      await setupIfFirstRun();
-      await PS.generateFullPac(this.localPort ?? 1080);
+      await gsettings.setGlobalProxy('127.0.0.1', this.httpPort ?? 10871, this.socksPort ?? 10801);
+    } else if (this.mode === 'PAC') {
+      await PS.generateFullPac(this.httpPort ?? 10871, this.socksPort ?? 10801);
       await gsettings.setPacProxy(`http://127.0.0.1:${this.pacPort ?? 1090}/proxy.pac`);
+      PS.startPacServer(this.pacPort);
     }
     logger.info('Set proxy on');
   }
 
   public async stop() {
-    await gsettings.unsetProxy();
+    PS.stopPacServer();
     logger.info('Set proxy off');
+    await gsettings.unsetProxy();
   }
 }
 
@@ -97,18 +97,20 @@ export class WinProxy extends Proxy {
 
   public async start() {
     if (this.mode === 'Global') {
-      await sysproxy.setGlobalProxy('127.0.0.1', this.httpPort ?? 1080, this.socksPort ?? 1087);
-    } else if (this.mode === 'PAC' && false) {
-      await setupIfFirstRun();
-      await PS.generateFullPac(this.localPort ?? 1080);
+      await sysproxy.setGlobalProxy('127.0.0.1', this.httpPort ?? 10871, this.socksPort ?? 10801);
+    } else if (this.mode === 'PAC') {
+      await PS.generateFullPac(this.httpPort ?? 10871, this.socksPort ?? 10801);
       await sysproxy.setPacProxy(`http://127.0.0.1:${this.pacPort ?? 1090}/proxy.pac`);
+      PS.startPacServer(this.pacPort);
     }
     logger.info('Set proxy on');
   }
 
   public async stop() {
-    await sysproxy.unsetProxy();
+    PS.stopPacServer();
     logger.info('Set proxy off');
+    await sysproxy.unsetProxy();
+
   }
 }
 
@@ -119,17 +121,22 @@ export class DarwinProxy extends Proxy {
 
   public async start() {
     if (this.mode === 'Global') {
-      await networksetup.setGlobalProxy('127.0.0.1', this.httpPort ?? 1080, this.socksPort ?? 1087);
-    } else if (this.mode === 'PAC' && false) {
-      await setupIfFirstRun();
-      await PS.generateFullPac(this.localPort ?? 1080);
+      await networksetup.setGlobalProxy(
+        '127.0.0.1',
+        this.httpPort ?? 10871,
+        this.socksPort ?? 10801,
+      );
+    } else if (this.mode === 'PAC') {
+      await PS.generateFullPac(this.httpPort ?? 10871, this.socksPort ?? 10801);
       await networksetup.setPacProxy(`http://127.0.0.1:${this.pacPort ?? 1090}/proxy.pac`);
+      PS.startPacServer(this.pacPort);
     }
     logger.info('Set proxy on');
   }
 
   public async stop() {
-    await networksetup.unsetProxy();
+    PS.stopPacServer();
     logger.info('Set proxy off');
+    await networksetup.unsetProxy();
   }
 }

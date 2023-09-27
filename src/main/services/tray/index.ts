@@ -52,7 +52,6 @@ export const createTray = (mainWindow: Object, createWindow: Function) => {
     },
     {
       label: 'Pac Mode',
-      enabled: false,
       type: 'radio',
       checked: false,
       click: async () => {
@@ -154,5 +153,4 @@ export const createTray = (mainWindow: Object, createWindow: Function) => {
       }
     }
   });
-  // emitter.emit('tray-v2ray:update', false);
 };
