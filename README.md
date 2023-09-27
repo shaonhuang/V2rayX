@@ -9,11 +9,11 @@
 
 [● Telegram Channel](https://t.me/V2rayX_electron)
 
-# WARN: text below will change in development. product is not ready to release beta (release day will be soon)
+# WARN: The text below will change in development. product is ready for pre-release
 
 ## I. V2ray Electron
 
-V2ray GUI client with cross-platform desktop support powered by Electron⚛️, made specially for Linux / Windows / MacOS users.
+V2ray GUI client with cross-platform desktop support powered by Electron⚛️, made especially for Linux / Windows / MacOS users.
 
 ### ➣ Tested on
 
@@ -31,7 +31,7 @@ V2ray GUI client with cross-platform desktop support powered by Electron⚛️, 
 
 - [ ] **SS / SSR** Protocol
 - [ ] **PAC** Mode
-  - Auto proxy mode for browser that use [GFWList](https://raw.githubusercontent.com/gfwlist/gfwlist/master/gfwlist.txt) as default rules.
+  - Auto proxy mode for browsers that use [GFWList](https://raw.githubusercontent.com/gfwlist/gfwlist/master/gfwlist.txt) as default rules.
   - Allow custom rules.
 - [x] **Global** Mode
   - Global socks5 proxy for browser.
@@ -39,21 +39,21 @@ V2ray GUI client with cross-platform desktop support powered by Electron⚛️, 
   - Get some tools like SwitchOmega to enable browser proxy on this mode.
 - [x] **HTTP(S)** Proxy
   - On Windows, commands for terminal proxy(port 1087 as default):
-    - `$env:HTTPS_PROXY="http://127.0.0.1:1087"` (powershell)
-    - `$env:HTTP_PROXY="http://127.0.0.1:1087"` (powershell)
-    - `set http_proxy=http://127.0.0.1:1087` (cmd)
-    - `set https_proxy=http://127.0.0.1:1087` (cmd)
+    - `$env:HTTPS_PROXY="http://127.0.0.1:10871"` (PowerShell)
+    - `$env:HTTP_PROXY="http://127.0.0.1:10871"` (PowerShell)
+    - `set http_proxy=http://127.0.0.1:10871` (cmd)
+    - `set https_proxy=http://127.0.0.1:10871` (cmd)
   - On Linux/MacOS, commands for terminal proxy:
-    - `export http_proxy="127.0.0.1:1087"`
-    - `export https_proxy="127.0.0.1:1087"`
-    - Some tools like `proxychains` is deep recommended.
+    - `export http_proxy="127.0.0.1:10871"`
+    - `export https_proxy="127.0.0.1:10871"`
+    - Some tools like `proxychains` are deeply recommended.
 - [x] Clipboard
 - [ ] QR-code Import
 - [ ] Subscription Import
 - [ ] Language Detecting And Switching (zh-CN / en-US / ru-RU)
 - [ ] Configuration Backup / Recovery
 - [x] Dark / Light Mode
-- [x] Auto Start (Not support on Linux)
+- [x] Auto Start (Not supported on Linux)
 - [x] Server Share
 - [x] Activity Logs
 
@@ -118,22 +118,22 @@ V2ray GUI client with cross-platform desktop support powered by Electron⚛️, 
   - ![statistics](https://img.shields.io/github/downloads/shaonhuang/V2rayX/total?style=plastic)
   - [↪ releases page](https://github.com/shaonhuang/V2rayX/releases/latest)
 
-- Snapcraft Store (linux)
+- Snapcraft Store (Linux)
 
   - [![Get it from the Snap Store](https://snapcraft.io/static/images/badges/en/snap-store-black.svg)](https://snapcraft.io/v2rayx)
   - [↪ home page](https://snapcraft.io/v2rayx)
 
 ## VII. Plugins Downloads
 
-after install, app will auto install v2ray component.
+after installation, the app will auto-install the v2ray component.
 
 ## IX. Why?
 
-This project was heavily inspired by yanue/V2rayU, which uses packed v2ray-core to avoid complex intallation with native O-C code.But it is not intuitive to use.Only support macos.
+This project was heavily inspired by yanue/V2rayU, which uses packed v2ray-core to avoid complex installation with native O-C code. But it is not intuitive to use. Only support macOS.
 
-I wish to create a web development work flow to work with frondend and backend, and app need a little bit of user interface and it has to be cross-platform.
+I work with different operating systems that need a proxy environment, and I hope the app has a little bit of a user interface and it has to be cross-platform.
 
-Hence, the app is created.Welcome to pull or make pr.
+Hence, the app is created. Welcome to pull or make PR.
 
 ## X. Development
 
@@ -141,21 +141,21 @@ Hence, the app is created.Welcome to pull or make pr.
 
 - Node@^`18.14.0`
 - Ubuntu18.04 or higher version
-- Mac catalina or other versions (works in most recent versions in theory)
+- Mac Catalina or other versions (works in most recent versions in theory)
 - Windows 10 (WSL tested) or higher version
 
 ### 2. Prepare
 
 ```bash
-# for ubuntu developers
-# for mac developers
+# for Ubuntu developers
+# for Mac developers
 
-# proxy env set (if your local machine support)
+# proxy env set (if your local machine support it)
 export HTTPS_PROXY=http://127.0.0.1:<port>
 export HTTP_PROXY=http://127.0.0.1:<port>
 ```
 
-### 3. Run commands in terminal
+### 3. Run commands in the terminal
 
 ```bash
 # [01]clone
@@ -165,7 +165,7 @@ $: cd v2rayx
 # for china developers
 $: npm config set electron_mirror http://npm.taobao.org/mirrors/electron/
 
-# [02]npm
+# [02]npm install yarn(v3)   
 $: npm i -g yarn
 $: yarn set version stable
 
