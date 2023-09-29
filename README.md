@@ -181,3 +181,5 @@ $: yarn dev
 ## XII. Credit
 
 - [yanue/V2rayU](https://github.com/yanue/V2rayU/tree/master)
+
+- [nojsja/shadowsocks-electron](https://github.com/nojsja/shadowsocks-electron)
