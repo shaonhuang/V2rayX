@@ -69,7 +69,7 @@
     "@vitejs/plugin-react": "^4.0.4",
     "autoprefixer": "^10.4.15",
     "cross-env": "^7.0.3",
-    "electron": "^26.1.0",
+    "electron": "^26.2.4",
     "electron-builder": "^24.6.4",
     "electron-vite": "^1.0.28",
     "eslint": "^8.48.0",
