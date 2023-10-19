@@ -1,4 +1,4 @@
-import { app, BrowserWindow, shell } from 'electron';
+import { BrowserWindow, shell } from 'electron';
 import { join } from 'path';
 import { is } from '@electron-toolkit/utils';
 import icon from '@resources/icon.png?asset';
@@ -13,6 +13,7 @@ function createWindow(): BrowserWindow {
     show: false,
     icon: icon,
     autoHideMenuBar: true,
+    titleBarStyle: 'hidden',
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
       preload: preloadPath,

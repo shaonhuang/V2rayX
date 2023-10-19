@@ -43,3 +43,24 @@ export const checkPortAvailability = (port: number) => {
   });
 };
 
+export const promiseRetry = <T>(
+  promiseFn: () => Promise<T>,
+  maxAttempts: number,
+  delay: number,
+): Promise<T> => {
+  return new Promise((resolve, reject) => {
+    const attempt = (currentAttempt: number) => {
+      promiseFn()
+        .then(resolve)
+        .catch((error) => {
+          if (currentAttempt < maxAttempts) {
+            setTimeout(() => attempt(currentAttempt + 1), delay);
+          } else {
+            reject(error);
+          }
+        });
+    };
+
+    attempt(1);
+  });
+};

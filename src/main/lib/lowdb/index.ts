@@ -37,7 +37,7 @@ const defaultData: Data = {
   autoLaunch: false,
   servers: [],
   currentServerId: '',
-  appVersion: '',
+  appVersion: '0.0.0',
   settings: {
     appearance: 'light',
     proxyMode: 'Manual',

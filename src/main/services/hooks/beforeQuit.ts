@@ -1,5 +1,7 @@
 import { ElectronApp } from '@main/app';
 import emitter from '@lib/event-emitter';
+import ProxyService from '../core/proxy';
+import Service from '../core/v2ray';
 
 let proxy = true;
 let service = true;
@@ -10,25 +12,23 @@ emitter.on('v2ray:status', (status: boolean) => {
 });
 emitter.on('proxy:status', (status: boolean) => {
   proxy = status;
-  if (!service && !proxy) {
-    emitter.emit('cleanUp:refresh', true);
-  }
 });
-const unProxy = (electronApp: ElectronApp) => {
+const stopProxy = (electronApp: ElectronApp) => {
   electronApp.registryHooksSync('beforeQuit', 'unProxy', () => {
     console.log('hooks: >> turn proxy off');
-    emitter.emit('proxy:stop', {});
+    const service = new Service(process.platform);
+    service.stop();
   });
 };
 
 const stopService = (electronApp: ElectronApp) => {
   electronApp.registryHooksSync('beforeQuit', 'unProxy', () => {
     console.log('hooks: >> turn service off');
-    emitter.emit('v2ray:stop', {});
+    new ProxyService().stop();
   });
 };
 
-tasks.push(unProxy, stopService);
+tasks.push(stopProxy, stopService);
 
 export default (electronApp: ElectronApp) => {
   tasks.forEach((task) => {

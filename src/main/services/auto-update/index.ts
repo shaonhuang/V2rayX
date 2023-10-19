@@ -90,7 +90,7 @@ const AppUpdater = (mainWindow) => {
     setTimeout(() => {
       dialog
         .showMessageBox({
-          title: 'Install Updates',
+          title: 'Updating V2rayX',
           message: 'Updates downloaded, application will be quit for update...',
         })
         .then(() => {

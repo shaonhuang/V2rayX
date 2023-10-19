@@ -110,7 +110,6 @@ export class WinProxy extends Proxy {
     PS.stopPacServer();
     logger.info('Set proxy off');
     await sysproxy.unsetProxy();
-
   }
 }
 

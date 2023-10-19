@@ -1,36 +1,51 @@
 import { app, BrowserWindow, ipcMain } from 'electron';
 import { join } from 'path';
 import * as fs from 'fs';
-import emitter from '@lib/event-emitter';
 import { electronApp, optimizer, is } from '@electron-toolkit/utils';
 
-import { Proxy } from '@main/lib/proxy';
 import logger from '@main/lib/logs';
 import appUpdater from '@main/services/auto-update';
 import { Install } from '@main/services/install';
-import { Service } from '@main/lib/v2ray';
 import { createTray } from '@main/services/tray';
 import db from '@main/lib/lowdb/index';
 import { createWindow } from '@main/services/browser';
-import startUp from './bootstrap';
-import { electronApp as electronHookApp } from './bootstrap';
+import registryHooks from '@main/services/hooks';
+import App from '@main/app';
+import { IpcMainWindowType } from '@lib/constant/types';
 
-let mainWindow: any = null;
-let proxy: Proxy | null = null;
-let service: Service | null = null;
-let cleanUp = false;
+export let mainWindow: IpcMainWindowType;
+
+/* -------------- pre work -------------- */
+
+const gotTheLock = app.requestSingleInstanceLock(); // singleton lock
+if (!gotTheLock) {
+  app.quit();
+} else {
+  // TODO: click for open window
+  const mainWindow: BrowserWindow = BrowserWindow.getAllWindows()[0];
+  mainWindow?.once('ready-to-show', () => {
+    mainWindow.show();
+  });
+}
+
+// Set app user model id for windows
+electronApp.setAppUserModelId('io.shaonhuang.v2rayx');
+// app.dock?.hide();
+
+export const electronHookApp = new App();
+
+registryHooks(electronHookApp);
+
+electronHookApp.beforeReady(app);
+
+/* -------------- electron life cycle -------------- */
 
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app.whenReady().then(async () => {
-  // Set app user model id for windows
-  electronApp.setAppUserModelId('com.v2rayx');
-  // service for manage v2ray process, proxy for manage system proxy settings
-  const { preStartProxy, preStartService, repeatedStart } = await startUp();
-  proxy = preStartProxy;
-  service = preStartService;
-  cleanUp = repeatedStart;
+  await db.read();
+  electronHookApp.ready(app);
 
   // Default open or close DevTools by F13 in development
   // and ignore CommandOrControl + R in production.
@@ -39,7 +54,6 @@ app.whenReady().then(async () => {
     optimizer.watchWindowShortcuts(window);
   });
   mainWindow = createWindow();
-
   if (is.dev) {
     const mainWindow = BrowserWindow.getAllWindows()[0];
     mainWindow.webContents.openDevTools();
@@ -53,6 +67,9 @@ app.whenReady().then(async () => {
   const install = Install.createInstall(process.platform);
   const v2rayPackageStatus = install.checkV2ray();
   db.data.v2rayInstallStatus = v2rayPackageStatus;
+  await db.write();
+  db.data = db.chain.set('appVersion', app.getVersion()).value();
+  // each time write something to lowdb, we have to write await db.write() weird bug for lowdb
   await db.write();
 
   logger.info(`v2rayPackageStatus: ${v2rayPackageStatus}`);
@@ -105,12 +122,4 @@ app.on('window-all-closed', () => {
 app.on('before-quit', (event) => {
   // Perform some actions before quitting
   electronHookApp.beforeQuit(app);
-
-  // Prevent the application from quitting immediately
-  cleanUp || event.preventDefault();
-
-  emitter.on('cleanUp:refresh', (status) => {
-    cleanUp = status;
-    app.quit()
-  });
 });

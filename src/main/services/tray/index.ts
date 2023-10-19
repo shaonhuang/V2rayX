@@ -1,4 +1,4 @@
-import { app, BrowserWindow, Tray, Menu, nativeImage, shell, ipcMain } from 'electron';
+import { app, BrowserWindow, Tray, Menu, nativeImage, shell } from 'electron';
 import fs from 'fs';
 import { join } from 'node:path';
 import logger from '@lib/logs';
@@ -22,7 +22,7 @@ export const createTray = (mainWindow: Object, createWindow: Function) => {
       accelerator: 'CmdOrCtrl+t',
       enabled: false,
       click: () => {
-        // emitter.emit('v2ray:stop', {});
+        emitter.emit('v2ray:stop', {});
       },
     },
     {
@@ -118,6 +118,7 @@ export const createTray = (mainWindow: Object, createWindow: Function) => {
   tray.setToolTip('click for more operations');
   tray.setContextMenu(contextMenu);
   emitter.on('tray-v2ray:update', (running: boolean) => {
+    const proxyMode = db.data.settings.proxyMode;
     template[0].label = `v2ray-core: ${running ? 'On' : 'Off'} (${app.getVersion()})`;
     template[1].label = `Turn v2ray-core ${running ? 'Off' : 'On'}`;
     // @ts-ignore
@@ -141,6 +142,13 @@ export const createTray = (mainWindow: Object, createWindow: Function) => {
       template[proxyMode === 'Global' ? 7 : proxyMode === 'Manual' ? 8 : 6].checked = true;
       tray.setContextMenu(Menu.buildFromTemplate(template));
     });
+  });
+  emitter.on('tray-mode:update', (mode) => {
+    [6, 7, 8].forEach((index: number) => {
+      template[index].checked = false;
+    });
+    template[mode === 'Global' ? 7 : mode === 'Manual' ? 8 : 6].checked = true;
+    tray.setContextMenu(Menu.buildFromTemplate(template));
   });
   tray.on('double-click', function () {
     if (mainWindow === null) {

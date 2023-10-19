@@ -27,7 +27,7 @@ const AboutPage = (): JSX.Element => {
     });
   }, [version]);
   return (
-    <section className="flex flex-row items-center justify-around flex-1">
+    <section className="flex flex-1 flex-row items-center justify-around">
       <div className="items-center justify-around rounded-xl bg-white p-9 text-black dark:bg-slate-700 dark:text-white">
         <div className="m-4 flex flex-col items-center">
           <img src={icon} alt="" className="m-4 h-24 w-24" />

@@ -64,7 +64,7 @@ const Index = (): JSX.Element => {
 
   return (
     <section className="flew-row flex flex-1 items-center justify-around text-black dark:text-white">
-      <div className="flex flex-col rounded-xl bg-white px-8 py-4 dark:bg-slate-700">
+      <div className="flex w-full flex-col rounded-xl bg-white px-8 py-4 dark:bg-slate-700">
         {isRunning && currentServerId ? (
           <div className="py-2">
             <div>

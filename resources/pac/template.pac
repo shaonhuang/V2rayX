@@ -1,4 +1,4 @@
-var proxy = "SOCKS5 127.0.0.1:__SOCKS5__PORT__; PROXY 127.0.0.1:__HTTP__PORT__; DIRECT;";
+var proxy = 'SOCKS5 127.0.0.1:__SOCKS5__PORT__; PROXY 127.0.0.1:__HTTP__PORT__; DIRECT;';
 
 var rules = __RULES__;
 
@@ -37,7 +37,7 @@ function extend(subclass, superclass, definition) {
     definition.__proto__ = superclass.prototype;
     subclass.prototype = definition;
   } else {
-    var tmpclass = function() {},
+    var tmpclass = function () {},
       ret;
     tmpclass.prototype = superclass.prototype;
     subclass.prototype = new tmpclass();
@@ -57,20 +57,21 @@ function Filter(text) {
 Filter.prototype = {
   text: null,
   subscriptions: null,
-  toString: function() {
+  toString: function () {
     return this.text;
-  }
+  },
 };
 Filter.knownFilters = createDict();
-Filter.elemhideRegExp = /^([^\/\*\|\@"!]*?)#(\@)?(?:([\w\-]+|\*)((?:\([\w\-]+(?:[$^*]?=[^\(\)"]*)?\))*)|#([^{}]+))$/;
+Filter.elemhideRegExp =
+  /^([^\/\*\|\@"!]*?)#(\@)?(?:([\w\-]+|\*)((?:\([\w\-]+(?:[$^*]?=[^\(\)"]*)?\))*)|#([^{}]+))$/;
 Filter.regexpRegExp = /^(@@)?\/.*\/(?:\$~?[\w\-]+(?:=[^,\s]+)?(?:,~?[\w\-]+(?:=[^,\s]+)?)*)?$/;
 Filter.optionsRegExp = /\$(~?[\w\-]+(?:=[^,\s]+)?(?:,~?[\w\-]+(?:=[^,\s]+)?)*)$/;
-Filter.fromText = function(text) {
+Filter.fromText = function (text) {
   if (text in Filter.knownFilters) {
     return Filter.knownFilters[text];
   }
   var ret;
-  if (text[0] == "!") {
+  if (text[0] == '!') {
     ret = new CommentFilter(text);
   } else {
     ret = RegExpFilter.fromText(text);
@@ -84,7 +85,7 @@ function InvalidFilter(text, reason) {
   this.reason = reason;
 }
 extend(InvalidFilter, Filter, {
-  reason: null
+  reason: null,
 });
 
 function CommentFilter(text) {
@@ -101,8 +102,8 @@ extend(ActiveFilter, Filter, {
   domainSeparator: null,
   ignoreTrailingDot: true,
   domainSourceIsUpperCase: false,
-  getDomains: function() {
-    var prop = getOwnPropertyDescriptor(this, "domains");
+  getDomains: function () {
+    var prop = getOwnPropertyDescriptor(this, 'domains');
     if (prop) {
       return prop;
     }
@@ -113,11 +114,11 @@ extend(ActiveFilter, Filter, {
         source = source.toUpperCase();
       }
       var list = source.split(this.domainSeparator);
-      if (list.length == 1 && list[0][0] != "~") {
+      if (list.length == 1 && list[0][0] != '~') {
         domains = createDict();
-        domains[""] = false;
+        domains[''] = false;
         if (this.ignoreTrailingDot) {
-          list[0] = list[0].replace(/\.+$/, "");
+          list[0] = list[0].replace(/\.+$/, '');
         }
         domains[list[0]] = true;
       } else {
@@ -125,13 +126,13 @@ extend(ActiveFilter, Filter, {
         for (var i = 0; i < list.length; i++) {
           var domain = list[i];
           if (this.ignoreTrailingDot) {
-            domain = domain.replace(/\.+$/, "");
+            domain = domain.replace(/\.+$/, '');
           }
-          if (domain == "") {
+          if (domain == '') {
             continue;
           }
           var include;
-          if (domain[0] == "~") {
+          if (domain[0] == '~') {
             include = false;
             domain = domain.substr(1);
           } else {
@@ -143,48 +144,45 @@ extend(ActiveFilter, Filter, {
           }
           domains[domain] = include;
         }
-        domains[""] = !hasIncludes;
+        domains[''] = !hasIncludes;
       }
       this.domainSource = null;
     }
     return this.domains;
   },
   sitekeys: null,
-  isActiveOnDomain: function(docDomain, sitekey) {
-    if (
-      this.getSitekeys() &&
-      (!sitekey || this.getSitekeys().indexOf(sitekey.toUpperCase()) < 0)
-    ) {
+  isActiveOnDomain: function (docDomain, sitekey) {
+    if (this.getSitekeys() && (!sitekey || this.getSitekeys().indexOf(sitekey.toUpperCase()) < 0)) {
       return false;
     }
     if (!this.getDomains()) {
       return true;
     }
     if (!docDomain) {
-      return this.getDomains()[""];
+      return this.getDomains()[''];
     }
     if (this.ignoreTrailingDot) {
-      docDomain = docDomain.replace(/\.+$/, "");
+      docDomain = docDomain.replace(/\.+$/, '');
     }
     docDomain = docDomain.toUpperCase();
     while (true) {
       if (docDomain in this.getDomains()) {
         return this.domains[docDomain];
       }
-      var nextDot = docDomain.indexOf(".");
+      var nextDot = docDomain.indexOf('.');
       if (nextDot < 0) {
         break;
       }
       docDomain = docDomain.substr(nextDot + 1);
     }
-    return this.domains[""];
+    return this.domains[''];
   },
-  isActiveOnlyOnDomain: function(docDomain) {
-    if (!docDomain || !this.getDomains() || this.getDomains()[""]) {
+  isActiveOnlyOnDomain: function (docDomain) {
+    if (!docDomain || !this.getDomains() || this.getDomains()['']) {
       return false;
     }
     if (this.ignoreTrailingDot) {
-      docDomain = docDomain.replace(/\.+$/, "");
+      docDomain = docDomain.replace(/\.+$/, '');
     }
     docDomain = docDomain.toUpperCase();
     for (var domain in this.getDomains()) {
@@ -192,25 +190,16 @@ extend(ActiveFilter, Filter, {
         this.domains[domain] &&
         domain != docDomain &&
         (domain.length <= docDomain.length ||
-          domain.indexOf("." + docDomain) !=
-            domain.length - docDomain.length - 1)
+          domain.indexOf('.' + docDomain) != domain.length - docDomain.length - 1)
       ) {
         return false;
       }
     }
     return true;
-  }
+  },
 });
 
-function RegExpFilter(
-  text,
-  regexpSource,
-  contentType,
-  matchCase,
-  domains,
-  thirdParty,
-  sitekeys
-) {
+function RegExpFilter(text, regexpSource, contentType, matchCase, domains, thirdParty, sitekeys) {
   ActiveFilter.call(this, text, domains, sitekeys);
   if (contentType != null) {
     this.contentType = contentType;
@@ -226,12 +215,12 @@ function RegExpFilter(
   }
   if (
     regexpSource.length >= 2 &&
-    regexpSource[0] == "/" &&
-    regexpSource[regexpSource.length - 1] == "/"
+    regexpSource[0] == '/' &&
+    regexpSource[regexpSource.length - 1] == '/'
   ) {
     var regexp = new RegExp(
       regexpSource.substr(1, regexpSource.length - 2),
-      this.matchCase ? "" : "i"
+      this.matchCase ? '' : 'i',
     );
     this.regexp = regexp;
   } else {
@@ -241,28 +230,25 @@ function RegExpFilter(
 extend(RegExpFilter, ActiveFilter, {
   domainSourceIsUpperCase: true,
   length: 1,
-  domainSeparator: "|",
+  domainSeparator: '|',
   regexpSource: null,
-  getRegexp: function() {
-    var prop = getOwnPropertyDescriptor(this, "regexp");
+  getRegexp: function () {
+    var prop = getOwnPropertyDescriptor(this, 'regexp');
     if (prop) {
       return prop;
     }
     var source = this.regexpSource
-      .replace(/\*+/g, "*")
-      .replace(/\^\|$/, "^")
-      .replace(/\W/g, "\\$&")
-      .replace(/\\\*/g, ".*")
-      .replace(
-        /\\\^/g,
-        "(?:[\\x00-\\x24\\x26-\\x2C\\x2F\\x3A-\\x40\\x5B-\\x5E\\x60\\x7B-\\x7F]|$)"
-      )
-      .replace(/^\\\|\\\|/, "^[\\w\\-]+:\\/+(?!\\/)(?:[^\\/]+\\.)?")
-      .replace(/^\\\|/, "^")
-      .replace(/\\\|$/, "$")
-      .replace(/^(\.\*)/, "")
-      .replace(/(\.\*)$/, "");
-    var regexp = new RegExp(source, this.matchCase ? "" : "i");
+      .replace(/\*+/g, '*')
+      .replace(/\^\|$/, '^')
+      .replace(/\W/g, '\\$&')
+      .replace(/\\\*/g, '.*')
+      .replace(/\\\^/g, '(?:[\\x00-\\x24\\x26-\\x2C\\x2F\\x3A-\\x40\\x5B-\\x5E\\x60\\x7B-\\x7F]|$)')
+      .replace(/^\\\|\\\|/, '^[\\w\\-]+:\\/+(?!\\/)(?:[^\\/]+\\.)?')
+      .replace(/^\\\|/, '^')
+      .replace(/\\\|$/, '$')
+      .replace(/^(\.\*)/, '')
+      .replace(/(\.\*)$/, '');
+    var regexp = new RegExp(source, this.matchCase ? '' : 'i');
     this.regexp = regexp;
     return regexp;
   },
@@ -270,34 +256,31 @@ extend(RegExpFilter, ActiveFilter, {
   matchCase: false,
   thirdParty: null,
   sitekeySource: null,
-  getSitekeys: function() {
-    var prop = getOwnPropertyDescriptor(this, "sitekeys");
+  getSitekeys: function () {
+    var prop = getOwnPropertyDescriptor(this, 'sitekeys');
     if (prop) {
       return prop;
     }
     var sitekeys = null;
     if (this.sitekeySource) {
-      sitekeys = this.sitekeySource.split("|");
+      sitekeys = this.sitekeySource.split('|');
       this.sitekeySource = null;
     }
     this.sitekeys = sitekeys;
     return this.sitekeys;
   },
-  matches: function(location, contentType, docDomain, thirdParty, sitekey) {
-    if (
-      this.getRegexp().test(location) &&
-      this.isActiveOnDomain(docDomain, sitekey)
-    ) {
+  matches: function (location, contentType, docDomain, thirdParty, sitekey) {
+    if (this.getRegexp().test(location) && this.isActiveOnDomain(docDomain, sitekey)) {
       return true;
     }
     return false;
-  }
+  },
 });
-RegExpFilter.prototype["0"] = "#this";
-RegExpFilter.fromText = function(text) {
+RegExpFilter.prototype['0'] = '#this';
+RegExpFilter.fromText = function (text) {
   var blocking = true;
   var origText = text;
-  if (text.indexOf("@@") == 0) {
+  if (text.indexOf('@@') == 0) {
     blocking = false;
     text = text.substr(2);
   }
@@ -308,57 +291,54 @@ RegExpFilter.fromText = function(text) {
   var thirdParty = null;
   var collapse = null;
   var options;
-  var match = text.indexOf("$") >= 0 ? Filter.optionsRegExp.exec(text) : null;
+  var match = text.indexOf('$') >= 0 ? Filter.optionsRegExp.exec(text) : null;
   if (match) {
-    options = match[1].toUpperCase().split(",");
+    options = match[1].toUpperCase().split(',');
     text = match.input.substr(0, match.index);
     for (var _loopIndex6 = 0; _loopIndex6 < options.length; ++_loopIndex6) {
       var option = options[_loopIndex6];
       var value = null;
-      var separatorIndex = option.indexOf("=");
+      var separatorIndex = option.indexOf('=');
       if (separatorIndex >= 0) {
         value = option.substr(separatorIndex + 1);
         option = option.substr(0, separatorIndex);
       }
-      option = option.replace(/-/, "_");
+      option = option.replace(/-/, '_');
       if (option in RegExpFilter.typeMap) {
         if (contentType == null) {
           contentType = 0;
         }
         contentType |= RegExpFilter.typeMap[option];
-      } else if (option[0] == "~" && option.substr(1) in RegExpFilter.typeMap) {
+      } else if (option[0] == '~' && option.substr(1) in RegExpFilter.typeMap) {
         if (contentType == null) {
           contentType = RegExpFilter.prototype.contentType;
         }
         contentType &= ~RegExpFilter.typeMap[option.substr(1)];
-      } else if (option == "MATCH_CASE") {
+      } else if (option == 'MATCH_CASE') {
         matchCase = true;
-      } else if (option == "~MATCH_CASE") {
+      } else if (option == '~MATCH_CASE') {
         matchCase = false;
-      } else if (option == "DOMAIN" && typeof value != "undefined") {
+      } else if (option == 'DOMAIN' && typeof value != 'undefined') {
         domains = value;
-      } else if (option == "THIRD_PARTY") {
+      } else if (option == 'THIRD_PARTY') {
         thirdParty = true;
-      } else if (option == "~THIRD_PARTY") {
+      } else if (option == '~THIRD_PARTY') {
         thirdParty = false;
-      } else if (option == "COLLAPSE") {
+      } else if (option == 'COLLAPSE') {
         collapse = true;
-      } else if (option == "~COLLAPSE") {
+      } else if (option == '~COLLAPSE') {
         collapse = false;
-      } else if (option == "SITEKEY" && typeof value != "undefined") {
+      } else if (option == 'SITEKEY' && typeof value != 'undefined') {
         sitekeys = value;
       } else {
-        return new InvalidFilter(
-          origText,
-          "Unknown option " + option.toLowerCase()
-        );
+        return new InvalidFilter(origText, 'Unknown option ' + option.toLowerCase());
       }
     }
   }
   if (
     !blocking &&
     (contentType == null || contentType & RegExpFilter.typeMap.DOCUMENT) &&
-    (!options || options.indexOf("DOCUMENT") < 0) &&
+    (!options || options.indexOf('DOCUMENT') < 0) &&
     !/^\|?[\w\-]+:/.test(text)
   ) {
     if (contentType == null) {
@@ -376,7 +356,7 @@ RegExpFilter.fromText = function(text) {
         domains,
         thirdParty,
         sitekeys,
-        collapse
+        collapse,
       );
     } else {
       return new WhitelistFilter(
@@ -386,7 +366,7 @@ RegExpFilter.fromText = function(text) {
         matchCase,
         domains,
         thirdParty,
-        sitekeys
+        sitekeys,
       );
     }
   } catch (e) {
@@ -410,11 +390,9 @@ RegExpFilter.typeMap = {
   FONT: 32768,
   BACKGROUND: 4,
   POPUP: 268435456,
-  ELEMHIDE: 1073741824
+  ELEMHIDE: 1073741824,
 };
-RegExpFilter.prototype.contentType &= ~(
-  RegExpFilter.typeMap.ELEMHIDE | RegExpFilter.typeMap.POPUP
-);
+RegExpFilter.prototype.contentType &= ~(RegExpFilter.typeMap.ELEMHIDE | RegExpFilter.typeMap.POPUP);
 
 function BlockingFilter(
   text,
@@ -424,43 +402,17 @@ function BlockingFilter(
   domains,
   thirdParty,
   sitekeys,
-  collapse
+  collapse,
 ) {
-  RegExpFilter.call(
-    this,
-    text,
-    regexpSource,
-    contentType,
-    matchCase,
-    domains,
-    thirdParty,
-    sitekeys
-  );
+  RegExpFilter.call(this, text, regexpSource, contentType, matchCase, domains, thirdParty, sitekeys);
   this.collapse = collapse;
 }
 extend(BlockingFilter, RegExpFilter, {
-  collapse: null
+  collapse: null,
 });
 
-function WhitelistFilter(
-  text,
-  regexpSource,
-  contentType,
-  matchCase,
-  domains,
-  thirdParty,
-  sitekeys
-) {
-  RegExpFilter.call(
-    this,
-    text,
-    regexpSource,
-    contentType,
-    matchCase,
-    domains,
-    thirdParty,
-    sitekeys
-  );
+function WhitelistFilter(text, regexpSource, contentType, matchCase, domains, thirdParty, sitekeys) {
+  RegExpFilter.call(this, text, regexpSource, contentType, matchCase, domains, thirdParty, sitekeys);
 }
 extend(WhitelistFilter, RegExpFilter, {});
 
@@ -470,17 +422,17 @@ function Matcher() {
 Matcher.prototype = {
   filterByKeyword: null,
   keywordByFilter: null,
-  clear: function() {
+  clear: function () {
     this.filterByKeyword = createDict();
     this.keywordByFilter = createDict();
   },
-  add: function(filter) {
+  add: function (filter) {
     if (filter.text in this.keywordByFilter) {
       return;
     }
     var keyword = this.findKeyword(filter);
     var oldEntry = this.filterByKeyword[keyword];
-    if (typeof oldEntry == "undefined") {
+    if (typeof oldEntry == 'undefined') {
       this.filterByKeyword[keyword] = filter;
     } else if (oldEntry.length == 1) {
       this.filterByKeyword[keyword] = [oldEntry, filter];
@@ -489,7 +441,7 @@ Matcher.prototype = {
     }
     this.keywordByFilter[filter.text] = keyword;
   },
-  remove: function(filter) {
+  remove: function (filter) {
     if (!(filter.text in this.keywordByFilter)) {
       return;
     }
@@ -508,8 +460,8 @@ Matcher.prototype = {
     }
     delete this.keywordByFilter[filter.text];
   },
-  findKeyword: function(filter) {
-    var result = "";
+  findKeyword: function (filter) {
+    var result = '';
     var text = filter.text;
     if (Filter.regexpRegExp.test(text)) {
       return result;
@@ -518,12 +470,10 @@ Matcher.prototype = {
     if (match) {
       text = match.input.substr(0, match.index);
     }
-    if (text.substr(0, 2) == "@@") {
+    if (text.substr(0, 2) == '@@') {
       text = text.substr(2);
     }
-    var candidates = text
-      .toLowerCase()
-      .match(/[^a-z0-9%*][a-z0-9%]{3,}(?=[^a-z0-9%*])/g);
+    var candidates = text.toLowerCase().match(/[^a-z0-9%*][a-z0-9%]{3,}(?=[^a-z0-9%*])/g);
     if (!candidates) {
       return result;
     }
@@ -533,10 +483,7 @@ Matcher.prototype = {
     for (var i = 0, l = candidates.length; i < l; i++) {
       var candidate = candidates[i].substr(1);
       var count = candidate in hash ? hash[candidate].length : 0;
-      if (
-        count < resultCount ||
-        (count == resultCount && candidate.length > resultLength)
-      ) {
+      if (count < resultCount || (count == resultCount && candidate.length > resultLength)) {
         result = candidate;
         resultCount = count;
         resultLength = candidate.length;
@@ -544,44 +491,35 @@ Matcher.prototype = {
     }
     return result;
   },
-  hasFilter: function(filter) {
+  hasFilter: function (filter) {
     return filter.text in this.keywordByFilter;
   },
-  getKeywordForFilter: function(filter) {
+  getKeywordForFilter: function (filter) {
     if (filter.text in this.keywordByFilter) {
       return this.keywordByFilter[filter.text];
     } else {
       return null;
     }
   },
-  _checkEntryMatch: function(
-    keyword,
-    location,
-    contentType,
-    docDomain,
-    thirdParty,
-    sitekey
-  ) {
+  _checkEntryMatch: function (keyword, location, contentType, docDomain, thirdParty, sitekey) {
     var list = this.filterByKeyword[keyword];
     for (var i = 0; i < list.length; i++) {
       var filter = list[i];
-      if (filter == "#this") {
+      if (filter == '#this') {
         filter = list;
       }
-      if (
-        filter.matches(location, contentType, docDomain, thirdParty, sitekey)
-      ) {
+      if (filter.matches(location, contentType, docDomain, thirdParty, sitekey)) {
         return filter;
       }
     }
     return null;
   },
-  matchesAny: function(location, contentType, docDomain, thirdParty, sitekey) {
+  matchesAny: function (location, contentType, docDomain, thirdParty, sitekey) {
     var candidates = location.toLowerCase().match(/[a-z0-9%]{3,}/g);
     if (candidates === null) {
       candidates = [];
     }
-    candidates.push("");
+    candidates.push('');
     for (var i = 0, l = candidates.length; i < l; i++) {
       var substr = candidates[i];
       if (substr in this.filterByKeyword) {
@@ -591,7 +529,7 @@ Matcher.prototype = {
           contentType,
           docDomain,
           thirdParty,
-          sitekey
+          sitekey,
         );
         if (result) {
           return result;
@@ -599,7 +537,7 @@ Matcher.prototype = {
       }
     }
     return null;
-  }
+  },
 };
 
 function CombinedMatcher() {
@@ -613,13 +551,13 @@ CombinedMatcher.prototype = {
   whitelist: null,
   resultCache: null,
   cacheEntries: 0,
-  clear: function() {
+  clear: function () {
     this.blacklist.clear();
     this.whitelist.clear();
     this.resultCache = createDict();
     this.cacheEntries = 0;
   },
-  add: function(filter) {
+  add: function (filter) {
     if (filter instanceof WhitelistFilter) {
       this.whitelist.add(filter);
     } else {
@@ -630,7 +568,7 @@ CombinedMatcher.prototype = {
       this.cacheEntries = 0;
     }
   },
-  remove: function(filter) {
+  remove: function (filter) {
     if (filter instanceof WhitelistFilter) {
       this.whitelist.remove(filter);
     } else {
@@ -641,48 +579,41 @@ CombinedMatcher.prototype = {
       this.cacheEntries = 0;
     }
   },
-  findKeyword: function(filter) {
+  findKeyword: function (filter) {
     if (filter instanceof WhitelistFilter) {
       return this.whitelist.findKeyword(filter);
     } else {
       return this.blacklist.findKeyword(filter);
     }
   },
-  hasFilter: function(filter) {
+  hasFilter: function (filter) {
     if (filter instanceof WhitelistFilter) {
       return this.whitelist.hasFilter(filter);
     } else {
       return this.blacklist.hasFilter(filter);
     }
   },
-  getKeywordForFilter: function(filter) {
+  getKeywordForFilter: function (filter) {
     if (filter instanceof WhitelistFilter) {
       return this.whitelist.getKeywordForFilter(filter);
     } else {
       return this.blacklist.getKeywordForFilter(filter);
     }
   },
-  isSlowFilter: function(filter) {
-    var matcher =
-      filter instanceof WhitelistFilter ? this.whitelist : this.blacklist;
+  isSlowFilter: function (filter) {
+    var matcher = filter instanceof WhitelistFilter ? this.whitelist : this.blacklist;
     if (matcher.hasFilter(filter)) {
       return !matcher.getKeywordForFilter(filter);
     } else {
       return !matcher.findKeyword(filter);
     }
   },
-  matchesAnyInternal: function(
-    location,
-    contentType,
-    docDomain,
-    thirdParty,
-    sitekey
-  ) {
+  matchesAnyInternal: function (location, contentType, docDomain, thirdParty, sitekey) {
     var candidates = location.toLowerCase().match(/[a-z0-9%]{3,}/g);
     if (candidates === null) {
       candidates = [];
     }
-    candidates.push("");
+    candidates.push('');
     var blacklistHit = null;
     for (var i = 0, l = candidates.length; i < l; i++) {
       var substr = candidates[i];
@@ -693,7 +624,7 @@ CombinedMatcher.prototype = {
           contentType,
           docDomain,
           thirdParty,
-          sitekey
+          sitekey,
         );
         if (result) {
           return result;
@@ -706,14 +637,14 @@ CombinedMatcher.prototype = {
           contentType,
           docDomain,
           thirdParty,
-          sitekey
+          sitekey,
         );
       }
     }
     return blacklistHit;
   },
-  matchesAny: function(location, docDomain) {
-    var key = location + " " + docDomain + " ";
+  matchesAny: function (location, docDomain) {
+    var key = location + ' ' + docDomain + ' ';
     if (key in this.resultCache) {
       return this.resultCache[key];
     }
@@ -725,11 +656,11 @@ CombinedMatcher.prototype = {
     this.resultCache[key] = result;
     this.cacheEntries++;
     return result;
-  }
+  },
 };
 var defaultMatcher = new CombinedMatcher();
 
-var direct = "DIRECT;";
+var direct = 'DIRECT;';
 
 for (var i = 0; i < rules.length; i++) {
   defaultMatcher.add(Filter.fromText(rules[i]));

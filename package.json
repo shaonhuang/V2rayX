@@ -1,6 +1,6 @@
 {
   "name": "v2rayx",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "An Electron application with React and TypeScript",
   "main": "./out/main/index.js",
   "author": "shaonhuang",
@@ -27,7 +27,6 @@
   "dependencies": {
     "@electron-toolkit/preload": "^2.0.0",
     "@electron-toolkit/utils": "^2.0.0",
-    "@sentry/electron": "^4.11.0",
     "@types/object-hash": "^3.0.2",
     "@types/redux-logger": "^3.0.9",
     "adm-zip": "^0.5.10",
@@ -69,7 +68,7 @@
     "@vitejs/plugin-react": "^4.0.4",
     "autoprefixer": "^10.4.15",
     "cross-env": "^7.0.3",
-    "electron": "^26.1.0",
+    "electron": "^26.3.0",
     "electron-builder": "^24.6.4",
     "electron-vite": "^1.0.28",
     "eslint": "^8.48.0",

@@ -62,9 +62,7 @@ export interface Status {
   delay: number | null | '';
 }
 
-export interface Service {
-  ipc: IpcMain;
-}
+export interface Service {}
 
 export interface TransparentWindowType {
   icon: string;

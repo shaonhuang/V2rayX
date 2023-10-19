@@ -13,9 +13,6 @@ import Notice from '@renderer/components/Notice';
 import { platform } from '@renderer/constant';
 import { useAppSelector } from '@renderer/store/hooks';
 import { find } from 'lodash';
-import { readFromDb } from '@renderer/store/serversPageSlice';
-import { useDispatch } from 'react-redux';
-import { AppDispatch } from '@renderer/store';
 
 const label = { inputProps: { 'aria-label': 'Checkbox' } };
 const AppearanceButton = styled(Button)({
@@ -28,7 +25,6 @@ const Title = styled.div(() => ({
 }));
 
 const GernalSettings = (): JSX.Element => {
-  const dispatch = useDispatch<AppDispatch>();
   const currentServerId = useAppSelector((state) => state.serversPage.currentServerId);
   const serversState = useAppSelector((state) => state.serversPage.servers);
   const [socksCmdPaste, setSocksCmdPaste] = useState('');
@@ -43,9 +39,6 @@ const GernalSettings = (): JSX.Element => {
     setSocksPort(e.target.value);
   };
 
-  useLayoutEffect(() => {
-    dispatch(readFromDb());
-  }, []);
   useLayoutEffect(() => {
     //FIXME: type error
     // @ts-ignore
@@ -88,7 +81,7 @@ const GernalSettings = (): JSX.Element => {
   }, []);
 
   return (
-    <section className="flex flex-row items-center justify-around text-black dark:text-white flex-1">
+    <section className="flex flex-1 flex-row items-center justify-around text-black dark:text-white">
       <div
         className="grid items-center justify-around gap-x-3 rounded-xl bg-white p-9 dark:bg-slate-700"
         style={{ gridTemplateColumns: '1fr 2fr' }}

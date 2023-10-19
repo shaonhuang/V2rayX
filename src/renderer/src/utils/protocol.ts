@@ -64,19 +64,19 @@ const v2Converter = {
   },
   host: (v) => {
     try {
-    if (typeof JSON.parse(v) === 'object') {
-      const vObj = JSON.parse(v);
-      for (const key of Object.keys(vObj)) {
-        if (key.toLowerCase() === 'host') {
-          return vObj[key];
+      if (typeof JSON.parse(v) === 'object') {
+        const vObj = JSON.parse(v);
+        for (const key of Object.keys(vObj)) {
+          if (key.toLowerCase() === 'host') {
+            return vObj[key];
+          }
         }
+        return v;
       }
-      return v;
-    }
     } catch (e) {}
     return v;
   },
-  tls: (v) => v === '1'? 'tls': ''
+  tls: (v) => (v === '1' ? 'tls' : ''),
 };
 const v2ToStdV2Converter = {
   scy: (v) => encodeURIComponent(v),

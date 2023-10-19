@@ -1,18 +1,21 @@
 import path from 'path';
 import os from 'os';
-import * as Sentry from '@sentry/electron';
-import isDev from 'electron-is-dev';
 
-import logger from '../logs';
+import logger from '@lib/logs';
 import { ElectronApp } from '@main/app';
 import { checkEnvFiles as check, copyDir, chmod } from '@lib/utils/misc/utils';
 import { appDataPath, platform, pathRuntime, pathExecutable, pacDir, binDir } from '@lib/constant';
-const binPath = path
-  .join(__dirname, '../../resources/bin')
-  .replace('app.asar', 'app.asar.unpacked');
-const pacPath = path
-  .join(__dirname, '../../resources/pac')
-  .replace('app.asar', 'app.asar.unpacked');
+import { BrowserWindow, IpcMainEvent, app, clipboard, ipcMain, nativeTheme } from 'electron';
+
+import ThemeService from '@main/services/theme';
+import * as fs from 'fs-extra';
+import { resolve } from 'path';
+import { PacServer as PS } from '@lib/proxy/pac';
+import db from '@main/lib/lowdb';
+import { mountListeners } from '../core/listener';
+
+const binPath = path.join(__dirname, '../../resources/bin').replace('app.asar', 'app.asar.unpacked');
+const pacPath = path.join(__dirname, '../../resources/pac').replace('app.asar', 'app.asar.unpacked');
 
 const tasks: Array<(electronApp: ElectronApp) => void> = [];
 
@@ -65,27 +68,47 @@ const checkPlatform = (electronApp: ElectronApp) => {
   });
 };
 
-const injectSentryMonitor = (electronApp: ElectronApp) => {
-  electronApp.registryHooksSync('beforeReady', 'injectSentryMonitor', () => {
-    if (isDev) {
-      console.log('hooks: >> uncaughtException');
-      // catch global error
-      process.on('uncaughtException', (err) => {
-        console.error('<---------------');
-        console.log(err);
-        console.error('--------------->');
-      });
-    } else {
-      // upload error
-      console.log('hooks: >> injectSentryMonitor');
-      Sentry.init({
-        dsn: 'https://e6252cd56d7cb6799154b451d4305b23@o4505950688575488.ingest.sentry.io/4505950692900864',
-      });
-    }
+const listenTheme = (electronApp: ElectronApp) => {
+  electronApp.registryHooksSync('beforeReady', 'listenTheme', () => {
+    console.log('hooks: >> listenTheme');
+    const theme = new ThemeService();
+    theme.listenForUpdate();
   });
 };
 
-tasks.push(checkEnvFiles, chmodFiles, checkPlatform, injectSentryMonitor);
+const setupListeners = (electronApp: ElectronApp) => {
+  electronApp.registryHooksSync('beforeReady', 'setupListeners', () => {
+    console.log('hooks: >> setupListeners');
+    mountListeners();
+  });
+};
+
+const setupPACFile = async () => {
+  try {
+    const firstRun = !(await fs.pathExists(resolve(pacDir, 'pac.txt')));
+
+    if (!firstRun) {
+      return;
+    }
+
+    logger.info('First run detected');
+
+    const data = await fs.readFile(resolve(pacDir, 'gfwlist.txt'));
+    const text = data.toString('ascii');
+    await PS.generatePacWithoutPort(text);
+  } catch (err) {
+    logger.error((err as any).message ?? err);
+  }
+};
+
+const setupSysProxy = (electronApp: ElectronApp) => {
+  electronApp.registryHooksSync('beforeReady', 'setupProxy', () => {
+    console.log('hooks: >> setupSysProxy');
+    setupPACFile();
+  });
+};
+
+tasks.push(checkEnvFiles, chmodFiles, checkPlatform, listenTheme, setupListeners, setupSysProxy);
 
 export default (electronApp: ElectronApp) => {
   tasks.forEach((task) => {

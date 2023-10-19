@@ -255,7 +255,7 @@ const Index = (): JSX.Element => {
         <Button>import from screen</Button>
       </div>
       */}
-      <div className='w-full'>
+      <div className="w-full">
         <div className="flex flex-col items-center justify-center text-black dark:text-white">
           {!servers.length ? (
             <></>
@@ -267,7 +267,7 @@ const Index = (): JSX.Element => {
                     className={
                       seletedServer === i.id
                         ? 'bg-sky-200 dark:bg-sky-700'
-                        : 'bg-white dark:bg-gray-400'
+                        : 'bg-white dark:bg-slate-500'
                     }
                     serverName={i.ps}
                     isSeleted={seletedServer === i.id}
