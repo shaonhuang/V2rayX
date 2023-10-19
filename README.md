@@ -30,7 +30,7 @@ V2ray GUI client with cross-platform desktop support powered by Electron⚛️, 
 ### ➣ Supported (TODO List)
 
 - [ ] **SS / SSR** Protocol
-- [ ] **PAC** Mode
+- [x] **PAC** Mode
   - Auto proxy mode for browsers that use [GFWList](https://raw.githubusercontent.com/gfwlist/gfwlist/master/gfwlist.txt) as default rules.
   - Allow custom rules.
 - [x] **Global** Mode
@@ -59,9 +59,8 @@ V2ray GUI client with cross-platform desktop support powered by Electron⚛️, 
 
 ### ➣ In Testing
 
-- [x] **PAC** Mode
 - [ ] QR-code Import
-- [x] Server Share
+- [x] Server Share (support import Shadowrocket url)
 
 ### ➣ Comming Soon
 
