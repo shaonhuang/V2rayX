@@ -9,6 +9,7 @@ import InstallDialog from '@renderer/components/Install';
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>
+    <div className="fixed h-8 w-screen" style={{ WebkitAppRegion: 'drag' }}></div>
     <Provider store={store}>
       <App />
       <InstallDialog />

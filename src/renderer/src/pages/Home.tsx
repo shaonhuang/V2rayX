@@ -115,7 +115,7 @@ const GernalSettings = (): JSX.Element => {
           </Notice>
         </div>
         <Title>Startup</Title>
-        <span className="justify-self-end">
+        <span className="justify-self-end px-3">
           <Checkbox
             {...label}
             checked={autoLaunch}
@@ -159,7 +159,7 @@ const GernalSettings = (): JSX.Element => {
           <FormControlLabel value="Manual" control={<Radio />} label="Manual" />
         </RadioGroup>
         <Title>Appearance</Title>
-        <Stack direction="row" spacing={1} className="justify-self-end pt-2">
+        <Stack direction="row" spacing={1} className="justify-self-end px-3 pt-2">
           <AppearanceButton
             variant={appearance === 'light' ? 'contained' : 'outlined'}
             onClick={() => {

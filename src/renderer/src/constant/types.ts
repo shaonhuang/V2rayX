@@ -1,7 +1,17 @@
+// 日志的级别。默认值为 "warning"。
+//
+// "debug"：详细的调试性信息。同时包含所有 "info" 内容。
+// "info"：V2Ray 在运行时的状态，不影响正常使用。同时包含所有 "warning" 内容。
+// "warning"：V2Ray 遇到了一些问题，通常是外部问题，不影响 V2Ray 的正常运行，但有可能影响用户的体验。同时包含所有 "error" 内容。
+// "error"：V2Ray 遇到了无法正常运行的问题，需要立即解决。
+// "none"：不记录任何内容。
+//
+// reference: https://www.v2fly.org/config/overview.html#logobject
+
 type Log = {
-  error: string;
-  loglevel: string;
-  access: string;
+  error: string | 'none';
+  loglevel: 'debug' | 'info' | 'warning' | 'error' | 'none';
+  access: string | 'none';
 };
 
 type Inbound = {

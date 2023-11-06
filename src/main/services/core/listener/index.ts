@@ -57,7 +57,12 @@ const registerChannels = [
   {
     channel: 'autoLaunch:change',
     listener: (_: IpcMainEvent, status: boolean) => {
-      app.setLoginItemSettings({ openAtLogin: status });
+      try {
+        app.setLoginItemSettings({ openAtLogin: status });
+        logger.info(`successfully setLoginItemSettings to ${status}`);
+      } catch (e) {
+        logger.error(`fail to setLoginItemSettings to ${status}`);
+      }
     },
   },
 ];

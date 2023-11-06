@@ -13,7 +13,7 @@ function createWindow(): BrowserWindow {
     show: false,
     icon: icon,
     autoHideMenuBar: true,
-    titleBarStyle: 'hidden',
+    titleBarStyle: 'hiddenInset',
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
       preload: preloadPath,
