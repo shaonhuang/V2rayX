@@ -1,11 +1,11 @@
 import path from 'path';
 import os from 'os';
-
+import * as Sentry from '@sentry/electron';
 import logger from '@lib/logs';
 import { ElectronApp } from '@main/app';
 import { checkEnvFiles as check, copyDir, chmod } from '@lib/utils/misc/utils';
 import { appDataPath, platform, pathRuntime, pathExecutable, pacDir, binDir } from '@lib/constant';
-import { BrowserWindow, IpcMainEvent, app, clipboard, ipcMain, nativeTheme } from 'electron';
+import { is } from '@electron-toolkit/utils';
 
 import ThemeService from '@main/services/theme';
 import * as fs from 'fs-extra';
@@ -108,7 +108,35 @@ const setupSysProxy = (electronApp: ElectronApp) => {
   });
 };
 
-tasks.push(checkEnvFiles, chmodFiles, checkPlatform, listenTheme, setupListeners, setupSysProxy);
+const injectSentryMonitor = (electronApp: ElectronApp) => {
+  electronApp.registryHooksSync('beforeReady', 'injectSentryMonitor', () => {
+    if (is.dev) {
+      console.log('hooks: >> uncaughtException');
+      // 未捕获的全局错误
+      process.on('uncaughtException', (err) => {
+        console.error('<---------------');
+        console.log(err);
+        console.error('--------------->');
+      });
+    } else {
+      // 错误上报
+      console.log('hooks: >> injectSentryMonitor');
+      Sentry.init({
+        dsn: 'https://e6252cd56d7cb6799154b451d4305b23@o4505950688575488.ingest.sentry.io/4505950692900864',
+      });
+    }
+  });
+};
+
+tasks.push(
+  checkEnvFiles,
+  chmodFiles,
+  checkPlatform,
+  listenTheme,
+  setupListeners,
+  setupSysProxy,
+  injectSentryMonitor,
+);
 
 export default (electronApp: ElectronApp) => {
   tasks.forEach((task) => {

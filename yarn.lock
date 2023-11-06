@@ -1265,6 +1265,103 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@sentry-internal/tracing@npm:7.74.0":
+  version: 7.74.0
+  resolution: "@sentry-internal/tracing@npm:7.74.0"
+  dependencies:
+    "@sentry/core": 7.74.0
+    "@sentry/types": 7.74.0
+    "@sentry/utils": 7.74.0
+    tslib: ^2.4.1 || ^1.9.3
+  checksum: 63c220c83f0bb650e8931b1e7a496376ba1cfa0bbd20f9396d25fc888bece7e14fffbc0db71a2ba1aac960b78b788f65ad72d7d931d22b1f3d8dda8792b38239
+  languageName: node
+  linkType: hard
+
+"@sentry/browser@npm:7.74.0":
+  version: 7.74.0
+  resolution: "@sentry/browser@npm:7.74.0"
+  dependencies:
+    "@sentry-internal/tracing": 7.74.0
+    "@sentry/core": 7.74.0
+    "@sentry/replay": 7.74.0
+    "@sentry/types": 7.74.0
+    "@sentry/utils": 7.74.0
+    tslib: ^2.4.1 || ^1.9.3
+  checksum: dafb8e182b41b6afa1e2f44242e2ce91f2ababc2655605e95d664ca48ca913cab9b86033d79ec87e9a71d63d3970dacb1c1ca4e06aa8ed872cf832009f0f48c8
+  languageName: node
+  linkType: hard
+
+"@sentry/core@npm:7.74.0":
+  version: 7.74.0
+  resolution: "@sentry/core@npm:7.74.0"
+  dependencies:
+    "@sentry/types": 7.74.0
+    "@sentry/utils": 7.74.0
+    tslib: ^2.4.1 || ^1.9.3
+  checksum: 8e666f836edc7f76e44329466a16729b3489a27573380261448c623776422f04b1a86f4125cb2fe8617dfcead50e8c45ea0acfecc08f1957afa93acd53ef3111
+  languageName: node
+  linkType: hard
+
+"@sentry/electron@npm:^4.14.0":
+  version: 4.14.0
+  resolution: "@sentry/electron@npm:4.14.0"
+  dependencies:
+    "@sentry/browser": 7.74.0
+    "@sentry/core": 7.74.0
+    "@sentry/node": 7.74.0
+    "@sentry/types": 7.74.0
+    "@sentry/utils": 7.74.0
+    deepmerge: 4.3.0
+    lru_map: ^0.3.3
+    tslib: ^2.5.0
+  checksum: 49e22ff44c4a0d5613d3ff4041a7416c7f8a9d88f3c603cb64e1a6eee279ae47a0d2ecaad497f9f86d31f807089849ae7bacd8134c41f292022c158456280e08
+  languageName: node
+  linkType: hard
+
+"@sentry/node@npm:7.74.0":
+  version: 7.74.0
+  resolution: "@sentry/node@npm:7.74.0"
+  dependencies:
+    "@sentry-internal/tracing": 7.74.0
+    "@sentry/core": 7.74.0
+    "@sentry/types": 7.74.0
+    "@sentry/utils": 7.74.0
+    cookie: ^0.5.0
+    https-proxy-agent: ^5.0.0
+    lru_map: ^0.3.3
+    tslib: ^2.4.1 || ^1.9.3
+  checksum: 2df2af3e2ed4571fabd035af905839ddb2379057b5ec336ba65c68e8b826e366cc13b61c5b029e57cbbc6d2cd2eb76648e1bb7439799a3ecd7808c8587a39765
+  languageName: node
+  linkType: hard
+
+"@sentry/replay@npm:7.74.0":
+  version: 7.74.0
+  resolution: "@sentry/replay@npm:7.74.0"
+  dependencies:
+    "@sentry/core": 7.74.0
+    "@sentry/types": 7.74.0
+    "@sentry/utils": 7.74.0
+  checksum: 9ea0c88d8233c9faccd61873ad83c19c4ece36e29c11dcc896cbe01013652b990ffa32a8c68e87c40c523bc96cd3a190b27a3f960bde4aa894f10e27a9f9a74e
+  languageName: node
+  linkType: hard
+
+"@sentry/types@npm:7.74.0":
+  version: 7.74.0
+  resolution: "@sentry/types@npm:7.74.0"
+  checksum: 2f4b4efaea708f37081d51f8c808afddf0d83680a62730eada655f2155db8c3e0f6b69f7fb48abe46ac2e25f88c611aacfba3d58e4fed592b920b0cbf6fd987e
+  languageName: node
+  linkType: hard
+
+"@sentry/utils@npm:7.74.0":
+  version: 7.74.0
+  resolution: "@sentry/utils@npm:7.74.0"
+  dependencies:
+    "@sentry/types": 7.74.0
+    tslib: ^2.4.1 || ^1.9.3
+  checksum: 833d4f83e434448958fbf22585b3661b4b6526b61089813fab5d11ed851f89c20cc2a9ffc9e0292549735563fc1be986f2d593c3bfd5804e8c749c28b6e1ea20
+  languageName: node
+  linkType: hard
+
 "@sindresorhus/is@npm:^4.0.0":
   version: 4.6.0
   resolution: "@sindresorhus/is@npm:4.6.0"
@@ -2590,6 +2687,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"cookie@npm:^0.5.0":
+  version: 0.5.0
+  resolution: "cookie@npm:0.5.0"
+  checksum: 1f4bd2ca5765f8c9689a7e8954183f5332139eb72b6ff783d8947032ec1fdf43109852c178e21a953a30c0dd42257828185be01b49d1eb1a67fd054ca588a180
+  languageName: node
+  linkType: hard
+
 "core-util-is@npm:1.0.2":
   version: 1.0.2
   resolution: "core-util-is@npm:1.0.2"
@@ -2715,6 +2819,13 @@ __metadata:
   version: 0.1.4
   resolution: "deep-is@npm:0.1.4"
   checksum: edb65dd0d7d1b9c40b2f50219aef30e116cedd6fc79290e740972c132c09106d2e80aa0bc8826673dd5a00222d4179c84b36a790eef63a4c4bca75a37ef90804
+  languageName: node
+  linkType: hard
+
+"deepmerge@npm:4.3.0":
+  version: 4.3.0
+  resolution: "deepmerge@npm:4.3.0"
+  checksum: c7980eb5c5be040b371f1df0d566473875cfabed9f672ccc177b81ba8eee5686ce2478de2f1d0076391621cbe729e5eacda397179a59ef0f68901849647db126
   languageName: node
   linkType: hard
 
@@ -5152,6 +5263,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"lru_map@npm:^0.3.3":
+  version: 0.3.3
+  resolution: "lru_map@npm:0.3.3"
+  checksum: ca9dd43c65ed7a4f117c548028101c5b6855e10923ea9d1f635af53ad20c5868ff428c364d454a7b57fe391b89c704982275410c3c5099cca5aeee00d76e169a
+  languageName: node
+  linkType: hard
+
 "magic-string@npm:^0.30.1":
   version: 0.30.3
   resolution: "magic-string@npm:0.30.3"
@@ -7298,7 +7416,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"tslib@npm:^2.5.0, tslib@npm:^2.6.0":
+"tslib@npm:^2.4.1 || ^1.9.3, tslib@npm:^2.5.0, tslib@npm:^2.6.0":
   version: 2.6.2
   resolution: "tslib@npm:2.6.2"
   checksum: 329ea56123005922f39642318e3d1f0f8265d1e7fcb92c633e0809521da75eeaca28d2cf96d7248229deb40e5c19adf408259f4b9640afd20d13aecc1430f3ad
@@ -7575,6 +7693,7 @@ __metadata:
     "@mui/material": ^5.11.5
     "@mui/styled-engine-sc": ^5.11.0
     "@reduxjs/toolkit": ^1.9.5
+    "@sentry/electron": ^4.14.0
     "@types/lodash": ^4.14.194
     "@types/node": ^18.17.14
     "@types/object-hash": ^3.0.2
