@@ -1,12 +1,12 @@
+import { useState } from 'react';
+import { debounce } from 'lodash';
 import { styled } from '@mui/material/styles';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
 import HomeIcon from '@mui/icons-material/Home';
 import LinkIcon from '@mui/icons-material/Link';
 import SettingsIcon from '@mui/icons-material/Settings';
-import { setNavTab } from '@store/navigationSlice';
-import { useAppSelector, useAppDispatch } from '@store/hooks';
-import type { RootState } from '@store/index';
+
 const NavButton = styled(Button)({
   display: 'flex',
   flexDirection: 'column',
@@ -15,52 +15,46 @@ const NavButton = styled(Button)({
   color: 'white',
 });
 const Navigation = () => {
-  const { tabName } = useAppSelector((state: RootState) => state.navTab);
-  const dispatch = useAppDispatch();
+  const [tabName, setTabName] = useState('home');
+  window.addEventListener('hashchange', () => {
+    setTabName(window.location.hash.split('/')[1]);
+  });
   return (
     <nav className="mt-4 rounded-xl bg-blue-900 p-4 backdrop-blur dark:bg-blue-500/20">
       <Stack spacing={4} direction="row" className="flex justify-center">
-        <NavButton
-          className="w-20"
-          variant={tabName === 'home' ? 'contained' : 'outlined'}
-          onClick={() => dispatch(setNavTab('home'))}
-        >
-          Home
-          <HomeIcon />
-        </NavButton>
-        <NavButton
-          className="w-20"
-          variant={tabName === 'servers' ? 'contained' : 'outlined'}
-          onClick={() => dispatch(setNavTab('servers'))}
-        >
-          Servers
-          <LinkIcon />
-        </NavButton>
-        <NavButton
-          className="w-20"
-          variant={tabName === 'logs' ? 'contained' : 'outlined'}
-          onClick={() => dispatch(setNavTab('logs'))}
-        >
-          Logs
-          <LinkIcon />
-        </NavButton>
+        <a href="/#/home">
+          <NavButton className="w-20" variant={tabName === 'home' ? 'contained' : 'outlined'}>
+            Home
+            <HomeIcon />
+          </NavButton>
+        </a>
+        <a href="/#/servers">
+          <NavButton className="w-20" variant={tabName === 'servers' ? 'contained' : 'outlined'}>
+            Servers
+            <LinkIcon />
+          </NavButton>
+        </a>
+
+        <a href="/#/logs">
+          <NavButton className="w-20" variant={tabName === 'logs' ? 'contained' : 'outlined'}>
+            Logs
+            <LinkIcon />
+          </NavButton>
+        </a>
         <NavButton
           className="w-20"
           variant={tabName === 'settings' ? 'contained' : 'outlined'}
-          onClick={() => dispatch(setNavTab('settings'))}
           disabled
         >
           Settings
           <LinkIcon />
         </NavButton>
-        <NavButton
-          className="w-20"
-          variant={tabName === 'about' ? 'contained' : 'outlined'}
-          onClick={() => dispatch(setNavTab('about'))}
-        >
-          About
-          <SettingsIcon />
-        </NavButton>
+        <a href="/#/about">
+          <NavButton className="w-20" variant={tabName === 'about' ? 'contained' : 'outlined'}>
+            About
+            <SettingsIcon />
+          </NavButton>
+        </a>
       </Stack>
     </nav>
   );

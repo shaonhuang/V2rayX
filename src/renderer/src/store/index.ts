@@ -1,11 +1,9 @@
 import { configureStore } from '@reduxjs/toolkit';
 import logger from 'redux-logger';
 import serversPageReducer from './serversPageSlice';
-import navTabReducer from './navigationSlice';
 
 const store = configureStore({
   reducer: {
-    navTab: navTabReducer,
     serversPage: serversPageReducer,
   },
   middleware: (getDefaultMiddleware) => getDefaultMiddleware().concat(logger),
