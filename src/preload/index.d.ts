@@ -6,6 +6,10 @@ declare global {
       read: (key: string, query?: Object) => Promise<any>;
       write: (key: string, data: any) => Promise<any>;
     };
+    win: {
+      create: (suffix: string) => void;
+      close: (suffix: string) => void;
+    };
     quit: () => void;
     electron: {
       electronAPI: IElectronAPI;
@@ -13,7 +17,7 @@ declare global {
     api: IElectronAPI;
     serverFiles: IElectronAPI;
     v2rayService: {
-      startService: (data: any) => void;
+      startService: (data?: any) => void;
       stopService: () => void;
       checkService: () => boolean | Promise<boolean>;
     };

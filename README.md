@@ -85,28 +85,52 @@ V2ray GUI client with cross-platform desktop support powered by Electron⚛️, 
 
 ## V. Screenshots
 
-### Home Page
+### For MacOS
 
-![home.png](./assets/home-page.png)
-![darkHome.png](./assets/dark-home-page.png)
+#### Home Page
 
-### Server Page
+![home.png](./assets/home-mac.png)
 
-![server.png](./assets/servers-page.png)
+#### Server Page
 
-### Server Add
+![server.png](./assets/servers-mac.png)
 
-![addServer.png](./assets/add-server-page.png)
+#### Server Add
 
-### Logs Page
+![addServer.png](./assets/import-mac.png)
+![addServer.png](./assets/manual-mac.png)
 
-![darkLogs.png](./assets/dark-logs.png)
+#### Logs Page
 
-### About Page
+![logs.png](./assets/logs-mac.png)
 
-![about.png](./assets/about-page.png)
+#### About Page
 
-### Tray Tool Bar
+![about.png](./assets/about-mac.png)
+
+### For Windows10/11 and Linux
+
+#### Home Page
+
+![home.png](./assets/home-win.png)
+
+#### Server Page
+
+![server.png](./assets/servers-win.png)
+
+#### Server Add
+
+![addServer.png](./assets/manual-win.png)
+
+#### Logs Page
+
+![logs.png](./assets/logs-win.png)
+
+#### About Page
+
+![about.png](./assets/about-win.png)
+
+#### Tray Tool Bar
 
 ![trayBar.png](./assets/tray-bar.png)
 

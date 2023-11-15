@@ -4,6 +4,8 @@ import FileOpenIcon from '@mui/icons-material/FileOpen';
 import { useAppSelector } from '@renderer/store/hooks';
 import { find } from 'lodash';
 import { Server, VmessObjConfiguration, EmptyObject } from '@renderer/constant/types';
+import ContentPasteOffIcon from '@mui/icons-material/ContentPasteOff';
+import { isMac } from '@renderer/constant';
 
 const Index = (): JSX.Element => {
   const [server, setServer] = useState<VmessObjConfiguration | EmptyObject>({});
@@ -63,14 +65,18 @@ const Index = (): JSX.Element => {
   }, [displayedLogs]);
 
   return (
-    <section className="flew-row flex flex-1 items-center justify-around text-black dark:text-white">
-      <div className="flex w-full flex-col rounded-xl bg-white px-8 py-4 dark:bg-slate-700">
+    <section className="flew-row flex flex-1 items-center justify-around">
+      <div
+        className={`flex w-full flex-col rounded-xl px-8 py-4 ${
+          isMac ? '' : 'bg-white dark:bg-slate-700'
+        }`}
+      >
         {isRunning && currentServerId ? (
           <div className="py-2">
             <div>
-              <p>LOG LEVEL: {server?.log.loglevel}</p>
+              <p>Log level: {server?.log.loglevel.toUpperCase()}</p>
               <p>
-                LOG FILE PATH: {server?.log[logType === 'access' ? 'access' : 'error']}
+                Log file path: {server?.log[logType === 'access' ? 'access' : 'error']}
                 <IconButton
                   color="primary"
                   className=""
@@ -94,13 +100,13 @@ const Index = (): JSX.Element => {
             </div>
             <div className="flex items-center justify-center gap-6 pt-4">
               <Button
-                variant={logType === 'access' ? 'contained' : 'text'}
+                variant={logType === 'access' ? 'contained' : 'outlined'}
                 onClick={() => setLogType('access')}
               >
                 access log
               </Button>
               <Button
-                variant={logType === 'error' ? 'contained' : 'text'}
+                variant={logType === 'error' ? 'contained' : 'outlined'}
                 onClick={() => setLogType('error')}
               >
                 error log
@@ -118,7 +124,9 @@ const Index = (): JSX.Element => {
                 {displayedLogs.map((log, idx) => (
                   <p
                     key={idx}
-                    className="animate__animated animate__fadeInRight mx-4 my-2 rounded-lg bg-slate-100 px-4 py-2 dark:text-black"
+                    className={`animate__animated animate__fadeInRight mx-4 my-2 rounded-lg px-4 py-2 ${
+                      isMac ? '' : 'text-black bg-slate-100'
+                    }`}
                   >
                     {log}
                   </p>
@@ -126,7 +134,9 @@ const Index = (): JSX.Element => {
               </div>
             </div>
           ) : (
-            <p>no log output</p>
+            <p className="text-l">
+              <ContentPasteOffIcon /> Log file is empty
+            </p>
           )}
         </div>
       </div>

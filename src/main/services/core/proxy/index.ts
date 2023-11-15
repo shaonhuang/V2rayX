@@ -63,17 +63,17 @@ export default class ProxyService {
       this.mode !== 'Manual' && logger.error('ProxyService:updateMode: proxy is not initialized');
     }
   }
-  start() {
+  async start() {
     if (this.proxy) {
-      this.proxy.stop();
-      this.proxy.start();
+      await this.proxy.stop();
+      await this.proxy.start();
     } else {
       this.mode !== 'Manual' && logger.error('ProxyService:start: proxy is not initialized');
     }
   }
-  stop() {
+  async stop() {
     if (this.proxy) {
-      this.proxy.stop();
+      await this.proxy.stop();
     } else {
       this.mode !== 'Manual' && logger.error('ProxyService:stop: proxy is not initialized');
     }

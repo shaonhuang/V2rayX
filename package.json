@@ -1,6 +1,6 @@
 {
   "name": "v2rayx",
-  "version": "0.2.3",
+  "version": "0.3.0",
   "description": "An Electron application with React and TypeScript",
   "main": "./out/main/index.js",
   "author": "shaonhuang",
@@ -27,6 +27,7 @@
   "dependencies": {
     "@electron-toolkit/preload": "^2.0.0",
     "@electron-toolkit/utils": "^2.0.0",
+    "@microlink/react-json-view": "^1.23.0",
     "@sentry/electron": "^4.14.0",
     "@types/object-hash": "^3.0.2",
     "@types/react-router-dom": "^5.3.3",
@@ -46,10 +47,10 @@
     "lowdb": "^6.0.1",
     "node-fetch": "^3.3.2",
     "object-hash": "^3.0.0",
-    "react-json-view": "^1.21.3",
     "react-router-dom": "^6.18.0",
     "redux-logger": "^3.0.6",
     "tapable": "^2.2.1",
+    "theme-ui": "^0.16.1",
     "winston": "^3.10.0",
     "winston-daily-rotate-file": "^4.7.1"
   },

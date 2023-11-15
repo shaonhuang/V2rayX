@@ -3,6 +3,7 @@ import Button from '@mui/material/Button';
 import icon from '../public/icon.png';
 import { platform } from '@renderer/constant';
 import { versionCompare } from '@renderer/utils/tools';
+import { isMac } from '@renderer/constant';
 
 const AboutPage = (): JSX.Element => {
   const [version, setVersion] = useState('0.0.0');
@@ -28,10 +29,14 @@ const AboutPage = (): JSX.Element => {
   }, [version]);
   return (
     <section className="flex flex-1 flex-row items-center justify-around">
-      <div className="items-center justify-around rounded-xl bg-white p-9 text-black dark:bg-slate-700 dark:text-white">
+      <div
+        className={`items-center justify-around rounded-xl p-9 ${
+          isMac ? '' : 'bg-white dark:bg-slate-700'
+        }`}
+      >
         <div className="m-4 flex flex-col items-center">
           <img src={icon} alt="" className="m-4 h-24 w-24" />
-          <p className="text-xl text-slate-700 dark:text-white">V2rayX({version})</p>
+          <p className="text-xl">V2rayX({version})</p>
         </div>
         <p>An all platform(Macos Windows Linux) V2ray client build with electron.</p>
         <div className="my-4 flex flex-row gap-2">

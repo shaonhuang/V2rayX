@@ -6,8 +6,8 @@ const store = configureStore({
   reducer: {
     serversPage: serversPageReducer,
   },
-  middleware: (getDefaultMiddleware) => getDefaultMiddleware().concat(logger),
-  devTools: process.env.NODE_ENV !== 'production',
+  // middleware: (getDefaultMiddleware) => getDefaultMiddleware().concat(logger),
+  // devTools: process.env.NODE_ENV !== 'production',
 });
 
 export default store;

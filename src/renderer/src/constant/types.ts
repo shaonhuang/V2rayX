@@ -1,3 +1,10 @@
+export type Server = {
+  id: string;
+  ps: string;
+  link: string;
+  config: VmessObjConfiguration;
+};
+
 // 日志的级别。默认值为 "warning"。
 //
 // "debug"：详细的调试性信息。同时包含所有 "info" 内容。

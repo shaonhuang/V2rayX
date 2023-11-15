@@ -2,9 +2,21 @@
 @tailwind components;
 @tailwind utilities;
 
+html {
+  height: 100%;
+}
+
 body {
   text-align: center;
-  height: fit-content;
+  height: 100%;
+}
+
+#root {
+  height: 100%;
+}
+
+.scroll-bar-none::-webkit-scrollbar {
+  display: none;
 }
 
 * {

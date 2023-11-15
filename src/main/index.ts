@@ -14,6 +14,7 @@ import App from '@main/app';
 import { IpcMainWindowType } from '@lib/constant/types';
 
 export let mainWindow: IpcMainWindowType;
+let cleanUp = false;
 
 /* -------------- pre work -------------- */
 
@@ -121,5 +122,17 @@ app.on('window-all-closed', () => {
 // code. You can also put them in separate files and require them here.
 app.on('before-quit', (event) => {
   // Perform some actions before quitting
-  electronHookApp.beforeQuit(app);
+  cleanUp || logger.info('App before quit. Cleaning up...');
+  cleanUp || event.preventDefault();
+
+  cleanUp ||
+    electronHookApp.beforeQuit(app, (err) => {
+      if (err) console.log(err);
+      cleanUp = true;
+      app.quit();
+    });
+});
+
+process.on('exit', () => {
+  app.quit();
 });

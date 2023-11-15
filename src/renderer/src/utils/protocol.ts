@@ -334,7 +334,7 @@ const parseVmess2config = (obj: VmessV2) => {
         serverName: '',
         allowInsecure: false,
       },
-      security: '',
+      security: 'none',
       network: '',
     },
     tag: 'proxy',
@@ -362,7 +362,7 @@ const parseVmess2config = (obj: VmessV2) => {
   outbounds.streamSettings.wsSettings.headers.host = obj.host;
   outbounds.streamSettings.tlsSettings.serverName = obj.host;
   // outbounds.streamSettings.tlsSettings.allowInsecure =
-  outbounds.streamSettings.security = obj.tls;
+  outbounds.streamSettings.security = obj.tls ?? 'none';
   outbounds.streamSettings.network = obj.net;
   outbounds.settings.vnext[0].address = obj.add;
   outbounds.settings.vnext[0].users[0] = {
@@ -422,7 +422,7 @@ const emptyVmessV2 = (): VmessV2 => {
           udp: false,
           auth: 'noauth',
         },
-        port: '10801',
+        port: 10801,
       },
       {
         listen: '127.0.0.1',
@@ -430,7 +430,7 @@ const emptyVmessV2 = (): VmessV2 => {
         settings: {
           timeout: 360,
         },
-        port: '10871',
+        port: 10871,
       },
     ],
     outbounds: [],
@@ -470,32 +470,32 @@ const emptyVmessV2 = (): VmessV2 => {
     protocol: 'vmess',
     streamSettings: {
       wsSettings: {
-        path: '/hkcHOyeEK',
+        path: '',
         headers: {
-          host: 'hihacker.shop',
+          host: '',
         },
       },
       tlsSettings: {
-        serverName: 'hihacker.shop',
+        serverName: '',
         allowInsecure: false,
       },
-      security: 'tls',
-      network: 'ws',
+      security: 'none',
+      network: '',
     },
     tag: 'proxy',
     settings: {
       vnext: [
         {
-          address: '45.76.168.25',
+          address: '',
           users: [
             {
-              id: '54374ca2-3388-4df2-a999-08bb81eefee7',
+              id: '',
               alterId: 0,
               level: 0,
-              security: 'aes-128-gcm',
+              security: '',
             },
           ],
-          port: 443,
+          port: 0,
         },
       ],
     },

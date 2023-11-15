@@ -54,7 +54,7 @@ export class Proxy {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-empty-function
-  public start() {}
+  public async start() {}
 
   // eslint-disable-next-line @typescript-eslint/no-empty-function
   public async stop() {}
@@ -85,8 +85,8 @@ export class LinuxProxy extends Proxy {
 
   public async stop() {
     PS.stopPacServer();
-    logger.info('Set proxy off');
     await gsettings.unsetProxy();
+    logger.info('Set proxy off');
   }
 }
 
@@ -108,8 +108,8 @@ export class WinProxy extends Proxy {
 
   public async stop() {
     PS.stopPacServer();
-    logger.info('Set proxy off');
     await sysproxy.unsetProxy();
+    logger.info('Set proxy off');
   }
 }
 
@@ -135,7 +135,7 @@ export class DarwinProxy extends Proxy {
 
   public async stop() {
     PS.stopPacServer();
-    logger.info('Set proxy off');
     await networksetup.unsetProxy();
+    logger.info('Set proxy off');
   }
 }

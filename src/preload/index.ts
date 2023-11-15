@@ -22,6 +22,7 @@ const customApi = {
       'v2rayx:service:selected',
       'v2rayx:restart-app',
       'v2rayx:checkForUpdateClick',
+      'v2rayx:server:add/edit:toMain',
     ];
     if (validChannels.includes(channel)) {
       ipcRenderer.send(channel, data);
@@ -36,6 +37,7 @@ const customApi = {
       'proxyMode:change',
       'logs:get',
       'v2ray:status',
+      'v2rayx:server:add/edit:fromMain',
     ];
     if (validChannels.includes(channel)) {
       // Deliberately strip event as it includes `sender`
@@ -65,13 +67,17 @@ if (process.contextIsolated) {
       read: () => ipcRenderer.invoke('v2rayx:clipboard:read'),
       paste: (data: string) => ipcRenderer.invoke('v2rayx:clipboard:paste', data),
     },
+    win: {
+      create: (suffix: string) => ipcRenderer.invoke('v2rayx:window:create', suffix),
+      close: (suffix: string) => ipcRenderer.invoke('v2rayx:window:close', suffix),
+    },
     quit: () => ipcRenderer.invoke('v2rayx:app:quit'),
   };
 
   try {
     contextBridge.exposeInMainWorld('api', customApi);
     contextBridge.exposeInMainWorld('v2rayService', {
-      startService: (data: any) => ipcRenderer.invoke('v2rayx:v2ray:start', data),
+      startService: (data?: any) => ipcRenderer.invoke('v2rayx:v2ray:start', data ?? undefined),
       stopService: () => ipcRenderer.invoke('v2rayx:v2ray:stop'),
       checkService: () => ipcRenderer.invoke('v2rayx:v2ray:check'),
     });

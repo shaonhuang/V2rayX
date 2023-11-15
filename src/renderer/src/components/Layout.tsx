@@ -3,7 +3,7 @@ import { nightMode } from './Theme';
 nightMode();
 
 interface LayoutProps {
-  children: JSX.Element[];
+  children: JSX.Element[] | JSX.Element;
 }
 const Layout = (props: LayoutProps) => {
   const { children } = props;

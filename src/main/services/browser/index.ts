@@ -2,17 +2,23 @@ import { BrowserWindow, shell } from 'electron';
 import { join } from 'path';
 import { is } from '@electron-toolkit/utils';
 import icon from '@resources/icon.png?asset';
+import createServerWindow from './createServer';
 
 function createWindow(): BrowserWindow {
   const preloadPath = join(__dirname, '../preload/index.js');
 
   // Create the browser window.
   const mainWindow = new BrowserWindow({
+    title: 'V2RayX',
     width: 900,
     height: 670,
     show: false,
     icon: icon,
     autoHideMenuBar: true,
+    transparent: true,
+    titleBarOverlay: true,
+    vibrancy: 'light',
+    visualEffectState: 'active',
     titleBarStyle: 'hiddenInset',
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
@@ -41,5 +47,5 @@ function createWindow(): BrowserWindow {
 
   return mainWindow;
 }
-
-export { createWindow };
+// FIXME:temporary naming createServerWindow
+export { createWindow, createServerWindow };

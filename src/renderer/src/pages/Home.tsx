@@ -1,18 +1,26 @@
-import { Checkbox, Stack, Button, Input, FormControlLabel } from '@mui/material';
+import {
+  Checkbox,
+  Stack,
+  Button,
+  Input,
+  FormControlLabel,
+  Radio,
+  RadioGroup,
+  IconButton,
+} from '@mui/material';
 import { useState, useEffect, useLayoutEffect } from 'react';
+import { LightMode, DarkMode, ContentCopy, SettingsBrightness } from '@mui/icons-material';
 import styled from '@emotion/styled';
-import Radio from '@mui/material/Radio';
-import RadioGroup from '@mui/material/RadioGroup';
 import LightModeIcon from '@mui/icons-material/LightMode';
 import DarkModeIcon from '@mui/icons-material/DarkMode';
 import { nightMode } from '@renderer/components/Theme';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
-import IconButton from '@mui/material/IconButton';
 import SettingsBrightnessIcon from '@mui/icons-material/SettingsBrightness';
 import Notice from '@renderer/components/Notice';
 import { platform } from '@renderer/constant';
 import { useAppSelector } from '@renderer/store/hooks';
 import { find } from 'lodash';
+import { isMac } from '@renderer/constant';
 
 const label = { inputProps: { 'aria-label': 'Checkbox' } };
 const AppearanceButton = styled(Button)({
@@ -29,8 +37,8 @@ const GernalSettings = (): JSX.Element => {
   const serversState = useAppSelector((state) => state.serversPage.servers);
   const [socksCmdPaste, setSocksCmdPaste] = useState('');
   const [httpCmdPaste, setHttpCmdPaste] = useState('');
-  const [socksPort, setSocksPort] = useState<number>(1080);
-  const [httpPort, setHttpPort] = useState<number>(1080);
+  const [socksPort, setSocksPort] = useState<number>(10801);
+  const [httpPort, setHttpPort] = useState<number>(10871);
   const [autoLaunch, setAutoLaunch] = useState<boolean>(false);
   const [proxyMode, setProxyMode] = useState('Manual');
   const [appearance, setAppearance] = useState('');
@@ -43,8 +51,8 @@ const GernalSettings = (): JSX.Element => {
     //FIXME: type error
     // @ts-ignore
     const config = find(serversState, { id: currentServerId })?.config;
-    const socksPort = parseInt(config?.inbounds?.[0]?.port ?? '1080');
-    const httpPort = parseInt(config?.inbounds?.[1]?.port ?? '1080');
+    const socksPort = parseInt(config?.inbounds?.[0]?.port ?? '10801');
+    const httpPort = parseInt(config?.inbounds?.[1]?.port ?? '10871');
     setSocksPort(socksPort);
     setHttpPort(httpPort);
     setSocksCmdPaste(
@@ -81,9 +89,11 @@ const GernalSettings = (): JSX.Element => {
   }, []);
 
   return (
-    <section className="flex flex-1 flex-row items-center justify-around text-black dark:text-white">
+    <section className="flex flex-1 flex-row items-center justify-around">
       <div
-        className="grid items-center justify-around gap-x-3 rounded-xl bg-white p-9 dark:bg-slate-700"
+        className={`grid items-center justify-around gap-x-3 rounded-xl p-9 ${
+          isMac ? '' : 'bg-white dark:bg-slate-700'
+        }`}
         style={{ gridTemplateColumns: '1fr 2fr' }}
       >
         <Title>Socks Port</Title>
@@ -114,25 +124,32 @@ const GernalSettings = (): JSX.Element => {
             </IconButton>
           </Notice>
         </div>
-        <Title>Startup</Title>
-        <span className="justify-self-end px-3">
-          <Checkbox
-            {...label}
-            checked={autoLaunch}
-            onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
-              window.db
-                .write('autoLaunch', event.target.checked)
-                .then(() => {
-                  setAutoLaunch(!event.target.checked);
-                  window.autoLaunch.change(!event.target.checked);
-                })
-                .catch((err) => {
-                  console.error(err);
-                });
-            }}
-          />
-          Launch V2rayX at Login
-        </span>
+        {platform !== 'linux' ? (
+          <>
+            <Title>Startup</Title>
+            <span className="justify-self-end px-3">
+              <Checkbox
+                {...label}
+                checked={autoLaunch}
+                onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
+                  window.db
+                    .write('autoLaunch', event.target.checked)
+                    .then(() => {
+                      setAutoLaunch(!event.target.checked);
+                      window.autoLaunch.change(!event.target.checked);
+                    })
+                    .catch((err) => {
+                      console.error(err);
+                    });
+                }}
+              />
+              Launch V2rayX at Login
+            </span>
+          </>
+        ) : (
+          <></>
+        )}
+
         {/*
         <Title>Hotkey</Title>
         <span className="justify-self-end">
@@ -158,50 +175,56 @@ const GernalSettings = (): JSX.Element => {
           <FormControlLabel value="Global" control={<Radio />} label="Global" />
           <FormControlLabel value="Manual" control={<Radio />} label="Manual" />
         </RadioGroup>
-        <Title>Appearance</Title>
-        <Stack direction="row" spacing={1} className="justify-self-end px-3 pt-2">
-          <AppearanceButton
-            variant={appearance === 'light' ? 'contained' : 'outlined'}
-            onClick={() => {
-              localStorage.setItem('theme', 'light');
-              nightMode();
-              window.db.read('settings').then((res) => {
-                window.db.write('settings', { ...res, appearance: 'light' });
-              });
-              setAppearance('light');
-            }}
-          >
-            <LightModeIcon />
-            Light
-          </AppearanceButton>
-          <AppearanceButton
-            variant={appearance === 'dark' ? 'contained' : 'outlined'}
-            onClick={() => {
-              localStorage.setItem('theme', 'dark');
-              nightMode();
-              window.db.read('settings').then((res) => {
-                window.db.write('settings', { ...res, appearance: 'dark' });
-              });
-              setAppearance('dark');
-            }}
-          >
-            <DarkModeIcon />
-            Dark
-          </AppearanceButton>
-          <AppearanceButton
-            variant={appearance === 'system' ? 'contained' : 'outlined'}
-            onClick={() => {
-              window.db.read('settings').then((res) => {
-                window.db.write('settings', { ...res, appearance: 'system' });
-              });
-              window.api.send('v2rayx:appearance:system');
-              setAppearance('system');
-            }}
-          >
-            <SettingsBrightnessIcon />
-            System
-          </AppearanceButton>
-        </Stack>
+        {!isMac ? (
+          <>
+            <Title>Appearance</Title>
+            <Stack direction="row" spacing={1} className="justify-self-end px-3 pt-2">
+              <AppearanceButton
+                variant={appearance === 'light' ? 'contained' : 'outlined'}
+                onClick={() => {
+                  localStorage.setItem('theme', 'light');
+                  nightMode();
+                  window.db.read('settings').then((res) => {
+                    window.db.write('settings', { ...res, appearance: 'light' });
+                  });
+                  setAppearance('light');
+                }}
+              >
+                <LightModeIcon />
+                Light
+              </AppearanceButton>
+              <AppearanceButton
+                variant={appearance === 'dark' ? 'contained' : 'outlined'}
+                onClick={() => {
+                  localStorage.setItem('theme', 'dark');
+                  nightMode();
+                  window.db.read('settings').then((res) => {
+                    window.db.write('settings', { ...res, appearance: 'dark' });
+                  });
+                  setAppearance('dark');
+                }}
+              >
+                <DarkModeIcon />
+                Dark
+              </AppearanceButton>
+              <AppearanceButton
+                variant={appearance === 'system' ? 'contained' : 'outlined'}
+                onClick={() => {
+                  window.db.read('settings').then((res) => {
+                    window.db.write('settings', { ...res, appearance: 'system' });
+                  });
+                  window.api.send('v2rayx:appearance:system');
+                  setAppearance('system');
+                }}
+              >
+                <SettingsBrightnessIcon />
+                System
+              </AppearanceButton>
+            </Stack>
+          </>
+        ) : (
+          <> </>
+        )}
       </div>
       {/*
     <section style={{ backgroundColor: 'white', width: '500px' }} className="rounded-xl p-8">

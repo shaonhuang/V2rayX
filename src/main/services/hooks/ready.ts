@@ -69,10 +69,10 @@ const autoStartSysProxy = (electronApp: ElectronApp) => {
         ?.find({ id: db.chain.get('currentServerId').value() })
         .value()?.config;
       // [0] is socks proxy port
-      const socksPort = config?.inbounds[0].port;
+      const socksPort = config?.inbounds[0].port ?? 10801;
 
       // [1] is http proxy port
-      const httpPort = config?.inbounds[1].port;
+      const httpPort = config?.inbounds[1].port ?? 10871;
 
       const randomPort = Math.floor(Math.random() * (65535 - 1024 + 1)) + 1024;
       let pacPort = randomPort;
@@ -83,6 +83,12 @@ const autoStartSysProxy = (electronApp: ElectronApp) => {
             .then((res) => {
               logger.info(res);
               pacPort = randomPort;
+              logger.info(
+                `Mode port infomation -- pacPort:${pacPort}, httpPort:${httpPort}, socksPort:${socksPort}, mode:${mode}`,
+              );
+              const proxy = new ProxyService(httpPort, socksPort, pacPort, mode);
+              proxy.mountListeners();
+              proxy.updateMode(mode);
             })
             .catch((err) => {
               logger.error(err);
@@ -90,8 +96,6 @@ const autoStartSysProxy = (electronApp: ElectronApp) => {
         3,
         0,
       );
-      const proxy = new ProxyService(httpPort, socksPort, pacPort, mode);
-      proxy.mountListeners();
     });
   });
 };

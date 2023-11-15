@@ -13,18 +13,21 @@ emitter.on('v2ray:status', (status: boolean) => {
 emitter.on('proxy:status', (status: boolean) => {
   proxy = status;
 });
+
 const stopProxy = (electronApp: ElectronApp) => {
-  electronApp.registryHooksSync('beforeQuit', 'unProxy', () => {
+  electronApp.registryHooksAsyncBeforeQuit('beforeQuit1', async (app, callback) => {
     console.log('hooks: >> turn proxy off');
     const service = new Service(process.platform);
     service.stop();
+    callback();
   });
 };
 
 const stopService = (electronApp: ElectronApp) => {
-  electronApp.registryHooksSync('beforeQuit', 'unProxy', () => {
+  electronApp.registryHooksAsyncBeforeQuit('beforeQuit2', async (app, callback) => {
     console.log('hooks: >> turn service off');
-    new ProxyService().stop();
+    await new ProxyService().stop();
+    callback();
   });
 };
 
