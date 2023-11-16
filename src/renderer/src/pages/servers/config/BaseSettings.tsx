@@ -18,8 +18,8 @@ const Index = (props: any) => {
     httpPort: parseInt(props.data.server.config.inbounds[1].port) ?? 10871,
     udp: false,
     dns: '',
-    mux: false,
-    concurrency: 8,
+    mux: props.data.server.config.outbounds[0].mux.enabled ?? false,
+    concurrency: props.data.server.config.outbounds[0].mux.concurrency ?? 8,
   });
   const [formError, setFormError] = useState<boolean>(false);
 
@@ -39,6 +39,8 @@ const Index = (props: any) => {
     }
     props.data.server.config.inbounds[0].port = formData.socksPort;
     props.data.server.config.inbounds[1].port = formData.httpPort;
+    props.data.server.config.outbounds[0].mux.enabled = formData.mux;
+    props.data.server.config.outbounds[0].mux.concurrency = formData.concurrency;
   }, [formData]);
 
   return (
@@ -145,8 +147,7 @@ const Index = (props: any) => {
               <FormControlLabel
                 control={
                   <Checkbox
-                    value={formData.mux}
-                    disabled
+                    checked={formData.mux}
                     onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
                       setFormData({
                         ...formData,
@@ -164,7 +165,6 @@ const Index = (props: any) => {
               id="outlined-number"
               label="Concurrency"
               type="number"
-              disabled
               style={{ marginRight: '-4rem' }}
               value={formData.concurrency}
               onChange={(event: React.ChangeEvent<HTMLInputElement>) => {

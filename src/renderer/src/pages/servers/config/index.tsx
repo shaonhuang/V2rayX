@@ -73,24 +73,84 @@ const ImportSettings = (props: any) => {
   const [theme, _] = useState<ThemeKeys>(
     localStorage.theme === 'light' ? 'summerfruit:inverted' : 'summerfruit',
   );
+  const [jsonThemes, setJsonThemes] = useState(isMac ? 'google' : theme);
+  const jsonEditThemes = [
+    'apathy',
+    'apathy:inverted',
+    'ashes',
+    'bespin',
+    'brewer',
+    'bright:inverted',
+    'bright',
+    'chalk',
+    'codeschool',
+    'colors',
+    'eighties',
+    'embers',
+    'flat',
+    'google',
+    'grayscale',
+    'grayscale:inverted',
+    'greenscreen',
+    'harmonic',
+    'hopscotch',
+    'isotope',
+    'marrakesh',
+    'mocha',
+    'monokai',
+    'ocean',
+    'paraiso',
+    'pop',
+    'railscasts',
+    'rjv-default',
+    'shapeshifter',
+    'shapeshifter:inverted',
+    'solarized',
+    'summerfruit',
+    'summerfruit:inverted',
+    'threezerotwofour',
+    'tomorrow',
+    'tube',
+    'twilight',
+  ];
   const copyData = (data) => {
     window.clipboard.paste(JSON.stringify(data.src));
   };
+
   return (
     <section className="mx-4 min-h-[100px] text-left">
-      {
-        <ReactJson
-          style={isMac ? { padding: '30px', backgroundColor: '#ffffff00' } : { padding: '30px' }}
-          src={data}
-          theme={theme}
-          collapsed={false}
-          displayObjectSize={true}
-          enableClipboard={copyData}
-          indentWidth={4}
-          displayDataTypes={true}
-          iconStyle="triangle"
-        />
-      }
+      <FormControl sx={{ width: 180 }} className="fixed left-2/3">
+        <InputLabel>Editor Theme</InputLabel>
+        <Select
+          value={jsonThemes}
+          input={<OutlinedInput label="Theme" />}
+          MenuProps={MenuProps}
+          onChange={(event) => {
+            setJsonThemes(event.target.value);
+          }}
+        >
+          {jsonEditThemes.map((i) => (
+            <MenuItem key={i} value={i}>
+              {i}
+            </MenuItem>
+          ))}
+        </Select>
+      </FormControl>
+      <ReactJson
+        style={isMac ? { padding: '30px', backgroundColor: '#00000000' } : { padding: '30px' }}
+        src={data}
+        iconStyle="circle"
+        theme={jsonThemes}
+        collapsed={2}
+        collapseStringsAfterLength={20}
+        displayObjectSize={true}
+        enableClipboard={copyData}
+        onEdit={props.handleEdit}
+        onAdd={props.handleEdit}
+        onDelete={props.handleEdit}
+        indentWidth={4}
+        displayDataTypes={true}
+      />
     </section>
   );
 };
@@ -138,6 +198,11 @@ const Index = () => {
   useLayoutEffect(() => {
     window.location.hash.includes('edit') && initEdit();
   }, []);
+
+  const handleEditJson = (args: any) => {
+    const { updated_src, name, namespace, new_value, existing_value } = args;
+    setFormData({ ...formData, server: { ...formData.server, config: updated_src } });
+  };
 
   return (
     <Container
@@ -235,7 +300,7 @@ const Index = () => {
                   </FormControl>
                 </Grid>
                 <Grid xs={12}>
-                  <ImportSettings data={formData.server.config} />
+                  <ImportSettings data={formData.server.config} handleEdit={handleEditJson} />
                 </Grid>
               </Grid>
             ) : (

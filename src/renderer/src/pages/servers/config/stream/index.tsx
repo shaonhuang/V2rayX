@@ -24,7 +24,7 @@ const Index = (props: any) => {
   const { outbounds } = props.data.server.config;
   const { settings, streamSettings } = outbounds[0];
   const [formData, setFormData] = useState<formDataType>({
-    network: streamSettings.network,
+    network: streamSettings.network || 'ws',
     host: streamSettings.wsSettings.headers.host,
     path: streamSettings.wsSettings.path,
   });
@@ -50,6 +50,7 @@ const Index = (props: any) => {
               value={formData.network}
               input={<OutlinedInput label="Network" />}
               MenuProps={MenuProps}
+              disabled
               onChange={(event) => {
                 setFormData({ ...formData, network: event.target.value });
               }}
