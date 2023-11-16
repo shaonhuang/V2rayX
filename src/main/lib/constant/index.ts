@@ -1,7 +1,7 @@
 import os from 'os';
 import path from 'path';
 import { app } from 'electron';
-import isDev from 'electron-is-dev';
+import { is } from '@electron-toolkit/utils';
 
 export const ignoredHosts =
   'FE80::/64, 127.0.0.1/8, ::1, FD00::/8, 192.168.0.0/16, 10.0.0.0/8, localhost';
@@ -32,7 +32,7 @@ export const v2rayBin = path.join(
   `v2ray${isWindows ? '.exe' : ''}`,
 );
 export const pathRuntime = path.join(appDataPath, 'runtime/');
-export const pathExecutable = isDev
+export const pathExecutable = is.dev
   ? app.getAppPath()
   : isMacOS
   ? path.join(path.dirname(app.getPath('exe')), '..')
