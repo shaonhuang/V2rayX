@@ -2,7 +2,7 @@ import { FormControl, InputLabel, MenuItem, Select, TextField, OutlinedInput } f
 import Grid from '@mui/material/Unstable_Grid2';
 import { useState, useEffect } from 'react';
 
-const networkTypes = ['ws', 'tcp', 'h2', 'kcp', 'quic', 'domainsocket'];
+const networkTypes = ['ws', 'tcp', 'h2', 'kcp', 'mkcp', 'quic', 'domainsocket'];
 
 const ITEM_HEIGHT = 48;
 const ITEM_PADDING_TOP = 8;

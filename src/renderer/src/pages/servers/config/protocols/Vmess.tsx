@@ -30,7 +30,7 @@ type formDataType = {
   address: string;
   port: number;
   uuid: string;
-  alterId: string;
+  alterId: number;
   level: number;
   algorithm: string;
 };
@@ -46,7 +46,7 @@ const Index = (props: any) => {
     address: settings.vnext[0].address,
     port: settings.vnext[0].port,
     uuid: settings.vnext[0].users[0].id,
-    alterId: settings.vnext[0].users[0].alterId,
+    alterId: parseInt(settings.vnext[0].users[0].alterId || 0),
     level: settings.vnext[0].users[0].level,
     algorithm: encryption,
   });
@@ -142,10 +142,14 @@ const Index = (props: any) => {
               fullWidth
               label="Alter Id"
               id="fullWidth"
+              type="number"
               required
               value={formData.alterId}
               onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
-                setFormData({ ...formData, alterId: event.target.value });
+                setFormData({ ...formData, alterId: parseInt(event.target.value || 0) });
+              }}
+              InputLabelProps={{
+                shrink: true,
               }}
             />
           </Grid>

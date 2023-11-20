@@ -1,9 +1,24 @@
-import { app, BrowserWindow, Tray, Menu, nativeImage, shell } from 'electron';
+import {
+  app,
+  BrowserWindow,
+  Tray,
+  Menu,
+  nativeImage,
+  shell,
+  clipboard,
+  Notification,
+} from 'electron';
 import fs from 'fs';
 import { join } from 'node:path';
 import logger from '@lib/logs';
 import db from '@lib/lowdb';
 import emitter from '@lib/event-emitter';
+import { globalPacConf, isMacOS, isWindows, pacDir, userPacConf } from '@main/lib/constant';
+import { autoUpdater } from 'electron-updater';
+import icon from '@resources/icon.png?asset';
+import { find, findIndex } from 'lodash';
+import { Server } from '@main/lib/constant/types';
+
 let tray: any = null;
 
 export const createTray = (mainWindow: Object, createWindow: Function) => {
@@ -12,9 +27,28 @@ export const createTray = (mainWindow: Object, createWindow: Function) => {
   );
   tray = new Tray(menuIcon);
 
+  const servers = db.chain.get('servers').value();
+  const currentServerId = db.chain.get('currentServerId').value();
+  const currentServer: Server = find(servers, { id: currentServerId });
+  const pastePort = currentServerId ? currentServer.config.inbounds[1].port : 10871;
+  const serversSubMenu = servers.map((server: Server) => {
+    return {
+      label: server.ps,
+      type: 'radio',
+      checked: server.id === currentServerId,
+      enabled: false,
+      click: async () => {
+        // db.data = db.chain.set('currentServerId', server.id).value();
+        // await db.write();
+        // const mainWindow = BrowserWindow.getAllWindows()[0];
+        // mainWindow?.webContents?.send('crrentServer:change', server.id);
+        // emitter.emit('currentServer:change', server.id);
+      },
+    };
+  });
   const template: any = [
     {
-      label: `v2ray-core: off (${app.getVersion()})`,
+      label: `v2ray-core: Off (${app.getVersion()})`,
       enabled: false,
     },
     {
@@ -29,7 +63,7 @@ export const createTray = (mainWindow: Object, createWindow: Function) => {
       type: 'separator',
     },
     {
-      label: 'View config.json',
+      label: 'View Config.json',
       click: () => {
         const config = join(app.getPath('userData'), 'v2ray-core', 'tmp.json');
         if (fs.existsSync(config)) {
@@ -39,7 +73,16 @@ export const createTray = (mainWindow: Object, createWindow: Function) => {
       },
     },
     {
-      label: 'View log',
+      label: 'View PAC File',
+      click: () => {
+        const pac = userPacConf;
+        if (fs.existsSync(pac)) {
+          shell.openExternal(`file://${pac}`);
+        }
+      },
+    },
+    {
+      label: 'View Log',
       click: () => {
         const logFile = `${app.getPath('logs')}/access.log`;
         if (fs.existsSync(logFile)) {
@@ -90,7 +133,12 @@ export const createTray = (mainWindow: Object, createWindow: Function) => {
       type: 'separator',
     },
     {
+      label: 'Servers...',
+      submenu: serversSubMenu,
+    },
+    {
       label: 'Configure...',
+      accelerator: 'CmdOrCtrl+c',
       click: () => {
         if (mainWindow === null) {
           mainWindow = createWindow();
@@ -104,7 +152,80 @@ export const createTray = (mainWindow: Object, createWindow: Function) => {
       },
     },
     {
+      label: 'Subscriptions...',
+      enabled: false,
+    },
+    {
+      label: 'PAC Settings...',
+      enabled: false,
+    },
+    {
+      label: 'Connection Test...',
+      enabled: false,
+    },
+    {
+      type: 'separator',
+    },
+    {
+      label: 'Import Server From Pasteboard',
+      enabled: false,
+    },
+    {
+      label: 'Scan QR Code from Screen',
+      enabled: false,
+    },
+    {
+      label: 'Share Link/QR Code',
+      enabled: false,
+    },
+    {
+      type: 'separator',
+    },
+    {
+      label: 'Copy HTTP Proxy Shell Export Command',
+      accelerator: 'CmdOrCtrl+e',
+      click: () => {
+        const pasteData = isWindows
+          ? `set http_proxy=http://127.0.0.1:${pastePort}`
+          : `export http_proxy=http://127.0.0.1:${pastePort};export https_proxy=http://127.0.0.1:${pastePort};`;
+        clipboard.writeText(pasteData);
+        new Notification({
+          title: 'V2rayX',
+          body: `Command has pasted to clipboard -- ${pasteData}`,
+          silent: true,
+          icon,
+        }).show();
+      },
+    },
+    {
+      type: 'separator',
+    },
+    {
+      label: 'Preferences...',
+      enabled: false,
+    },
+    {
+      label: isMacOS ? 'Check Offical Website' : 'Check for Updates',
+      click: () => {
+        if (isMacOS) {
+          shell.openExternal('https://github.com/shaonhuang/V2rayX/releases');
+          return;
+        }
+        autoUpdater.checkForUpdates();
+      },
+    },
+    {
+      label: 'Help',
+      click: () => {
+        shell.openExternal('https://github.com/shaonhuang/V2rayX/issues');
+      },
+    },
+    {
+      type: 'separator',
+    },
+    {
       label: 'Quit',
+      accelerator: 'CmdOrCtrl+q',
       click: () => {
         app.quit();
       },
@@ -113,8 +234,8 @@ export const createTray = (mainWindow: Object, createWindow: Function) => {
 
   const contextMenu = Menu.buildFromTemplate(template);
   const proxyMode = db.chain.get('settings.proxyMode').value();
-  // item 6:PAC; item 7:GLobal; item 8:Manual;
-  contextMenu.items[proxyMode === 'Global' ? 7 : proxyMode === 'Manual' ? 8 : 6].checked = true;
+  // item 7:PAC; item 8:GLobal; item 9:Manual;
+  contextMenu.items[proxyMode === 'Global' ? 8 : proxyMode === 'Manual' ? 9 : 7].checked = true;
   tray.setToolTip('click for more operations');
   tray.setContextMenu(contextMenu);
   emitter.on('tray-v2ray:update', (running: boolean) => {
@@ -132,22 +253,57 @@ export const createTray = (mainWindow: Object, createWindow: Function) => {
         emitter.emit(running ? 'v2ray:stop' : 'v2ray:start', config);
       }
     };
-    [6, 7, 8].forEach((index: number) => {
+    [7, 8, 9].forEach((index: number) => {
       template[index].checked = false;
     });
     const mainWindow = BrowserWindow.getAllWindows()[0];
     mainWindow?.webContents?.send('v2ray:status', running);
     db.data.serviceRunningState = running;
     db.write().then(() => {
-      template[proxyMode === 'Global' ? 7 : proxyMode === 'Manual' ? 8 : 6].checked = true;
+      template[proxyMode === 'Global' ? 8 : proxyMode === 'Manual' ? 9 : 7].checked = true;
       tray.setContextMenu(Menu.buildFromTemplate(template));
     });
   });
   emitter.on('tray-mode:update', (mode) => {
-    [6, 7, 8].forEach((index: number) => {
+    [7, 8, 9].forEach((index: number) => {
       template[index].checked = false;
     });
-    template[mode === 'Global' ? 7 : mode === 'Manual' ? 8 : 6].checked = true;
+    template[mode === 'Global' ? 8 : mode === 'Manual' ? 9 : 7].checked = true;
+    tray.setContextMenu(Menu.buildFromTemplate(template));
+  });
+  emitter.on('tray-servers:update', () => {
+    const servers = db.chain.get('servers').value();
+    const currentServerId = db.chain.get('currentServerId').value();
+    const currentServer: Server = find(servers, { id: currentServerId });
+    const pastePort = currentServerId ? currentServer.config.inbounds[1].port : 10871;
+    const serversSubMenu = servers.map((server: Server) => {
+      return {
+        label: server.ps,
+        type: 'radio',
+        checked: server.id === currentServerId,
+        enabled: false,
+        click: async () => {
+          // db.data = db.chain.set('currentServerId', server.id).value();
+          // await db.write();
+          // const mainWindow = BrowserWindow.getAllWindows()[0];
+          // mainWindow?.webContents?.send('crrentServer:change', server.id);
+          // emitter.emit('currentServer:change', server.id);
+        },
+      };
+    });
+    template[21].click = () => {
+      const pasteData = isWindows
+        ? `set http_proxy=http://127.0.0.1:${pastePort}`
+        : `export http_proxy=http://127.0.0.1:${pastePort};export https_proxy=http://127.0.0.1:${pastePort};`;
+      clipboard.writeText(pasteData);
+      new Notification({
+        title: 'V2rayX',
+        body: `Command has pasted to clipboard -- ${pasteData}`,
+        silent: true,
+        icon,
+      }).show();
+    };
+    template[11].submenu = serversSubMenu;
     tray.setContextMenu(Menu.buildFromTemplate(template));
   });
   tray.on('double-click', function () {

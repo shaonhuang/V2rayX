@@ -48,7 +48,7 @@ const v2ToStdV2Mapper = {
 const v1Converter = {};
 
 const v2Converter = {
-  ps: (v) => encodeURIComponent(v),
+  ps: (v) => encodeURIComponent(v ?? ''),
   net: (v) => {
     if (['tcp', 'kcp', 'ws', 'h2', 'quic'].includes(v)) {
       return v;
@@ -379,7 +379,7 @@ const parseVmess2config = (obj: VmessV2) => {
 const fromJson2Vmess2 = (json: any): VmessV2 => {
   const { outbounds, other } = json;
   const { settings, streamSettings } = outbounds[0];
-  const ps = encodeURIComponent(other.ps),
+  const ps = encodeURIComponent(other?.ps ?? ''),
     add = settings.vnext[0].address,
     port = settings.vnext[0].port,
     tls = streamSettings.security,

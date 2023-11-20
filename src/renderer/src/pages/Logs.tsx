@@ -125,7 +125,7 @@ const Index = (): JSX.Element => {
                   <p
                     key={idx}
                     className={`animate__animated animate__fadeInRight mx-4 my-2 rounded-lg px-4 py-2 ${
-                      isMac ? '' : 'text-black bg-slate-100'
+                      isMac ? '' : 'bg-slate-100 text-black'
                     }`}
                   >
                     {log}

@@ -35,8 +35,8 @@ export const pathRuntime = path.join(appDataPath, 'runtime/');
 export const pathExecutable = is.dev
   ? app.getAppPath()
   : isMacOS
-  ? path.join(path.dirname(app.getPath('exe')), '..')
-  : path.dirname(app.getPath('exe'));
+    ? path.join(path.dirname(app.getPath('exe')), '..')
+    : path.dirname(app.getPath('exe'));
 
 export const archMap = new Map([
   ['aarch64', 'arm64'],

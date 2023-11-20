@@ -100,9 +100,15 @@ validatedIpcMain.on('v2rayx:appearance:system', (event) => {
   event.reply('appearance:system:fromMain', isDarkMode ? 'dark' : 'light');
 });
 
-validatedIpcMain.on('v2rayx:service:selected', (_) => emitter.emit('tray-v2ray:update', false));
+validatedIpcMain.on('v2rayx:service:selected', (_) => {
+  emitter.emit('tray-v2ray:update', false);
+  emitter.emit('tray-servers:update', _);
+});
 
-validatedIpcMain.on('v2rayx:service:empty', (_) => emitter.emit('tray-v2ray:update', false));
+validatedIpcMain.on('v2rayx:service:empty', (_) => {
+  emitter.emit('tray-v2ray:update', false);
+  emitter.emit('tray-servers:update', _);
+});
 
 validatedIpcMain.on('v2rayx:server:add/edit:toMain', (_, serverItem: any) => {
   const mainWindow = BrowserWindow.getAllWindows()[1];
