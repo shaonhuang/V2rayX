@@ -1,7 +1,7 @@
 {
   "name": "v2rayx",
   "version": "0.3.3",
-  "description": "An Electron application with React and TypeScript",
+  "description": "An all-platform (Macos Windows Linux) V2ray client build with electron.",
   "main": "./out/main/index.js",
   "author": "shaonhuang",
   "homepage": "https://github.com/shaonhuang/V2rayX",
