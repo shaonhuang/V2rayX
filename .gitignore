@@ -13,10 +13,8 @@ out
 
 # misc
 .DS_Store
-resources/v2ray-core
 v2ray.zip
 electron.vite.config.*.mjs
-build/beforeBuild.ts
 
 # Yarn 3 files
 /.pnp

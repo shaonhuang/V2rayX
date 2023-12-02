@@ -38,7 +38,7 @@ const AboutPage = (): JSX.Element => {
           <img src={icon} alt="" className="m-4 h-24 w-24" />
           <p className="text-xl">V2rayX({version})</p>
         </div>
-        <p>An all platform(Macos Windows Linux) V2ray client build with electron.</p>
+        <p>An all platform (Macos Windows Linux) V2ray client build with electron.</p>
         <div className="my-4 flex flex-row gap-2">
           <Button variant="outlined" className="relative" onClick={handleCheckUpdate}>
             CHECK UPDATE

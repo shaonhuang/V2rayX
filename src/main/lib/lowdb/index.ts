@@ -17,7 +17,6 @@ type Settings = {
 };
 
 type Data = {
-  v2rayInstallStatus: boolean;
   autoLaunch: boolean;
   servers: Server[];
   currentServerId?: string;
@@ -33,7 +32,6 @@ class LowWithLodash<T> extends Low<T> {
 }
 
 const defaultData: Data = {
-  v2rayInstallStatus: false,
   autoLaunch: false,
   servers: [],
   currentServerId: '',

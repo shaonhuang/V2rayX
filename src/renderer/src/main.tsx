@@ -9,7 +9,6 @@ import { ThemeOptions } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 
 import store from '@store/index';
-import InstallDialog from '@renderer/components/Install';
 import { isMac } from '@renderer/constant';
 
 const originalSetItem = window.localStorage.setItem;
@@ -89,7 +88,6 @@ const Page = () => {
         <CssBaseline />
         <Provider store={store}>
           <App />
-          <InstallDialog />
         </Provider>
       </ThemeProvider>
     </React.StrictMode>

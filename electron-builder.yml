@@ -18,22 +18,22 @@ win:
     - target: nsis
       arch:
         - x64
-        - ia32
+        - arm64
 nsis:
-  artifactName: ${name}-${version}-setup.${ext}
+  artifactName: ${name}-${version}-${arch}-setup.${ext}
   shortcutName: ${productName}
   uninstallDisplayName: ${productName}
   createDesktopShortcut: always
 mac:
   target:
     - target: zip
-      arch: x64
-    - target: zip
-      arch: arm64
+      arch:
+        - x64
+        - arm64
     - target: dmg
-      arch: x64
-    - target: dmg
-      arch: arm64
+      arch:
+        - x64
+        - arm64
 
   entitlementsInherit: build/entitlements.mac.plist
   extendInfo:
@@ -42,27 +42,35 @@ mac:
     - NSDocumentsFolderUsageDescription: Application requests access to the user's Documents folder.
     - NSDownloadsFolderUsageDescription: Application requests access to the user's Downloads folder.
 dmg:
-  artifactName: ${name}-${version}.${arch}.${ext}
+  artifactName: ${name}-${version}-${arch}.${ext}
+
 linux:
   target:
     - target: AppImage
       arch:
         - x64
-        - armv7l
         - arm64
     - target: snap
       arch:
         - x64
-        - armv7l
     - target: deb
       arch:
         - x64
-        - armv7l
+        - arm64
+    - target: pacman
+      arch:
+        - x64
         - arm64
   maintainer: shaonhuang.github.io
   category: Utility
 appImage:
-  artifactName: ${name}-${version}.${ext}
+  artifactName: ${name}-${version}-${arch}.${ext}
+snap:
+  artifactName: ${name}-${version}-${arch}.${ext}
+deb:
+  artifactName: ${name}-${version}-${arch}.${ext}
+pacman:
+  artifactName: ${name}-${version}-${arch}.${ext}
 npmRebuild: false
 publish:
   provider: github

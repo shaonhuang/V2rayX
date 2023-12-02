@@ -15,9 +15,10 @@ const customApi = {
     // whitelist channels
     const validChannels = [
       'toMain',
-      'v2ray:install',
       'v2rayx:appearance:system',
       'logs:get',
+      'logs:getAll',
+      'logs:getAllError',
       'v2rayx:service:empty',
       'v2rayx:service:selected',
       'v2rayx:restart-app',
@@ -31,8 +32,6 @@ const customApi = {
   receive: (channel, func) => {
     const validChannels = [
       'fromMain',
-      'v2ray:downloadStatus',
-      'v2ray:finishedInstall',
       'appearance:system:fromMain',
       'proxyMode:change',
       'logs:get',

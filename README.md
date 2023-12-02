@@ -17,8 +17,8 @@ V2ray GUI client with cross-platform desktop support powered by Electron⚛️, 
 
 ### ➣ Tested on
 
-- Ubuntu22.10 (amd64)
-- MacOS Ventura (x64)
+- Ubuntu22.10 (amd64, arm64)
+- MacOS Ventura (Intel, M1+)
 - Windows10/11 (x64)
 
 ### ➣ Future test plan
@@ -73,15 +73,16 @@ V2ray GUI client with cross-platform desktop support powered by Electron⚛️, 
 > More architectures will be supported if necessary, just give me an issue.
 
 - Ubuntu
-  - deb `x64/x86/arm64`
-  - AppImage `x64/x86/arm64`
-  - snap `x64/x86/arm64`
-- MacOS
+  - deb `x64/arm64`
+  - pacman `x64/arm64`
+  - AppImage `x64/arm64`
+  - snap `x64/arm64(Easy Intall On SnapStore)`
+- MacOS (M1+, Intel)
   - dmg `x64/arm64`
   - zip `x64/arm64`
 - Windows 10/11
-  - exe `x64/x86/arm64`
-  - zip `x64/x86/arm64`
+  - exe `x64/arm64`
+  - zip `x64/arm64`
 
 ## V. Screenshots
 
@@ -125,6 +126,7 @@ V2ray GUI client with cross-platform desktop support powered by Electron⚛️, 
 #### Logs Page
 
 ![logs.png](./assets/logs-win.png)
+![logs.png](./assets/logs-screen-linux.png)
 
 #### About Page
 

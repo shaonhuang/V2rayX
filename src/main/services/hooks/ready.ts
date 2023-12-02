@@ -6,7 +6,6 @@ import logger from '@lib/logs';
 import { promiseRetry, checkPortAvailability } from '@main/lib/utils';
 import ProxyService from '@main/services/core/proxy';
 import { existsSync } from 'fs';
-import { log } from 'console';
 
 const tasks: Array<(electronApp: ElectronApp) => void> = [];
 
@@ -25,35 +24,33 @@ const autoStartProxy = (electronApp: ElectronApp) => {
     console.log('hooks: >> autoStartProxy');
     // TODD: auto start proxy
     db.read().then(() => {
-      if (db.chain.get('v2rayInstallStatus').value()) {
-        const service = new Service(process.platform);
-        try {
-          const currentServerId = db.chain.get('currentServerId').value();
-          if (currentServerId !== '') {
-            if (
-              existsSync(
-                db.chain.get('servers').find({ id: currentServerId }).value()?.config.log.access,
-              )
-            ) {
-              service.start(
-                db.chain
-                  .get('servers')
-                  .find({ id: db.chain.get('currentServerId').value() })
-                  .value()?.config,
-              );
-              emitter.emit('tray-v2ray:update', true);
-            } else {
-              logger.error('service init failed. accessing log file not found');
-              db.data = db.chain
-                .set('currentServerId', '')
-                .set('servers', [])
-                .set('serviceRunningState', false)
-                .value();
-            }
+      const service = new Service(process.platform);
+      try {
+        const currentServerId = db.chain.get('currentServerId').value();
+        if (currentServerId !== '') {
+          if (
+            existsSync(
+              db.chain.get('servers').find({ id: currentServerId }).value()?.config.log.access,
+            )
+          ) {
+            service.start(
+              db.chain
+                .get('servers')
+                .find({ id: db.chain.get('currentServerId').value() })
+                .value()?.config,
+            );
+            emitter.emit('tray-v2ray:update', true);
+          } else {
+            logger.error('service init failed. accessing log file not found');
+            db.data = db.chain
+              .set('currentServerId', '')
+              .set('servers', [])
+              .set('serviceRunningState', false)
+              .value();
           }
-        } catch (err) {
-          logger.error('service init', err);
         }
+      } catch (err) {
+        logger.error('service init', err);
       }
     });
   });

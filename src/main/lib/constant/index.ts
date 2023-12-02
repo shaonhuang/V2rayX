@@ -3,6 +3,14 @@ import path from 'path';
 import { app } from 'electron';
 import { is } from '@electron-toolkit/utils';
 
+const resourcesPath = path
+  .join(__dirname, '../../resources/')
+  .replace('app.asar', 'app.asar.unpacked');
+
+export const pacPath = path.join(resourcesPath, 'pac');
+export const binPath = path.join(resourcesPath, 'bin');
+export const v2rayPackage = path.join(resourcesPath, 'v2ray-package');
+
 export const ignoredHosts =
   'FE80::/64, 127.0.0.1/8, ::1, FD00::/8, 192.168.0.0/16, 10.0.0.0/8, localhost';
 
@@ -25,7 +33,6 @@ export const isLinux = platform === 'linux';
 export const packageName = 'v2rayx';
 export const v2rayPackageName = 'v2ray-core';
 export const appDataPath = path.join(electronAppPath, packageName);
-export const v2rayPath = path.join(app.getPath('userData'), v2rayPackageName);
 export const v2rayBin = path.join(
   app.getPath('userData'),
   'v2ray-core',
@@ -38,6 +45,8 @@ export const pathExecutable = is.dev
     ? path.join(path.dirname(app.getPath('exe')), '..')
     : path.dirname(app.getPath('exe'));
 
+export const arch = os.arch();
+
 export const archMap = new Map([
   ['aarch64', 'arm64'],
   ['x86', 'ia32'],
@@ -45,11 +54,13 @@ export const archMap = new Map([
   ['ia32', 'ia32'],
   ['arm64', 'arm64'],
 ]);
+
 export const v2rayPlatform = new Map([
   ['darwin', 'macos'],
   ['win32', 'windows'],
   ['linux', 'linux'],
 ]);
+
 export const v2rayArch = new Map([
   ['x64', '64'],
   ['ia32', '32'],
@@ -61,8 +72,15 @@ export const getPathRoot = (p: string) => path.join(appDataPath, p);
 export const getPathRuntime = (p: string) => path.join(pathRuntime, p);
 export const pacDir = getPathRuntime('pac');
 export const binDir = getPathRuntime('bin');
+export const v2rayDir = path.join(app.getPath('userData'), v2rayPackageName);
 export const globalPacConf = path.resolve(pacDir, 'gfwlist.txt');
 export const userPacConf = path.resolve(pacDir, 'gfwlist-user.txt');
+export const v2rayPackagePath = path.join(
+  v2rayPackage,
+  platform,
+  arch,
+  `v2ray-${v2rayPlatform.get(platform)}-${v2rayArch.get(arch)}.zip`,
+);
 
 export default {
   v2rayPackageName,

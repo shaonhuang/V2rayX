@@ -2,7 +2,7 @@ import path from 'node:path';
 import { ChildProcessWithoutNullStreams } from 'node:child_process';
 import fs from 'node:fs';
 import logger from '@lib/logs';
-import { v2rayBin, v2rayPath } from '@lib/constant';
+import { v2rayBin, v2rayDir } from '@lib/constant';
 
 export default class Service {
   private static instance: Service;
@@ -33,12 +33,12 @@ export default class Service {
   }
   start(data?: JSON) {
     if (data) {
-      fs.writeFileSync(path.join(v2rayPath, `tmp.json`), JSON.stringify(data));
+      fs.writeFileSync(path.join(v2rayDir, `tmp.json`), JSON.stringify(data));
       logger.info('tmp.json file has written successfully.');
     }
     const { spawn } = require('node:child_process');
     try {
-      this.v2ray = spawn(v2rayBin, ['run', '-c', path.join(v2rayPath, `tmp.json`)]);
+      this.v2ray = spawn(v2rayBin, ['run', '-c', path.join(v2rayDir, `tmp.json`)]);
       this.v2ray?.stdout.on('data', (data: string) => {
         logger.info(`stdout: ${data}`);
       });

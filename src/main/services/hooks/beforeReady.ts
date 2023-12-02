@@ -6,16 +6,14 @@ import { ElectronApp } from '@main/app';
 import { checkEnvFiles as check, copyDir, chmod } from '@lib/utils/misc/utils';
 import { appDataPath, platform, pathRuntime, pathExecutable, pacDir, binDir } from '@lib/constant';
 import { is } from '@electron-toolkit/utils';
+import { Install } from '@main/services/install';
 
 import ThemeService from '@main/services/theme';
 import * as fs from 'fs-extra';
 import { resolve } from 'path';
 import { PacServer as PS } from '@lib/proxy/pac';
-import db from '@main/lib/lowdb';
 import { mountListeners } from '../core/listener';
-
-const binPath = path.join(__dirname, '../../resources/bin').replace('app.asar', 'app.asar.unpacked');
-const pacPath = path.join(__dirname, '../../resources/pac').replace('app.asar', 'app.asar.unpacked');
+import { binPath, pacPath, v2rayDir, v2rayPackagePath } from '@lib/constant';
 
 const tasks: Array<(electronApp: ElectronApp) => void> = [];
 
@@ -42,6 +40,17 @@ const checkEnvFiles = (electronApp: ElectronApp) => {
         exec: () => {
           logger.info(`copyDir: ${pacPath} -> ${pacDir}`);
           copyDir(pacPath, pacDir);
+        },
+      },
+      {
+        _path: v2rayDir,
+        isDir: true,
+        checkEmpty: true,
+        exec: () => {
+          logger.info(`copyDir: ${v2rayPackagePath} -> ${v2rayDir}`);
+          // check v2ray package install status
+          const install = Install.createInstall(process.platform);
+          install.installV2ray();
         },
       },
     ]);

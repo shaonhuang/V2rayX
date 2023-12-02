@@ -48,7 +48,7 @@ export const createTray = (mainWindow: Object, createWindow: Function) => {
   });
   const template: any = [
     {
-      label: `v2ray-core: Off (${app.getVersion()})`,
+      label: `v2ray-core: Off (v${app.getVersion()})`,
       enabled: false,
     },
     {
@@ -240,7 +240,7 @@ export const createTray = (mainWindow: Object, createWindow: Function) => {
   tray.setContextMenu(contextMenu);
   emitter.on('tray-v2ray:update', (running: boolean) => {
     const proxyMode = db.data.settings.proxyMode;
-    template[0].label = `v2ray-core: ${running ? 'On' : 'Off'} (${app.getVersion()})`;
+    template[0].label = `v2ray-core: ${running ? 'On' : 'Off'} (v${app.getVersion()})`;
     template[1].label = `Turn v2ray-core ${running ? 'Off' : 'On'}`;
     // @ts-ignore
     const config = db.chain

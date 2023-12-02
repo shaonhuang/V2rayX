@@ -1,146 +1,186 @@
-import { useState, useEffect, useLayoutEffect, useRef } from 'react';
-import { Button, IconButton } from '@mui/material';
+import { useState, useEffect, useLayoutEffect, useRef, useMemo, useCallback } from 'react';
+import { Button, IconButton, Stack, Container, Paper, Box } from '@mui/material';
 import FileOpenIcon from '@mui/icons-material/FileOpen';
 import { useAppSelector } from '@renderer/store/hooks';
-import { find } from 'lodash';
-import { Server, VmessObjConfiguration, EmptyObject } from '@renderer/constant/types';
-import ContentPasteOffIcon from '@mui/icons-material/ContentPasteOff';
-import { isMac } from '@renderer/constant';
+import { find, isEmpty } from 'lodash';
+import { VmessObjConfiguration, EmptyObject } from '@renderer/constant/types';
+
+import { type MRT_ColumnDef } from 'material-react-table';
+import DataTable from '@renderer/components/InfiniteTable';
+
+type Log = {
+  date: string;
+  time: string;
+  address: string;
+  type: string;
+  content: string;
+  level: string;
+};
+
+const columns: MRT_ColumnDef<Log>[] = [
+  {
+    accessorKey: 'date',
+    header: 'Date',
+  },
+  {
+    accessorKey: 'time',
+    header: 'Time',
+  },
+  {
+    accessorKey: 'address',
+    header: 'Address',
+  },
+  {
+    accessorKey: 'type',
+    header: 'Type',
+  },
+  {
+    accessorKey: 'content',
+    header: 'Content',
+  },
+  {
+    accessorKey: 'level',
+    header: 'Level',
+  },
+];
+
+type ErorLog = {
+  date: string;
+  time: string;
+  type: string;
+  content: string;
+};
+
+const columnsError: MRT_ColumnDef<ErorLog>[] = [
+  {
+    accessorKey: 'errorDate',
+    header: 'Date',
+  },
+  {
+    accessorKey: 'errorTime',
+    header: 'Time',
+  },
+  {
+    accessorKey: 'errorType',
+    header: 'Type',
+  },
+  {
+    accessorKey: 'errorContent',
+    header: 'Content',
+  },
+];
 
 const Index = (): JSX.Element => {
-  const [server, setServer] = useState<VmessObjConfiguration | EmptyObject>({});
   const serverState = useAppSelector((state) => state.serversPage.servers);
+  const [server, setServer] = useState<VmessObjConfiguration | EmptyObject>({});
   const currentServerId = useAppSelector((state) => state.serversPage.currentServerId);
-  const [logs, setLogs] = useState<string[]>([]);
-  const [displayedLogs, setDisplayedLogs] = useState<string[]>([]);
   const [logType, setLogType] = useState<string>('access');
-  const scrollWindow = useRef<HTMLDivElement>(null);
-  const [isRunning, setIsRunning] = useState<boolean>(false);
 
-  useLayoutEffect(() => {
-    const server: Server | any = find(serverState, { id: currentServerId });
-    // FIXME: type error
-    // @ts-ignore
-    window.v2rayService.checkService().then((res) => {
-      setIsRunning(res);
+  useEffect(() => {
+    if (currentServerId !== '') {
+      setServer(find(serverState, { id: currentServerId })?.config);
+    }
+  }, [currentServerId]);
+
+  useEffect(() => {
+    // window.location.reload();
+  }, [logType]);
+
+  const queryFn = async ({ start, size, filters, globalFilter, sorting }) => {
+    window.electron.electronAPI.ipcRenderer.send('logs:getAll', {
+      type: 'access.log',
+      start,
+      size,
+      filters,
+      globalFilter,
+      sorting,
     });
-    setServer(server?.config);
-  }, []);
-  useEffect(() => {
-    if (isRunning) {
-      window.electron.electronAPI.ipcRenderer.on('logs:get', (_, data) => {
-        setLogs([...data]);
-        setDisplayedLogs([]);
+    return new Promise((resolve, reject) => {
+      window.electron.electronAPI.ipcRenderer.once('logs:getAll', (_, { data, meta }) => {
+        const logs = data;
+        return resolve({ data: logs, meta });
       });
-      const getLogs = () => {
-        window.api.send('logs:get', logType === 'access' ? 'access.log' : 'error.log');
-      };
-      getLogs();
-      const refresh = setInterval(() => {
-        getLogs();
-      }, 10000);
-      return () => {
-        clearInterval(refresh);
-      };
-    }
-    return () => {};
-  }, [logType, isRunning]);
-  useEffect(() => {
-    const delay = 600; // Delay between each log in milliseconds
-
-    const displayLogs = () => {
-      logs.forEach((log, index) => {
-        setTimeout(() => {
-          setDisplayedLogs((prevLogs) => [...prevLogs, log]);
-        }, index * delay);
+    });
+  };
+  const queryFnError = async ({ start, size, filters, globalFilter, sorting }) => {
+    window.electron.electronAPI.ipcRenderer.send('logs:getAllError', {
+      type: 'error.log',
+      start,
+      size,
+      filters,
+      globalFilter,
+      sorting,
+    });
+    return new Promise((resolve, reject) => {
+      window.electron.electronAPI.ipcRenderer.once('logs:getAllError', (_, { data, meta }) => {
+        const logs = data;
+        return resolve({ data: logs, meta });
       });
-    };
-
-    displayLogs();
-  }, [logs]);
-  useEffect(() => {
-    if (scrollWindow?.current) {
-      scrollWindow.current.scrollTop = scrollWindow.current.scrollHeight;
-    }
-  }, [displayedLogs]);
+    });
+  };
+  const DataGrid = (props) => {
+    return <DataTable columns={props.columns} queryFn={props.queryFn} />;
+  };
 
   return (
-    <section className="flew-row flex flex-1 items-center justify-around">
-      <div
-        className={`flex w-full flex-col rounded-xl px-8 py-4 ${
-          isMac ? '' : 'bg-white dark:bg-slate-700'
-        }`}
-      >
-        {isRunning && currentServerId ? (
-          <div className="py-2">
-            <div>
-              <p>Log level: {server?.log.loglevel.toUpperCase()}</p>
-              <p>
-                Log file path: {server?.log[logType === 'access' ? 'access' : 'error']}
-                <IconButton
-                  color="primary"
-                  className=""
-                  onClick={() => {
-                    window.electron.electronAPI.shell
-                      .openPath(server?.log[logType === 'access' ? 'access' : 'error'])
-                      .then(() => {
-                        // File opened successfully
-                        console.log('File opened');
-                      })
-                      .catch((error) => {
-                        // Error occurred while opening the file
-                        console.error(error);
-                      });
-                  }}
-                  size="small"
-                >
-                  <FileOpenIcon className="" fontSize="medium" />
-                </IconButton>
-              </p>
-            </div>
-            <div className="flex items-center justify-center gap-6 pt-4">
-              <Button
-                variant={logType === 'access' ? 'contained' : 'outlined'}
-                onClick={() => setLogType('access')}
+    <Container>
+      {!isEmpty(server) ? (
+        <Box className="flex w-full flex-col items-center gap-4 py-4">
+          <Box >
+            <Paper elevation={0} className='mb-2'>Log level: {server.log.loglevel.toUpperCase()}</Paper>
+            <Paper elevation={0} className='px-4'>
+              Log file path: {server.log[logType === 'access' ? 'access' : 'error']}
+              <IconButton
+                color="primary"
+                className=""
+                onClick={() => {
+                  window.electron.electronAPI.shell
+                    .openPath(server.log[logType === 'access' ? 'access' : 'error'])
+                    .then(() => {
+                      // File opened successfully
+                      console.log('File opened');
+                    })
+                    .catch((error) => {
+                      // Error occurred while opening the file
+                      console.error(error);
+                    });
+                }}
+                size="small"
               >
-                access log
-              </Button>
-              <Button
-                variant={logType === 'error' ? 'contained' : 'outlined'}
-                onClick={() => setLogType('error')}
-              >
-                error log
-              </Button>
-            </div>
-          </div>
-        ) : (
-          <></>
-        )}
-        <div className="m-2">
-          {displayedLogs.length >= 1 && currentServerId ? (
-            <div>
-              <hr />
-              <div className="my-2 h-64 overflow-x-hidden overflow-y-scroll" ref={scrollWindow}>
-                {displayedLogs.map((log, idx) => (
-                  <p
-                    key={idx}
-                    className={`animate__animated animate__fadeInRight mx-4 my-2 rounded-lg px-4 py-2 ${
-                      isMac ? '' : 'bg-slate-100 text-black'
-                    }`}
-                  >
-                    {log}
-                  </p>
-                ))}
-              </div>
-            </div>
-          ) : (
-            <p className="text-l">
-              <ContentPasteOffIcon /> Log file is empty
-            </p>
-          )}
-        </div>
-      </div>
-    </section>
+                <FileOpenIcon className="" fontSize="medium" />
+              </IconButton>
+            </Paper>
+          </Box>
+          <Box className="flex items-center justify-center gap-6">
+            <Button
+              variant={logType === 'access' ? 'contained' : 'outlined'}
+              onClick={() => setLogType('access')}
+            >
+              access log
+            </Button>
+            <Button
+              variant={logType === 'error' ? 'contained' : 'outlined'}
+              onClick={() => setLogType('error')}
+            >
+              error log
+            </Button>
+          </Box>
+          <Stack sx={{ maxWidth: '100%' }}>
+            {logType === 'access' ? (
+              <DataGrid columns={columns} queryFn={queryFn} />
+            ) : (
+              <DataGrid columns={columnsError} queryFn={queryFnError} />
+            )}
+          </Stack>
+        </Box>
+      ) : (
+        <Box className="flex h-[80vh] w-full flex-col items-center justify-center">
+          <Paper className="p-4" elevation={0}>
+            Log File is not assigned
+          </Paper>
+        </Box>
+      )}
+    </Container>
   );
 };
 

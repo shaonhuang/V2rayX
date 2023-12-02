@@ -6,6 +6,7 @@ import GernalSettings from '@renderer/pages/Home';
 import Servers from '@renderer/pages/servers';
 import About from '@renderer/pages/About';
 import Logs from '@renderer/pages/Logs';
+import Settings from '@renderer/pages/Settings';
 
 import ConfigPage from '@renderer/pages/servers/config';
 
@@ -42,6 +43,10 @@ const router = createHashRouter([
       {
         path: '/index/logs',
         element: <Logs />,
+      },
+      {
+        path: '/index/settings',
+        element: <Settings />,
       },
       {
         path: '/index/about',

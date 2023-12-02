@@ -4,6 +4,7 @@ import path from 'path';
 import fsExtra from 'fs-extra';
 import logger from '@main/lib/logs';
 import { globalPacConf, pacDir, userPacConf } from '@main/lib/constant';
+import chokidar from 'chokidar';
 
 export function debounce<params extends any[]>(fn: (...args: params) => any, timeout: number) {
   let timer: NodeJS.Timeout;
@@ -22,6 +23,8 @@ let server: PacServer | null;
 
 export class PacServer {
   core: http.Server;
+  httpPort: number;
+  sockPort: number;
   pacPort: number;
   globalPacConf: string;
   userPacConf: string;
@@ -44,9 +47,9 @@ export class PacServer {
     return await fs.promises.readFile(globalPacConf, 'utf8');
   }
 
-  static startPacServer(pacPort: number) {
+  static startPacServer(httpPort: number, sockPort: number, pacPort: number) {
     server?.close();
-    server = new PacServer(pacPort, path.resolve(pacDir, 'proxy.pac'));
+    server = new PacServer(httpPort, sockPort, pacPort, path.resolve(pacDir, 'proxy.pac'));
   }
 
   static stopPacServer() {
@@ -157,8 +160,10 @@ export class PacServer {
   //     });
   // }
 
-  constructor(pacPort: number, pacFile: string) {
+  constructor(httpPort: number, sockPort: number, pacPort: number, pacFile: string) {
     logger.info('Starting PAC server');
+    this.httpPort = httpPort;
+    this.sockPort = sockPort;
     this.pacPort = pacPort;
     this.core = http.createServer((req, res) => {
       fs.readFile(pacFile, (err, data) => {
@@ -180,22 +185,29 @@ export class PacServer {
   watch(pacFile: string) {
     if (!fs.existsSync(pacFile)) return null;
     logger.info(`Watching PAC file ${pacFile}...`);
-
-    return fs.watch(
-      pacFile,
-      debounce(async () => {
-        logger.info(`Regenerating PAC conf from file: ${pacFile}...`);
-        try {
-          const userData = await fs.promises.readFile(pacFile);
-          const globalData = await fs.promises.readFile(this.globalPacConf);
-          const userText = userData.toString('ascii');
-          const globalText = globalData.toString('ascii');
-          await PacServer.generatePacWithoutPort(`${userText}\n${globalText}`);
-        } catch (error) {
-          console.log(error);
-        }
-      }, 1e3),
-    );
+    return chokidar
+      .watch(pacFile, {
+        awaitWriteFinish: true,
+        usePolling: true,
+      })
+      .on(
+        'change',
+        debounce(async () => {
+          logger.info(`Regenerating PAC conf from file: ${pacFile}...`);
+          try {
+            const userData = await fs.promises.readFile(pacFile);
+            const globalData = await fs.promises.readFile(this.globalPacConf);
+            const userText = userData.toString('ascii');
+            const globalText = globalData.toString('ascii');
+            await PacServer.generatePacWithoutPort(`${userText}\n${globalText}`);
+            await PacServer.generateFullPac(this.httpPort, this.sockPort);
+            PacServer.stopPacServer();
+            PacServer.startPacServer(this.httpPort, this.sockPort, this.pacPort);
+          } catch (error) {
+            console.log(error);
+          }
+        }, 1e3),
+      );
   }
 
   unwatch() {

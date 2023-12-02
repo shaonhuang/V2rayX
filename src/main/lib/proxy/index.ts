@@ -78,7 +78,7 @@ export class LinuxProxy extends Proxy {
     } else if (this.mode === 'PAC') {
       await PS.generateFullPac(this.httpPort ?? 10871, this.socksPort ?? 10801);
       await gsettings.setPacProxy(`http://127.0.0.1:${this.pacPort ?? 1090}/proxy.pac`);
-      PS.startPacServer(this.pacPort);
+      PS.startPacServer(this.httpPort, this.socksPort, this.pacPort);
     }
     logger.info('Set proxy on');
   }
@@ -101,7 +101,7 @@ export class WinProxy extends Proxy {
     } else if (this.mode === 'PAC') {
       await PS.generateFullPac(this.httpPort ?? 10871, this.socksPort ?? 10801);
       await sysproxy.setPacProxy(`http://127.0.0.1:${this.pacPort ?? 1090}/proxy.pac`);
-      PS.startPacServer(this.pacPort);
+      PS.startPacServer(this.httpPort, this.socksPort, this.pacPort);
     }
     logger.info('Set proxy on');
   }
@@ -128,7 +128,7 @@ export class DarwinProxy extends Proxy {
     } else if (this.mode === 'PAC') {
       await PS.generateFullPac(this.httpPort ?? 10871, this.socksPort ?? 10801);
       await networksetup.setPacProxy(`http://127.0.0.1:${this.pacPort ?? 1090}/proxy.pac`);
-      PS.startPacServer(this.pacPort);
+      PS.startPacServer(this.httpPort, this.socksPort, this.pacPort);
     }
     logger.info('Set proxy on');
   }
