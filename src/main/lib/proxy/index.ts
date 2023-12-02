@@ -35,7 +35,6 @@ export class Proxy {
     pacPort: number,
     mode: Mode,
   ): Proxy | null {
-    if (mode === 'Manual') return null;
     switch (platform) {
       case 'darwin':
         return new DarwinProxy(httpPort, socksPort, pacPort, mode);

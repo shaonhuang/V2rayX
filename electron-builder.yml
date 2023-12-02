@@ -57,10 +57,10 @@ linux:
       arch:
         - x64
         - arm64
-    - target: pacman
-      arch:
-        - x64
-        - arm64
+    # - target: pacman
+    #   arch:
+    #     - x64
+    #     - arm64
   maintainer: shaonhuang.github.io
   category: Utility
 appImage:

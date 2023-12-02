@@ -11,7 +11,7 @@ import { createWindow } from '@main/services/browser';
 import registryHooks from '@main/services/hooks';
 import App from '@main/app';
 import { IpcMainWindowType } from '@lib/constant/types';
-import { filter, find } from 'lodash';
+import { filter, find, escapeRegExp } from 'lodash';
 
 export let mainWindow: IpcMainWindowType;
 let cleanUp = false;
@@ -51,9 +51,15 @@ app.on('ready', async () => {
   await db.write();
 
   electronHookApp.ready(app);
+  mainWindow = createWindow();
+
   electronHookApp.afterReady(app, (err) => {
     if (err) console.log(err);
   });
+
+  // load services
+  createTray(mainWindow, createWindow);
+  appUpdater(mainWindow);
 
   // Default open or close DevTools by F13 in development
   // and ignore CommandOrControl + R in production.
@@ -61,15 +67,10 @@ app.on('ready', async () => {
   app.on('browser-window-created', (_, window) => {
     optimizer.watchWindowShortcuts(window);
   });
-  mainWindow = createWindow();
   if (is.dev) {
     const mainWindow = BrowserWindow.getAllWindows()[0];
     mainWindow.webContents.openDevTools();
   }
-
-  // load services
-  createTray(mainWindow, createWindow);
-  appUpdater(mainWindow);
 
   // FIXME: DevTools bugs
   // installExtension(REACT_DEVELOPER_TOOLS)
@@ -106,19 +107,19 @@ app.on('ready', async () => {
       (i: any) => {
         const filtersObj = JSON.parse(filters);
         const patternErrorDate = new RegExp(
-          find(filtersObj, { id: 'errorDate' })?.value ?? /.*/,
+          escapeRegExp(find(filtersObj, { id: 'errorDate' })?.value) || /.*/,
           'i',
         );
         const patternErrorTime = new RegExp(
-          find(filtersObj, { id: 'errorTime' })?.value ?? /.*/,
+          escapeRegExp(find(filtersObj, { id: 'errorTime' })?.value) || /.*/,
           'i',
         );
         const patternErrorType = new RegExp(
-          find(filtersObj, { id: 'errorType' })?.value ?? /.*/,
+          escapeRegExp(find(filtersObj, { id: 'errorType' })?.value) || /.*/,
           'i',
         );
         const patternErrorContent = new RegExp(
-          find(filtersObj, { id: 'errorContent' })?.value ?? /.*/,
+          escapeRegExp(find(filtersObj, { id: 'errorContent' })?.value) || /.*/,
           'i',
         );
         const preTest =
@@ -165,12 +166,30 @@ app.on('ready', async () => {
         }),
       (i: any) => {
         const filtersObj = JSON.parse(filters);
-        const patternDate = new RegExp(find(filtersObj, { id: 'date' })?.value ?? /.*/, 'i'); // case insensitive
-        const patternAddress = new RegExp(find(filtersObj, { id: 'address' })?.value ?? /.*/, 'i');
-        const patternTime = new RegExp(find(filtersObj, { id: 'time' })?.value ?? /.*/, 'i');
-        const patternType = new RegExp(find(filtersObj, { id: 'type' })?.value ?? /.*/, 'i');
-        const patternContent = new RegExp(find(filtersObj, { id: 'content' })?.value ?? /.*/, 'i');
-        const patternLevel = new RegExp(find(filtersObj, { id: 'level' })?.value ?? /.*/, 'i');
+        const patternDate = new RegExp(
+          escapeRegExp(find(filtersObj, { id: 'date' })?.value) || /.*/,
+          'i',
+        ); // case insensitive
+        const patternAddress = new RegExp(
+          escapeRegExp(find(filtersObj, { id: 'address' })?.value) || /.*/,
+          'i',
+        );
+        const patternTime = new RegExp(
+          escapeRegExp(find(filtersObj, { id: 'time' })?.value) || /.*/,
+          'i',
+        );
+        const patternType = new RegExp(
+          escapeRegExp(find(filtersObj, { id: 'type' })?.value) || /.*/,
+          'i',
+        );
+        const patternContent = new RegExp(
+          escapeRegExp(find(filtersObj, { id: 'content' })?.value) || /.*/,
+          'i',
+        );
+        const patternLevel = new RegExp(
+          escapeRegExp(find(filtersObj, { id: 'level' })?.value) || /.*/,
+          'i',
+        );
         const preTest =
           patternDate.test(i.date) &&
           patternAddress.test(i.address) &&
