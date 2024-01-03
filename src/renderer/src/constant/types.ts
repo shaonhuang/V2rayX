@@ -1,10 +1,3 @@
-export type Server = {
-  id: string;
-  ps: string;
-  link: string;
-  config: VmessObjConfiguration;
-};
-
 // 日志的级别。默认值为 "warning"。
 //
 // "debug"：详细的调试性信息。同时包含所有 "info" 内容。
@@ -14,6 +7,8 @@ export type Server = {
 // "none"：不记录任何内容。
 //
 // reference: https://www.v2fly.org/config/overview.html#logobject
+import { VMessV2, TrojanType, VLessType } from '../utils/protocol/index';
+export type { VMessV2, TrojanType, VLessType };
 
 type Log = {
   error: string | 'none';
@@ -87,9 +82,655 @@ export type Server = {
   id: string;
   ps: string;
   link: string;
-  config: VmessObjConfiguration;
+  latency: string;
+  outbound: Record<string, any>;
 };
 
 export type Servers = Server[];
 
 export type EmptyObject = Record<string, never>;
+
+type V2RayCore = {
+  version: string;
+  isReinstallV2rayPackage: boolean;
+};
+
+type GeneralSettings = {
+  allowSystemNotification: boolean;
+  autoStartProxy: boolean;
+  dashboardPopWhenStart: boolean;
+  applicationLogsFolder: string;
+  v2rayLogsFolder: string;
+  automaticUpgrade: {
+    visiableUpgradeTip: boolean;
+    autodownloadAndInstall: boolean;
+  };
+};
+
+type Appearance = {
+  theme: string;
+  customStyle: boolean;
+  styleInJson: string;
+  followSystemTheme: boolean;
+  fontFamily: string;
+  hideTrayBar: boolean;
+  enhancedTrayIcon: string;
+};
+
+type SystemProxy = {
+  bypassDomains: string;
+  pacSetting: {
+    banListUrl: string;
+    userRules: string;
+  };
+};
+
+type Proxies = {
+  latencyTest: {
+    url: string;
+    timeout: number;
+  };
+};
+
+// Define SniffingObject type
+interface SniffingObject {
+  enabled: boolean;
+  destOverride: string[];
+  metadataOnly: boolean;
+}
+
+// Define AllocateObject type
+interface AllocateObject {
+  strategy: string;
+  refresh: number;
+  concurrency: number;
+}
+
+// TcpObject
+interface TcpObject {
+  connectionReuse: boolean;
+  header: {
+    type: string;
+  };
+}
+
+// KcpObject
+interface KcpObject {
+  mtu: number;
+  tti: number;
+  uplinkCapacity: number;
+  downlinkCapacity: number;
+  congestion: boolean;
+  readBufferSize: number;
+  writeBufferSize: number;
+  header: {
+    type: string;
+  };
+}
+
+// WebSocketObject
+interface WebSocketObject {
+  path: string;
+  headers: Record<string, string>;
+}
+
+// HttpObject
+interface HttpObject {
+  host: string[];
+  path: string;
+  headers: Record<string, string>;
+}
+
+// QuicObject
+interface QuicObject {
+  security: string;
+  key: string;
+  header: {
+    type: string;
+  };
+}
+
+// DomainSocketObject
+interface DomainSocketObject {
+  path: string;
+}
+
+// GrpcObject
+interface GrpcObject {
+  serviceName: string;
+  multiplex: boolean;
+  header: {
+    type: string;
+  };
+}
+
+// SockoptObject
+interface SockoptObject {
+  mark: number;
+  tcpFastOpen: boolean;
+  tcpFastOpenQueueLength: number;
+  tproxy: 'redirect' | 'tproxy' | 'off';
+  tcpKeepAliveInterval: number;
+}
+
+// StreamSettingsObject
+export interface StreamSettingsObject {
+  network: 'tcp' | 'kcp' | 'ws' | 'http' | 'domainsocket' | 'quic' | 'grpc';
+  security: 'none' | 'tls';
+  tlsSettings?: TLSObject;
+  tcpSettings?: TcpObject;
+  kcpSettings?: KcpObject;
+  wsSettings?: WebSocketObject;
+  httpSettings?: HttpObject;
+  quicSettings?: QuicObject;
+  dsSettings?: DomainSocketObject;
+  grpcSettings?: GrpcObject;
+  sockopt?: SockoptObject;
+}
+
+// TLSObject
+interface TLSObject {
+  serverName: string;
+  alpn: string[];
+  allowInsecure: boolean;
+  disableSystemRoot: boolean;
+  certificates: CertificateObject[];
+  verifyClientCertificate: boolean;
+  pinnedPeerCertificateChainSha256: string;
+}
+
+// CertificateObject
+interface CertificateObject {
+  usage: 'encipherment' | 'verify' | 'issue' | 'verifyclient';
+  certificateFile: string;
+  certificate: string[];
+  keyFile: string;
+  key: string[];
+}
+
+// Define InboundObject type
+export interface InboundObject {
+  listen: string;
+  port: number;
+  protocol: string;
+  settings?: Record<string, any>;
+  streamSettings?: StreamSettingsObject;
+  tag?: string;
+  sniffing?: SniffingObject;
+  allocate?: AllocateObject;
+}
+
+type V2rayConfigure = {
+  inbounds: InboundObject[];
+  dns: string;
+};
+
+export type SettingsPageType = {
+  v2rayCore: V2RayCore;
+  generalSettings: GeneralSettings;
+  appearance: Appearance;
+  systemProxy: SystemProxy;
+  proxies: Proxies;
+  v2rayConfigure: V2rayConfigure;
+};
+
+export type GithubReleaseLatest = {
+  title: 'Release';
+  description: 'A release.';
+  type: 'object';
+  properties: {
+    url: {
+      type: 'string';
+      format: 'uri';
+    };
+    html_url: {
+      type: 'string';
+      format: 'uri';
+    };
+    assets_url: {
+      type: 'string';
+      format: 'uri';
+    };
+    upload_url: {
+      type: 'string';
+    };
+    tarball_url: {
+      type: ['string', 'null'];
+      format: 'uri';
+    };
+    zipball_url: {
+      type: ['string', 'null'];
+      format: 'uri';
+    };
+    id: {
+      type: 'integer';
+    };
+    node_id: {
+      type: 'string';
+    };
+    tag_name: {
+      description: 'The name of the tag.';
+      type: 'string';
+      examples: ['v1.0.0'];
+    };
+    target_commitish: {
+      description: 'Specifies the commitish value that determines where the Git tag is created from.';
+      type: 'string';
+      examples: ['master'];
+    };
+    name: {
+      type: ['string', 'null'];
+    };
+    body: {
+      type: ['string', 'null'];
+    };
+    draft: {
+      description: 'true to create a draft (unpublished) release, false to create a published one.';
+      type: 'boolean';
+      examples: [false];
+    };
+    prerelease: {
+      description: 'Whether to identify the release as a prerelease or a full release.';
+      type: 'boolean';
+      examples: [false];
+    };
+    created_at: {
+      type: 'string';
+      format: 'date-time';
+    };
+    published_at: {
+      type: ['string', 'null'];
+      format: 'date-time';
+    };
+    author: {
+      title: 'Simple User';
+      description: 'A GitHub user.';
+      type: 'object';
+      properties: {
+        name: {
+          type: ['string', 'null'];
+        };
+        email: {
+          type: ['string', 'null'];
+        };
+        login: {
+          type: 'string';
+          examples: ['octocat'];
+        };
+        id: {
+          type: 'integer';
+          examples: [1];
+        };
+        node_id: {
+          type: 'string';
+          examples: ['MDQ6VXNlcjE='];
+        };
+        avatar_url: {
+          type: 'string';
+          format: 'uri';
+          examples: ['https://github.com/images/error/octocat_happy.gif'];
+        };
+        gravatar_id: {
+          type: ['string', 'null'];
+          examples: ['41d064eb2195891e12d0413f63227ea7'];
+        };
+        url: {
+          type: 'string';
+          format: 'uri';
+          examples: ['https://api.github.com/users/octocat'];
+        };
+        html_url: {
+          type: 'string';
+          format: 'uri';
+          examples: ['https://github.com/octocat'];
+        };
+        followers_url: {
+          type: 'string';
+          format: 'uri';
+          examples: ['https://api.github.com/users/octocat/followers'];
+        };
+        following_url: {
+          type: 'string';
+          examples: ['https://api.github.com/users/octocat/following{/other_user}'];
+        };
+        gists_url: {
+          type: 'string';
+          examples: ['https://api.github.com/users/octocat/gists{/gist_id}'];
+        };
+        starred_url: {
+          type: 'string';
+          examples: ['https://api.github.com/users/octocat/starred{/owner}{/repo}'];
+        };
+        subscriptions_url: {
+          type: 'string';
+          format: 'uri';
+          examples: ['https://api.github.com/users/octocat/subscriptions'];
+        };
+        organizations_url: {
+          type: 'string';
+          format: 'uri';
+          examples: ['https://api.github.com/users/octocat/orgs'];
+        };
+        repos_url: {
+          type: 'string';
+          format: 'uri';
+          examples: ['https://api.github.com/users/octocat/repos'];
+        };
+        events_url: {
+          type: 'string';
+          examples: ['https://api.github.com/users/octocat/events{/privacy}'];
+        };
+        received_events_url: {
+          type: 'string';
+          format: 'uri';
+          examples: ['https://api.github.com/users/octocat/received_events'];
+        };
+        type: {
+          type: 'string';
+          examples: ['User'];
+        };
+        site_admin: {
+          type: 'boolean';
+        };
+        starred_at: {
+          type: 'string';
+          examples: ['"2020-07-09T00:17:55Z"'];
+        };
+      };
+      required: [
+        'avatar_url',
+        'events_url',
+        'followers_url',
+        'following_url',
+        'gists_url',
+        'gravatar_id',
+        'html_url',
+        'id',
+        'node_id',
+        'login',
+        'organizations_url',
+        'received_events_url',
+        'repos_url',
+        'site_admin',
+        'starred_url',
+        'subscriptions_url',
+        'type',
+        'url',
+      ];
+    };
+    assets: {
+      type: 'array';
+      items: {
+        title: 'Release Asset';
+        description: 'Data related to a release.';
+        type: 'object';
+        properties: {
+          url: {
+            type: 'string';
+            format: 'uri';
+          };
+          browser_download_url: {
+            type: 'string';
+            format: 'uri';
+          };
+          id: {
+            type: 'integer';
+          };
+          node_id: {
+            type: 'string';
+          };
+          name: {
+            description: 'The file name of the asset.';
+            type: 'string';
+            examples: ['Team Environment'];
+          };
+          label: {
+            type: ['string', 'null'];
+          };
+          state: {
+            description: 'State of the release asset.';
+            type: 'string';
+            enum: ['uploaded', 'open'];
+          };
+          content_type: {
+            type: 'string';
+          };
+          size: {
+            type: 'integer';
+          };
+          download_count: {
+            type: 'integer';
+          };
+          created_at: {
+            type: 'string';
+            format: 'date-time';
+          };
+          updated_at: {
+            type: 'string';
+            format: 'date-time';
+          };
+          uploader: {
+            anyOf: [
+              {
+                type: 'null';
+              },
+              {
+                title: 'Simple User';
+                description: 'A GitHub user.';
+                type: 'object';
+                properties: {
+                  name: {
+                    type: ['string', 'null'];
+                  };
+                  email: {
+                    type: ['string', 'null'];
+                  };
+                  login: {
+                    type: 'string';
+                    examples: ['octocat'];
+                  };
+                  id: {
+                    type: 'integer';
+                    examples: [1];
+                  };
+                  node_id: {
+                    type: 'string';
+                    examples: ['MDQ6VXNlcjE='];
+                  };
+                  avatar_url: {
+                    type: 'string';
+                    format: 'uri';
+                    examples: ['https://github.com/images/error/octocat_happy.gif'];
+                  };
+                  gravatar_id: {
+                    type: ['string', 'null'];
+                    examples: ['41d064eb2195891e12d0413f63227ea7'];
+                  };
+                  url: {
+                    type: 'string';
+                    format: 'uri';
+                    examples: ['https://api.github.com/users/octocat'];
+                  };
+                  html_url: {
+                    type: 'string';
+                    format: 'uri';
+                    examples: ['https://github.com/octocat'];
+                  };
+                  followers_url: {
+                    type: 'string';
+                    format: 'uri';
+                    examples: ['https://api.github.com/users/octocat/followers'];
+                  };
+                  following_url: {
+                    type: 'string';
+                    examples: ['https://api.github.com/users/octocat/following{/other_user}'];
+                  };
+                  gists_url: {
+                    type: 'string';
+                    examples: ['https://api.github.com/users/octocat/gists{/gist_id}'];
+                  };
+                  starred_url: {
+                    type: 'string';
+                    examples: ['https://api.github.com/users/octocat/starred{/owner}{/repo}'];
+                  };
+                  subscriptions_url: {
+                    type: 'string';
+                    format: 'uri';
+                    examples: ['https://api.github.com/users/octocat/subscriptions'];
+                  };
+                  organizations_url: {
+                    type: 'string';
+                    format: 'uri';
+                    examples: ['https://api.github.com/users/octocat/orgs'];
+                  };
+                  repos_url: {
+                    type: 'string';
+                    format: 'uri';
+                    examples: ['https://api.github.com/users/octocat/repos'];
+                  };
+                  events_url: {
+                    type: 'string';
+                    examples: ['https://api.github.com/users/octocat/events{/privacy}'];
+                  };
+                  received_events_url: {
+                    type: 'string';
+                    format: 'uri';
+                    examples: ['https://api.github.com/users/octocat/received_events'];
+                  };
+                  type: {
+                    type: 'string';
+                    examples: ['User'];
+                  };
+                  site_admin: {
+                    type: 'boolean';
+                  };
+                  starred_at: {
+                    type: 'string';
+                    examples: ['"2020-07-09T00:17:55Z"'];
+                  };
+                };
+                required: [
+                  'avatar_url',
+                  'events_url',
+                  'followers_url',
+                  'following_url',
+                  'gists_url',
+                  'gravatar_id',
+                  'html_url',
+                  'id',
+                  'node_id',
+                  'login',
+                  'organizations_url',
+                  'received_events_url',
+                  'repos_url',
+                  'site_admin',
+                  'starred_url',
+                  'subscriptions_url',
+                  'type',
+                  'url',
+                ];
+              },
+            ];
+          };
+        };
+        required: [
+          'id',
+          'name',
+          'content_type',
+          'size',
+          'state',
+          'url',
+          'node_id',
+          'download_count',
+          'label',
+          'uploader',
+          'browser_download_url',
+          'created_at',
+          'updated_at',
+        ];
+      };
+    };
+    body_html: {
+      type: 'string';
+    };
+    body_text: {
+      type: 'string';
+    };
+    mentions_count: {
+      type: 'integer';
+    };
+    discussion_url: {
+      description: 'The URL of the release discussion.';
+      type: 'string';
+      format: 'uri';
+    };
+    reactions: {
+      title: 'Reaction Rollup';
+      type: 'object';
+      properties: {
+        url: {
+          type: 'string';
+          format: 'uri';
+        };
+        total_count: {
+          type: 'integer';
+        };
+        '+1': {
+          type: 'integer';
+        };
+        '-1': {
+          type: 'integer';
+        };
+        laugh: {
+          type: 'integer';
+        };
+        confused: {
+          type: 'integer';
+        };
+        heart: {
+          type: 'integer';
+        };
+        hooray: {
+          type: 'integer';
+        };
+        eyes: {
+          type: 'integer';
+        };
+        rocket: {
+          type: 'integer';
+        };
+      };
+      required: [
+        'url',
+        'total_count',
+        '+1',
+        '-1',
+        'laugh',
+        'confused',
+        'heart',
+        'hooray',
+        'eyes',
+        'rocket',
+      ];
+    };
+  };
+  required: [
+    'assets_url',
+    'upload_url',
+    'tarball_url',
+    'zipball_url',
+    'created_at',
+    'published_at',
+    'draft',
+    'id',
+    'node_id',
+    'author',
+    'html_url',
+    'name',
+    'prerelease',
+    'tag_name',
+    'target_commitish',
+    'assets',
+    'url',
+  ];
+};

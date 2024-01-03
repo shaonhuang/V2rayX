@@ -1,5 +1,16 @@
 import { decode, encode } from 'js-base64';
 
+/**
+ - {"type":"ss","name":"v2rayse_test_1","server":"198.57.27.218","port":5004,"cipher":"aes-256-gcm","password":"g5MeD6Ft3CWlJId"}
+ - {"type":"ssr","name":"v2rayse_test_3","server":"20.239.49.44","port":59814,"protocol":"origin","cipher":"dummy","obfs":"plain","password":"3df57276-03ef-45cf-bdd4-4edb6dfaa0ef"}
+ - {"type":"vmess","name":"v2rayse_test_2","ws-opts":{"path":"/"},"server":"154.23.190.162","port":443,"uuid":"b9984674-f771-4e67-a198-","alterId":"0","cipher":"auto","network":"ws"}
+ - {"type":"vless","name":"test","server":"1.2.3.4","port":7777,"uuid":"abc-def-ghi-fge-zsx","skip-cert-verify":true,"network":"tcp","tls":true,"udp":true}
+ - {"type":"trojan","name":"v2rayse_test_4","server":"ca-trojan.bonds.id","port":443,"password":"bc7593fe-0604-4fbe--b4ab-11eb-b65e-1239d0255272","udp":true,"skip-cert-verify":true}
+ - {"type":"http","name":"http_proxy","server":"124.15.12.24","port":251,"username":"username","password":"password","udp":true}
+ - {"type":"socks5","name":"socks5_proxy","server":"124.15.12.24","port":2312,"udp":true}
+ - {"type":"socks5","name":"telegram_proxy","server":"1.2.3.4","port":123,"username":"username","password":"password","udp":true}
+ */
+
 const isWindows = navigator.platform.includes('Win');
 let logsDir;
 window.electron.electronAPI.ipcRenderer
@@ -277,7 +288,7 @@ const parseVmess2config = (obj: VmessV2) => {
           udp: false,
           auth: 'noauth',
         },
-        port: '10801',
+        port: 10801,
       },
       {
         listen: '127.0.0.1',
@@ -285,7 +296,7 @@ const parseVmess2config = (obj: VmessV2) => {
         settings: {
           timeout: 360,
         },
-        port: '10871',
+        port: 10871,
       },
     ],
     outbounds: [],
@@ -417,28 +428,67 @@ const emptyVmessV2 = (): VmessV2 => {
     inbounds: [
       {
         listen: '127.0.0.1',
-        protocol: 'socks',
-        settings: {
-          udp: false,
-          auth: 'noauth',
+        port: 10871,
+        protocol: 'http',
+        tag: 'http-inbound',
+        allocate: {
+          strategy: 'always',
+          refresh: 5,
+          concurrency: 3,
         },
-        port: 10801,
       },
       {
         listen: '127.0.0.1',
-        protocol: 'http',
-        settings: {
-          timeout: 360,
+        port: '10801',
+        protocol: 'socks',
+        tag: 'socks-inbound',
+        allocate: {
+          strategy: 'always',
+          refresh: 5,
+          concurrency: 3,
         },
-        port: 10871,
+      },
+      {
+        listen: '127.0.0.1',
+        port: 10085,
+        protocol: 'dokodemo-door',
+        settings: {
+          address: '127.0.0.1',
+        },
+        tag: 'api',
       },
     ],
+    stats: {},
+    api: {
+      services: ['HandlerService', 'LoggerService', 'StatsService'],
+      tag: 'api',
+    },
+    policy: {
+      levels: {
+        '0': {
+          statsUserUplink: true,
+          statsUserDownlink: true,
+        },
+      },
+      system: {
+        statsInboundUplink: true,
+        statsInboundDownlink: true,
+        statsOutboundUplink: true,
+        statsOutboundDownlink: true,
+      },
+    },
     outbounds: [],
     dns: {},
     routing: {
       settings: {
         domainStrategy: 'AsIs',
-        rules: [],
+        rules: [
+          {
+            inboundTag: ['api'],
+            outboundTag: 'api',
+            type: 'field',
+          },
+        ],
       },
     },
     transport: {},

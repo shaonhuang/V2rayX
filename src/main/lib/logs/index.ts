@@ -1,13 +1,26 @@
-import path from 'path';
+import path from 'node:path';
 import { app } from 'electron';
 import winston, { format } from 'winston';
 import open from 'open';
 import DailyRotateFile from 'winston-daily-rotate-file';
 import chalk from 'chalk';
+import fs, { existsSync } from 'node:fs';
+import { appDataPath } from '@lib/constant';
 
 const { combine, simple, colorize } = format;
-
-export const logDir = app.getPath('logs');
+const configPath = path.join(appDataPath, 'lowdb', 'db.json');
+export const logDir = (() => {
+  if (fs.existsSync(configPath)) {
+    const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+    const targetPath = config?.management?.generalSettings?.applicationLogsFolder;
+    if (config && targetPath) {
+      if (existsSync(targetPath)) {
+        return targetPath;
+      }
+    }
+  }
+  return app.getPath('logs');
+})();
 
 export const openLogDir = async () => {
   await open(logDir);

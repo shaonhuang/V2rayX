@@ -1,4 +1,4 @@
-import { ElectronApp } from '@main/app';
+import { ElectronApp } from '@lib/app';
 import emitter from '@lib/event-emitter';
 import ProxyService from '../core/proxy';
 import Service from '../core/v2ray';

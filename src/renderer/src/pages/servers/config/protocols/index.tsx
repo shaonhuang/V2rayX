@@ -1,3 +1,6 @@
-import Vmess from './Vmess';
+import VMess from './VMess';
+import VLess from './VLess';
+import Trojan from './Trojan';
+// import Socks from './Socks';
 
-export { Vmess };
+export { VMess, VLess, Trojan };

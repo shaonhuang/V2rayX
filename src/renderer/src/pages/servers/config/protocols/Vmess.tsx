@@ -1,7 +1,7 @@
-import { FormControl, InputLabel, MenuItem, Select, TextField, OutlinedInput } from '@mui/material';
+import { FormControl, InputLabel, MenuItem, OutlinedInput, Select, TextField } from '@mui/material';
 import Grid from '@mui/material/Unstable_Grid2';
-import { useState, useEffect } from 'react';
-import { portReg, ipReg, domainReg } from '@renderer/constant';
+import { domainReg, ipReg, portReg } from '@renderer/constant';
+import { forwardRef, useEffect, useState, useRef, useImperativeHandle } from 'react';
 
 const algorithmTypes = [
   'auto',
@@ -24,8 +24,6 @@ const MenuProps = {
   },
 };
 
-const protocols = ['Vmess'];
-
 type formDataType = {
   address: string;
   port: number;
@@ -35,29 +33,41 @@ type formDataType = {
   algorithm: string;
 };
 
-const Index = (props: any) => {
-  const { outbounds } = props.data.server.config;
-  const { settings, streamSettings } = outbounds[0];
-  const encryption =
-    outbounds?.[0]?.settings?.vnext?.[0]?.users?.[0]?.security === 'none'
-      ? 'auto'
-      : outbounds?.[0]?.settings?.vnext?.[0]?.users?.[0]?.security;
+const Index = forwardRef((props: any, ref) => {
+  const internalRef = useRef(null);
   const [formData, setFormData] = useState<formDataType>({
-    address: settings.vnext[0].address,
-    port: settings.vnext[0].port,
-    uuid: settings.vnext[0].users[0].id,
-    alterId: parseInt(settings.vnext[0].users[0].alterId || 0),
-    level: settings.vnext[0].users[0].level,
-    algorithm: encryption,
+    address: '',
+    port: 0,
+    uuid: '',
+    alterId: 0,
+    level: 0,
+    algorithm: 'auto',
   });
   const [formError, setFormError] = useState<boolean>(false);
 
   useEffect(() => {
+    const { settings } = props.data;
+    const { vnext } = settings;
+    const { address, users, port } = vnext[0] ?? {};
+    const { id, alterId, level } = users ? users[0] : {};
+    const userSecurity = users ? users[0].security : {};
+    setFormData({
+      address: address ?? '',
+      port: port ?? 0,
+      uuid: id ?? '',
+      alterId: alterId ?? 0,
+      level: level,
+      algorithm: userSecurity === 'none' ? 'auto' : userSecurity ?? 'auto',
+    });
+  }, [props.data]);
+
+  useEffect(() => {
+    const { address, port, uuid, alterId, level, algorithm } = formData;
     if (
-      !portReg.test(formData.port.toString()) ||
-      isNaN(formData.port) ||
-      !ipReg.test(formData.address) ||
-      !domainReg.test(formData.address)
+      !portReg.test(String(port)) ||
+      isNaN(port) ||
+      !ipReg.test(address) ||
+      !domainReg.test(address)
     ) {
       setFormError(true);
       props.handleError(1, true);
@@ -65,17 +75,26 @@ const Index = (props: any) => {
       setFormError(false);
       props.handleError(1, false);
     }
-    props.data.server.config.outbounds[0].settings.vnext[0].address = formData.address;
-    props.data.server.config.outbounds[0].settings.vnext[0].port = formData.port;
-    props.data.server.config.outbounds[0].settings.vnext[0].users[0].id = formData.uuid;
-    props.data.server.config.outbounds[0].settings.vnext[0].users[0].alterId = formData.alterId;
-    props.data.server.config.outbounds[0].settings.vnext[0].users[0].level = formData.level;
-    props.data.server.config.outbounds[0].settings.vnext[0].users[0].security =
-      formData.algorithm === 'auto' ? 'none' : formData.algorithm;
+    props.data.settings.vnext[0] = {
+      address,
+      users: [
+        {
+          id: uuid,
+          alterId: parseInt(alterId),
+          level,
+          security: algorithm,
+        },
+      ],
+      port: parseInt(port),
+    };
   }, [formData]);
 
+  useImperativeHandle(ref, () => ({
+    current: internalRef.current,
+  }));
+
   return (
-    <Grid container spacing={4}>
+    <Grid container spacing={4} ref={internalRef}>
       <Grid container spacing={2} xs={16}>
         <Grid xs="auto">
           <span className="text-xl">Server Settings</span>
@@ -148,9 +167,6 @@ const Index = (props: any) => {
               onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
                 setFormData({ ...formData, alterId: parseInt(event.target.value || 0) });
               }}
-              InputLabelProps={{
-                shrink: true,
-              }}
             />
           </Grid>
           <Grid xs>
@@ -160,6 +176,7 @@ const Index = (props: any) => {
               type="number"
               size="small"
               disabled
+              value={formData.level}
               onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
                 setFormData({ ...formData, level: parseInt(event.target.value) });
               }}
@@ -191,6 +208,8 @@ const Index = (props: any) => {
       </Grid>
     </Grid>
   );
-};
+});
+
+Index.displayName = 'VMess';
 
 export default Index;

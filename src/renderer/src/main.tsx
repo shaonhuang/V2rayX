@@ -7,9 +7,11 @@ import '@renderer/assets/index.css';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { ThemeOptions } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
+import { from } from 'rxjs';
+import { debounceTime, map } from 'rxjs/operators';
+import { set } from 'lodash';
 
 import store from '@store/index';
-import { isMac } from '@renderer/constant';
 
 const originalSetItem = window.localStorage.setItem;
 
@@ -27,6 +29,25 @@ window.localStorage.setItem = function (key, value) {
 
 const Page = () => {
   const [mode, setMode] = React.useState<'light' | 'dark'>('light');
+  const [styleInJson, setStyleInJson] = React.useState({
+    palette: {
+      mode: 'light',
+      primary: {
+        main: '#1976d2',
+        contrastText: '#ffffff',
+      },
+      secondary: {
+        main: '#9c27b0',
+      },
+      success: {
+        main: '#2e7d32',
+      },
+    },
+    typography: {
+      fontFamily: 'Source Sans Pro, sans-serif',
+    },
+  });
+  const state$ = from(store);
   React.useLayoutEffect(() => {
     const localStorageSetHandler = (e: any) => {
       if (e.key === 'theme') {
@@ -38,49 +59,25 @@ const Page = () => {
       res.appearance === 'dark' ? setMode('dark') : setMode('light');
     });
     document.addEventListener('itemInserted', localStorageSetHandler, false);
+    // Subscribe to state changes using RxJS
+    const subscription = state$
+      .pipe(
+        debounceTime(500), // Add a debounce time to avoid excessive updates
+        map(() => store.getState().settingsPage.appearance.styleInJson),
+      )
+      .subscribe((styleInJson) => {
+        try {
+          setStyleInJson(JSON.parse(styleInJson));
+        } catch (err) {}
+      });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
-  const theme: ThemeOptions = React.useMemo(
-    () =>
-      createTheme(
-        isMac
-          ? {
-              palette: {
-                mode: 'dark',
-                primary: {
-                  main: '#ffffff',
-                },
-                secondary: {
-                  main: '#616161',
-                },
-                background: {
-                  default: 'rgba(18,18,18,0.1)',
-                  paper: 'rgba(18,18,18,0.1)',
-                },
-                success: {
-                  main: '#2e7d32',
-                },
-              },
-              typography: {
-                // fontFamily: 'Droid Serif',
-              },
-            }
-          : {
-              palette: {
-                mode,
-                primary: {
-                  main: '#1976d2',
-                },
-                secondary: {
-                  main: '#9c27b0',
-                },
-                success: {
-                  main: '#2e7d32',
-                },
-              },
-            },
-      ),
-    [mode],
-  );
+  const theme: ThemeOptions = React.useMemo(() => {
+    return createTheme(set(styleInJson, 'palette.mode', mode));
+  }, [mode, styleInJson]);
   return (
     <React.StrictMode>
       <div className="fixed h-8 w-screen" style={{ WebkitAppRegion: 'drag' }}></div>

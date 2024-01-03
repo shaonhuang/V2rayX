@@ -9,6 +9,7 @@
       "@main/*": ["src/main/*"],
       "@resources/*": ["resources/*"],
       "@lib/*": ["src/main/lib/*"],
+      "@services/*": ["src/main/services/*"],
     }
   }
 }

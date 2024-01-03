@@ -285,7 +285,7 @@ type Inbound = {
   port: number;
 };
 
-type Outbound = {
+type Outbound = Partial<{
   mux?: {
     enabled: boolean;
     concurrency: number;
@@ -313,7 +313,7 @@ type Outbound = {
       port: number;
     }[];
   };
-};
+}>;
 
 type DNS = Record<string, any>; // Placeholder for the actual DNS configuration type
 
@@ -340,7 +340,192 @@ export type Server = {
   id: string;
   ps: string;
   link: string;
-  config: VmessObjConfiguration;
+  // TODO: should be plurals
+  outbound: Outbound;
 };
 
 export type Servers = Server[];
+
+type V2RayCore = {
+  version: string;
+  isReinstallV2rayPackage: boolean;
+};
+
+type GeneralSettings = {
+  allowSystemNotification: boolean;
+  autoStartProxy: boolean;
+  dashboardPopWhenStart: boolean;
+  applicationLogsFolder: string;
+  v2rayLogsFolder: string;
+  automaticUpgrade: {
+    visiableUpgradeTip: boolean;
+    autodownloadAndInstall: boolean;
+  };
+};
+
+type Appearance = {
+  theme: string;
+  customStyle: boolean;
+  styleInJson: string;
+  followSystemTheme: boolean;
+  fontFamily: string;
+  hideTrayBar: boolean;
+  enhancedTrayIcon: string;
+};
+
+type SystemProxy = {
+  bypassDomains: string;
+  pacSetting: {
+    banListUrl: string;
+    userRules: string;
+  };
+};
+
+type Proxies = {
+  latencyTest: {
+    url: string;
+    timeout: number;
+  };
+};
+
+// Define SniffingObject type
+interface SniffingObject {
+  enabled: boolean;
+  destOverride: string[];
+  metadataOnly: boolean;
+}
+
+// Define AllocateObject type
+interface AllocateObject {
+  strategy: string;
+  refresh: number;
+  concurrency: number;
+}
+
+// TcpObject
+interface TcpObject {
+  connectionReuse: boolean;
+  header: {
+    type: string;
+  };
+}
+
+// KcpObject
+interface KcpObject {
+  mtu: number;
+  tti: number;
+  uplinkCapacity: number;
+  downlinkCapacity: number;
+  congestion: boolean;
+  readBufferSize: number;
+  writeBufferSize: number;
+  header: {
+    type: string;
+  };
+}
+
+// WebSocketObject
+interface WebSocketObject {
+  path: string;
+  headers: Record<string, string>;
+}
+
+// HttpObject
+interface HttpObject {
+  host: string[];
+  path: string;
+  headers: Record<string, string>;
+}
+
+// QuicObject
+interface QuicObject {
+  security: string;
+  key: string;
+  header: {
+    type: string;
+  };
+}
+
+// DomainSocketObject
+interface DomainSocketObject {
+  path: string;
+}
+
+// GrpcObject
+interface GrpcObject {
+  serviceName: string;
+  multiplex: boolean;
+  header: {
+    type: string;
+  };
+}
+
+// SockoptObject
+interface SockoptObject {
+  mark: number;
+  tcpFastOpen: boolean;
+  tcpFastOpenQueueLength: number;
+  tproxy: 'redirect' | 'tproxy' | 'off';
+  tcpKeepAliveInterval: number;
+}
+
+// StreamSettingsObject
+export interface StreamSettingsObject {
+  network: 'tcp' | 'kcp' | 'ws' | 'http' | 'domainsocket' | 'quic' | 'grpc';
+  security: 'none' | 'tls';
+  tlsSettings?: TLSObject;
+  tcpSettings?: TcpObject;
+  kcpSettings?: KcpObject;
+  wsSettings?: WebSocketObject;
+  httpSettings?: HttpObject;
+  quicSettings?: QuicObject;
+  dsSettings?: DomainSocketObject;
+  grpcSettings?: GrpcObject;
+  sockopt?: SockoptObject;
+}
+
+// TLSObject
+interface TLSObject {
+  serverName: string;
+  alpn: string[];
+  allowInsecure: boolean;
+  disableSystemRoot: boolean;
+  certificates: CertificateObject[];
+  verifyClientCertificate: boolean;
+  pinnedPeerCertificateChainSha256: string;
+}
+
+// CertificateObject
+interface CertificateObject {
+  usage: 'encipherment' | 'verify' | 'issue' | 'verifyclient';
+  certificateFile: string;
+  certificate: string[];
+  keyFile: string;
+  key: string[];
+}
+
+// Define InboundObject type
+export interface InboundObject {
+  listen: string;
+  port: number;
+  protocol: string;
+  settings?: Record<string, any>;
+  streamSettings?: StreamSettingsObject;
+  tag?: string;
+  sniffing?: SniffingObject;
+  allocate?: AllocateObject;
+}
+
+type V2rayConfigure = {
+  inbounds: InboundObject[];
+  dns: string;
+};
+
+export type SettingsPageType = {
+  v2rayCore: V2RayCore;
+  generalSettings: GeneralSettings;
+  appearance: Appearance;
+  systemProxy: SystemProxy;
+  proxies: Proxies;
+  v2rayConfigure: V2rayConfigure;
+};

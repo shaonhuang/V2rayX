@@ -1,8 +1,8 @@
 // copy code need to be tide up
 
-import path from 'path';
-import fs, { PathLike } from 'fs';
-import os from 'os';
+import path from 'node:path';
+import fs, { PathLike } from 'node:fs';
+import os from 'node:os';
 import { exec, ExecOptions } from 'child_process';
 import { Config } from '@lib/constant/types';
 import { archMap, getPathRuntime, pathExecutable } from '@lib/constant';

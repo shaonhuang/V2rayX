@@ -1,9 +1,9 @@
 import { useState, useEffect, useLayoutEffect } from 'react';
-import Button from '@mui/material/Button';
+import { Button, Skeleton } from '@mui/material';
 import icon from '../public/icon.png';
 import { platform } from '@renderer/constant';
 import { versionCompare } from '@renderer/utils/tools';
-import { isMac } from '@renderer/constant';
+import { isDev } from '@renderer/constant';
 
 const AboutPage = (): JSX.Element => {
   const [version, setVersion] = useState('0.0.0');
@@ -11,32 +11,31 @@ const AboutPage = (): JSX.Element => {
   const handleCheckUpdate = () => {
     platform === 'darwin' &&
       updateAvailable &&
+      !isDev &&
       window.electron.electronAPI.shell.openExternal(
         'https://github.com/shaonhuang/V2rayX/releases',
       );
     window.api.send('v2rayx:checkForUpdateClick');
     window.update.checkForUpdate();
   };
-  useEffect(() => {
+  useLayoutEffect(() => {
     window.db.read('appVersion').then((version) => {
       setVersion(version);
     });
   }, []);
   useEffect(() => {
     window.db.read('updateAvailableVersion').then((latestVersion) => {
-      setUpdateAvailable(versionCompare(latestVersion, version));
+      setUpdateAvailable(versionCompare(latestVersion, version) && version !== '0.0.0');
     });
   }, [version]);
   return (
     <section className="flex flex-1 flex-row items-center justify-around">
-      <div
-        className={`items-center justify-around rounded-xl p-9 ${
-          isMac ? '' : 'bg-white dark:bg-slate-700'
-        }`}
-      >
+      <div className={'items-center justify-around rounded-xl bg-white p-9 dark:bg-slate-700'}>
         <div className="m-4 flex flex-col items-center">
           <img src={icon} alt="" className="m-4 h-24 w-24" />
-          <p className="text-xl">V2rayX({version})</p>
+          <p className="flex text-xl" id="appVersion">
+            {version === '0.0.0' ? <Skeleton width={64} /> : `V2rayX(${version})`}
+          </p>
         </div>
         <p>An all platform (Macos Windows Linux) V2ray client build with electron.</p>
         <div className="my-4 flex flex-row gap-2">

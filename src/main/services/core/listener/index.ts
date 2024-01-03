@@ -1,31 +1,30 @@
 import logger from '@lib/logs';
+import { net } from 'electron';
 import db from '@lib/lowdb';
-import { VmessObjConfiguration } from '@lib/constant/types';
-import { IpcMainEvent, app, clipboard, ipcMain, nativeTheme, ipcRenderer } from 'electron';
+import fs from 'node:fs';
+import {
+  IpcMainEvent,
+  app,
+  clipboard,
+  nativeTheme,
+  BrowserWindowConstructorOptions,
+  Notification,
+  nativeImage,
+} from 'electron';
 import emitter from '@lib/event-emitter';
 import { is } from '@electron-toolkit/utils';
 import { BrowserWindow } from 'electron';
-
-import { autoUpdater } from 'electron-updater';
 import { validatedIpcMain } from '@lib/bridge';
-import { createServerWindow } from '@main/services/browser';
+import Window from '@main/services/browser';
+import tcpPing from '@lib/utils/misc/tcpPing';
+// import { getQrCodeFromScreenResources } from '../misc';
 
-import ProxyService from '@main/services/core/proxy';
-import V2rayService from '@main/services/core/v2ray';
+import logListeners from './logs';
+import v2rayListeners from './v2ray';
+import updateListeners from './appUpdate';
+import * as constVariables from '@lib/constant';
 
 const registerChannels = [
-  {
-    channel: 'update:checkForUpdate',
-    listener: () => autoUpdater.checkForUpdatesAndNotify(),
-  },
-  {
-    channel: 'update:downloadUpdate',
-    listener: () => autoUpdater.downloadUpdate(),
-  },
-  {
-    channel: 'update:quitAndInstall',
-    listener: () => autoUpdater.quitAndInstall(),
-  },
   {
     channel: 'app:quit',
     listener: () => app.quit(),
@@ -36,7 +35,12 @@ const registerChannels = [
   },
   {
     channel: 'clipboard:paste',
-    listener: (_: IpcMainEvent, data) => clipboard.writeText(data),
+    listener: (_: IpcMainEvent, data: string) => clipboard.writeText(data),
+  },
+  {
+    channel: 'clipboard:writeImage',
+    listener: (_: IpcMainEvent, data: string) =>
+      clipboard.writeImage(nativeImage.createFromDataURL(data)),
   },
   {
     channel: 'db:read',
@@ -70,10 +74,15 @@ const registerChannels = [
   },
   {
     channel: 'window:create',
-    listener: (_: IpcMainEvent, suffix: string) => {
+    listener: (
+      _: IpcMainEvent,
+      suffix: string,
+      winConfig?: BrowserWindowConstructorOptions,
+      customConfig?,
+    ) => {
       try {
-        logger.info(`v2rayx:window:create-url:${suffix}`);
-        const configWin = createServerWindow(suffix);
+        logger.info(`v2rayx:window:create-url:${suffix}, ${winConfig}, ${customConfig}`);
+        const configWin = Window.createWindow(suffix, winConfig, customConfig);
         is.dev && configWin.webContents.openDevTools();
       } catch (e) {
         logger.error(`v2rayx:window:create-url:${suffix} failed`);
@@ -85,11 +94,100 @@ const registerChannels = [
     listener: (_: IpcMainEvent, suffix: string) => {
       try {
         const allWindows = BrowserWindow.getAllWindows();
-        allWindows[0].close();
+        // allWindows[0].close();
         // allWindows.find((win) => win.title === 'Server Configuration')?.close();
         logger.info(`v2rayx:window:close-url:${suffix}`);
       } catch (e) {
         logger.error(`v2rayx:window:close-url:${suffix} failed`);
+      }
+    },
+  },
+  {
+    channel: 'net:request',
+    listener: (_: IpcMainEvent, url: string, options?: any) => {
+      return new Promise((resolve, reject) => {
+        try {
+          const request = net.request(url);
+          request.on('response', (response) => {
+            let res = '';
+            console.log(`STATUS: ${response.statusCode}`);
+            console.log(`HEADERS: ${JSON.stringify(response.headers)}`);
+            response.on('data', (chunk) => {
+              console.log(`BODY: ${chunk}`);
+              res += chunk;
+            });
+            response.on('end', () => {
+              resolve(res);
+              console.log('No more data in response.');
+            });
+          });
+          request.end();
+        } catch (error) {
+          logger.error(error);
+          reject(error);
+        }
+      });
+    },
+  },
+  {
+    channel: 'net:tcpPing',
+    listener: (_: IpcMainEvent, params: { host: string; port: number }) => {
+      return new Promise((resolve) => {
+        tcpPing({
+          host: params.host,
+          port: params.port,
+        }).then(([result, records]) => {
+          resolve({
+            code: 200,
+            result: {
+              ...result,
+              records: records,
+            },
+          });
+        });
+      });
+    },
+  },
+  {
+    channel: 'screen:qrCode',
+    listener: async () => {
+      try {
+        // return await getQrCodeFromScreenResources();
+      } catch (error) {
+        logger.error(error);
+      }
+    },
+  },
+  {
+    channel: 'notification:send',
+    listener: async (e, params: { title: string; body: string; silent: boolean }) => {
+      new Notification({
+        title: params.title,
+        body: params.body,
+        silent: params.silent,
+      }).show();
+    },
+  },
+  {
+    channel: 'mainConst:get',
+    listener: (e, key: string) => {
+      return constVariables[key];
+    },
+  },
+  {
+    channel: 'writeToFile:write',
+    listener: (e, params: { path: string; content: string }) => {
+      if (fs.existsSync(params.path)) {
+        fs.writeFile(params.path, params.content, 'utf8', (err) => {
+          if (err) {
+            console.error('Error writing file:', err);
+            return;
+          }
+
+          console.log('File updated successfully.');
+        });
+      } else {
+        logger.info(`path:${params.path} do not exist`);
       }
     },
   },
@@ -99,6 +197,17 @@ validatedIpcMain.on('v2rayx:appearance:system', (event) => {
   const isDarkMode = nativeTheme.shouldUseDarkColors;
   event.reply('appearance:system:fromMain', isDarkMode ? 'dark' : 'light');
 });
+
+validatedIpcMain.on('v2rayx:settings:getDefaultLogDir', (event) => {
+  event.reply('settings:getDefaultLogDir:fromMain', app.getPath('logs'));
+});
+
+validatedIpcMain.on(
+  'v2rayx:settings:setAppLogsDir',
+  (_: IpcMainEvent, applicationLogsDir: string) => {
+    console.log(applicationLogsDir);
+  },
+);
 
 validatedIpcMain.on('v2rayx:service:selected', (_) => {
   emitter.emit('tray-v2ray:update', false);
@@ -115,6 +224,11 @@ validatedIpcMain.on('v2rayx:server:add/edit:toMain', (_, serverItem: any) => {
   mainWindow?.webContents.send('v2rayx:server:add/edit:fromMain', serverItem);
 });
 
+validatedIpcMain.on('v2rayx:server:subscription:update:toMain', (_) => {
+  const mainWindow = new Window().mainWin;
+  mainWindow?.webContents.send('v2rayx:server:subscription:update:fromMain');
+});
+
 validatedIpcMain.on('v2rayx:restart-app', () => {
   app.relaunch();
   app.quit();
@@ -126,57 +240,10 @@ const mountChannels = (channels: any[]) => {
   });
 };
 export const mountListeners = () => {
-  mountChannels(registerChannels);
-  ipcMain.handle('v2rayx:v2ray:start', async (_, data: VmessObjConfiguration) => {
-    await db.read();
-    const service = new V2rayService(process.platform);
-    let config;
-    if (data === undefined) {
-      const currentServerId = db.chain.get('currentServerId').value();
-      config = db.chain.get('servers').find({ id: currentServerId }).value()?.config;
-      service.start(config);
-    } else {
-      service.start(data);
-    }
-    const socksPort = data ? data.inbounds[0].port : config?.inbounds[0].port;
-    const httpPort = data ? data.inbounds[1].port : config?.inbounds[1].port;
-    logger.info(`socksPort: ${socksPort}, httpPort: ${httpPort}`);
-    const proxy = new ProxyService();
-    proxy.updatePort(httpPort, socksPort);
-    await proxy.stop();
-    await proxy.start();
-    emitter.emit('tray-v2ray:update', true);
-  });
-  ipcMain.handle('v2rayx:v2ray:stop', () => {
-    const service = new V2rayService(process.platform);
-    service.stop();
-    emitter.emit('tray-v2ray:update', false);
-  });
-  ipcMain.handle('v2rayx:v2ray:check', () => {
-    const service = new V2rayService(process.platform);
-    emitter.emit('tray-v2ray:update', service?.check() ?? false);
-    return service?.check();
-  });
-  ipcMain.handle('get-logs-path', () => {
-    return app.getPath('logs');
-  });
-  emitter.on('v2ray:stop', () => {
-    const service = new V2rayService(process.platform);
+  // inject file listener
+  logListeners();
+  v2rayListeners();
+  updateListeners();
 
-    service?.stop();
-    emitter.emit('v2ray:status', service?.check() ?? false);
-    emitter.emit('tray-v2ray:update', false);
-  });
-  emitter.on('v2ray:start', (data) => {
-    const service = new V2rayService(process.platform);
-    service?.start(data);
-    const socksPort = data?.inbounds[0].port;
-    const httpPort = data?.inbounds[1].port;
-    logger.info(`socksPort: ${socksPort}, httpPort: ${httpPort}`);
-    const proxy = new ProxyService();
-    proxy.updatePort(httpPort, socksPort);
-    proxy.stop();
-    proxy.start();
-    emitter.emit('tray-v2ray:update', true);
-  });
+  mountChannels(registerChannels);
 };

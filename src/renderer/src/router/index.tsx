@@ -1,13 +1,14 @@
 import { createHashRouter } from 'react-router-dom';
-import { createRoutesFromElements, Route, Outlet, Routes, redirect } from 'react-router-dom';
-
+import { Outlet } from 'react-router-dom';
 import Navigation from '@renderer/components/navigation/Navigation';
 import GernalSettings from '@renderer/pages/Home';
 import Servers from '@renderer/pages/servers';
 import About from '@renderer/pages/About';
 import Logs from '@renderer/pages/Logs';
-import Settings from '@renderer/pages/Settings';
-
+import Settings from '@renderer/pages/settings/';
+import QRcode from '@renderer/pages/qrcode';
+import Subscriptions from '@renderer/pages/subscriptions';
+import PACSettings from '@renderer/pages/pac';
 import ConfigPage from '@renderer/pages/servers/config';
 
 const IndexLayout = () => (
@@ -57,6 +58,18 @@ const router = createHashRouter([
   {
     path: '/servers/*',
     element: <ConfigPage />,
+  },
+  {
+    path: '/share/qrcode',
+    element: <QRcode />,
+  },
+  {
+    path: 'manage/subscription',
+    element: <Subscriptions />,
+  },
+  {
+    path: 'manage/pac',
+    element: <PACSettings />,
   },
 ]);
 

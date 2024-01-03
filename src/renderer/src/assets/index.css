@@ -8,11 +8,13 @@ html {
 
 body {
   text-align: center;
-  height: 100%;
+  min-height: 100%;
+  width: 100%;
 }
 
 #root {
-  height: 100%;
+  min-height: 100%;
+  width: 100%;
 }
 
 .scroll-bar-none::-webkit-scrollbar {
@@ -22,4 +24,42 @@ body {
 * {
   padding: 0;
   margin: 0;
+}
+
+@font-face {
+  font-family: 'Oswald';
+  src: url('./fonts/Oswald-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Lato';
+  src: url('./fonts/Lato-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Lora';
+  src: url('./fonts/Lora-Regular') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Montserrat';
+  src: url('./fonts/Montserrat-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'PTSans';
+  src: url('./fonts/PTSans-Regularr.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Raleway';
+  src: url('./fonts/Raleway-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
 }

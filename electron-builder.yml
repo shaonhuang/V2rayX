@@ -1,5 +1,5 @@
 appId: com.electron.app
-productName: v2rayx
+productName: V2rayX
 directories:
   buildResources: build
 files:
@@ -9,9 +9,12 @@ files:
   - '!{.eslintignore,.eslintrc.cjs,.prettierignore,.prettierrc,dev-app-update.yml,CHANGELOG.md,README.md}'
   - '!{.env,.env.*,.npmrc,pnpm-lock.yaml}'
   - '!{tsconfig.json,tsconfig.node.json,tsconfig.web.json}'
+  - '!{.yarn,.github,dist,test,snap,assets}'
+  - '!resources/v2ray-package/!(${platform})'
+  - '!resources/v2ray-package/${platform}/!(${arch})'
 asarUnpack:
   - resources/**
-afterSign: build/notarize.js
+afterSign: build/notarize.cjs
 win:
   executableName: v2rayx
   target:
@@ -20,10 +23,11 @@ win:
         - x64
         - arm64
 nsis:
-  artifactName: ${name}-${version}-${arch}-setup.${ext}
+  artifactName: ${name}-windows-${version}-${arch}-setup.${ext}
   shortcutName: ${productName}
   uninstallDisplayName: ${productName}
   createDesktopShortcut: always
+  deleteAppDataOnUninstall: true
 mac:
   target:
     - target: zip
@@ -42,7 +46,7 @@ mac:
     - NSDocumentsFolderUsageDescription: Application requests access to the user's Documents folder.
     - NSDownloadsFolderUsageDescription: Application requests access to the user's Downloads folder.
 dmg:
-  artifactName: ${name}-${version}-${arch}.${ext}
+  artifactName: ${name}-macos-${version}-${arch}-Installer.${ext}
 
 linux:
   target:
@@ -64,13 +68,13 @@ linux:
   maintainer: shaonhuang.github.io
   category: Utility
 appImage:
-  artifactName: ${name}-${version}-${arch}.${ext}
+  artifactName: ${name}-linux-${version}-${arch}.${ext}
 snap:
-  artifactName: ${name}-${version}-${arch}.${ext}
+  artifactName: ${name}-linux-${version}-${arch}.${ext}
 deb:
-  artifactName: ${name}-${version}-${arch}.${ext}
+  artifactName: ${name}-linux-${version}-${arch}.${ext}
 pacman:
-  artifactName: ${name}-${version}-${arch}.${ext}
+  artifactName: ${name}-linux-${version}-${arch}.${ext}
 npmRebuild: false
 publish:
   provider: github
