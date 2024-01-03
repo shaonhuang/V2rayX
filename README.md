@@ -1,9 +1,3 @@
----
-runme:
-  id: 01HJTETYFF2MZB43GCHEGJ3M6E
-  version: v2.0
----
-
 ```txt {"id":"01HJTETYFF2MZB43GCH8XQRFYR"}
 ██╗░░░██╗██████╗░██████╗░░█████╗░██╗░░░██╗██╗░░██╗
 ██║░░░██║╚════██╗██╔══██╗██╔══██╗╚██╗░██╔╝╚██╗██╔╝
@@ -76,7 +70,6 @@ V2ray GUI client with cross-platform desktop support powered by Electron⚛️, 
 ### ➣ In Testing
 
 - [ ] QR-code Import
-- [x] Server Share (support import Shadowrocket url)
 
 ### ➣ Comming Soon
 
@@ -172,11 +165,7 @@ V2ray GUI client with cross-platform desktop support powered by Electron⚛️, 
   - [![Get it from the Snap Store](https://snapcraft.io/static/images/badges/en/snap-store-black.svg)](https://snapcraft.io/v2rayx)
   - [↪ home page](https://snapcraft.io/v2rayx)
 
-## VII. Plugins Downloads
-
-after installation, the app will auto-install the v2ray component.
-
-## VIII. Why?
+## VII. Why?
 
 This project was heavily inspired by yanue/V2rayU, which uses packed v2ray-core to avoid complex installation with native O-C code. But it is not intuitive to use. Only support macOS.
 
@@ -184,13 +173,13 @@ I work with different operating systems that need a proxy environment, and I hop
 
 Hence, the app is created. Welcome to pull or make PR.
 
-## IX Sponsor
+## VIII Sponsor
 
 Life is hard. Maybe a coffee would help.❤️❤️🙏🙏💪💪
 
 [!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/shaonhuang)
 
-## X. Development
+## IX. Development
 
 ### 1. Env
 
@@ -231,9 +220,9 @@ $: yarn install
 $: yarn dev
 ```
 
-## XI. Mention
+## X. Mention
 
-## XII. Credit
+## XI. Credit
 
 ## ![Alt](https://repobeats.axiom.co/api/embed/c628651683a8754f63ac1e29e2e0b40a46333f36.svg 'Repobeats')
 
