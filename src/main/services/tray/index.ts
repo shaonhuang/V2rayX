@@ -8,44 +8,60 @@ import {
   clipboard,
   Notification,
 } from 'electron';
-import fs from 'fs';
+import fs from 'node:fs';
 import { join } from 'node:path';
 import logger from '@lib/logs';
 import db from '@lib/lowdb';
 import emitter from '@lib/event-emitter';
-import { globalPacConf, isMacOS, isWindows, pacDir, userPacConf } from '@main/lib/constant';
+import { isMacOS, isWindows, userPacConf } from '@main/lib/constant';
 import { autoUpdater } from 'electron-updater';
 import icon from '@resources/icon.png?asset';
-import { find, findIndex } from 'lodash';
+import { find, flattenDeep } from 'lodash';
 import { Server } from '@main/lib/constant/types';
+import Window from '@main/services/browser';
+import tcpPing from '@lib/utils/misc/tcpPing';
+import { VMess, VLess, Trojan } from '@main/lib/utils/misc/protocol';
+import hash from 'object-hash';
+import { uniqBy } from 'lodash';
 
 let tray: any = null;
 
-export const createTray = (mainWindow: Object, createWindow: Function) => {
+export const createTray = () => {
   const menuIcon = nativeImage.createFromDataURL(
-    'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAASpJREFUOE+lk7FKA0EQhv85FSuLu/MRXAJqKTY2prZII4KtlazY2oiQSsgDZE8LX8BYiC9ginRWFhHC3htoNhFbb0cuGrnoeXuH2+3y/98M/84Q/nko9YftuMXEJxVYfbC9MUe15gQQqPgRHu+bQ/E0uV/oVVj0i4AMdEdS1L8AmqdiI8Wvt79AqdYJYMYzgA5bdMbHopvp8NpIse4EfFanByNXNv0o3iLmXrbbMoBx8o4Nu2hfFxLqAVSrBPCAxosUd34U3xJzI5uHMwMCTodSnIdR3GLmHXjY+/4ppbkQECqthlLIINIHYFz9rBy4AKkhL7QpyAlYuhws54WWGgtDtAnq83P0lhDO8kLLnQNf6XsCtivsAmZHuT1ogrxdAGslIbPLVNKUK/sAFubAEc0R7fYAAAAASUVORK5CYII=',
+    db.data?.management.appearance.enhancedTrayIcon ||
+      'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAASpJREFUOE+lk7FKA0EQhv85FSuLu/MRXAJqKTY2prZII4KtlazY2oiQSsgDZE8LX8BYiC9ginRWFhHC3htoNhFbb0cuGrnoeXuH2+3y/98M/84Q/nko9YftuMXEJxVYfbC9MUe15gQQqPgRHu+bQ/E0uV/oVVj0i4AMdEdS1L8AmqdiI8Wvt79AqdYJYMYzgA5bdMbHopvp8NpIse4EfFanByNXNv0o3iLmXrbbMoBx8o4Nu2hfFxLqAVSrBPCAxosUd34U3xJzI5uHMwMCTodSnIdR3GLmHXjY+/4ppbkQECqthlLIINIHYFz9rBy4AKkhL7QpyAlYuhws54WWGgtDtAnq83P0lhDO8kLLnQNf6XsCtivsAmZHuT1ogrxdAGslIbPLVNKUK/sAFubAEc0R7fYAAAAASUVORK5CYII=',
   );
   tray = new Tray(menuIcon);
+  const mainWindow = new Window().mainWin;
 
-  const servers = db.chain.get('servers').value();
-  const currentServerId = db.chain.get('currentServerId').value();
-  const currentServer: Server = find(servers, { id: currentServerId });
-  const pastePort = currentServerId ? currentServer.config.inbounds[1].port : 10871;
-  const serversSubMenu = servers.map((server: Server) => {
+  const currentServerId = db.data.currentServerId?.[0] ?? '';
+  const pastePort = db.data.management.v2rayConfigure.inbounds[1].port ?? 10871;
+  const v2rayLogsFolder = db.data.management.generalSettings.v2rayLogsFolder;
+  const outbounds = flattenDeep([
+    db.chain.get('servers').value(),
+    db.chain
+      .get('subscriptionList')
+      .value()
+      .map((i) => i.requestServers),
+  ]);
+  const serversSubMenu = outbounds.map((server: Server) => {
     return {
-      label: server.ps,
+      label: server.latency
+        ? `${server.latency === 'Timeout' ? 'Timeout' : server.latency}  ${server.ps}`
+        : server.ps,
       type: 'radio',
       checked: server.id === currentServerId,
       enabled: false,
       click: async () => {
-        // db.data = db.chain.set('currentServerId', server.id).value();
+        // db.data = db.chain.set('currentServerId', [server.id]).value();
         // await db.write();
-        // const mainWindow = BrowserWindow.getAllWindows()[0];
-        // mainWindow?.webContents?.send('crrentServer:change', server.id);
+        // const mainWindow = new Window().mainWin;
+        /* mainWindow?.webContents?.send('crrentServer:change', server.id); */
         // emitter.emit('currentServer:change', server.id);
       },
     };
   });
+
   const template: any = [
     {
       label: `v2ray-core: Off (v${app.getVersion()})`,
@@ -84,7 +100,7 @@ export const createTray = (mainWindow: Object, createWindow: Function) => {
     {
       label: 'View Log',
       click: () => {
-        const logFile = `${app.getPath('logs')}/access.log`;
+        const logFile = `${v2rayLogsFolder}access.log`;
         if (fs.existsSync(logFile)) {
           shell.openPath(logFile);
         }
@@ -140,49 +156,146 @@ export const createTray = (mainWindow: Object, createWindow: Function) => {
       label: 'Configure...',
       accelerator: 'CmdOrCtrl+c',
       click: () => {
-        if (mainWindow === null) {
-          mainWindow = createWindow();
-        } else {
-          if (BrowserWindow.getAllWindows().length === 0) {
-            mainWindow = createWindow();
-          } else {
-            mainWindow.show();
-          }
-        }
+        const mainWindow = new Window().mainWin;
+        mainWindow?.show();
       },
     },
     {
       label: 'Subscriptions...',
-      enabled: false,
+      click: () => {
+        new Window('/index/servers').mainWin?.show();
+        Window.createWindow(
+          '/manage/subscription',
+          {
+            width: 800,
+            height: 600,
+            show: true,
+          },
+          {
+            parentName: 'mainWindow',
+            modalStatus: true,
+          },
+        );
+      },
     },
     {
       label: 'PAC Settings...',
-      enabled: false,
+      click: () => {
+        Window.createWindow('/manage/pac', {
+          width: 800,
+          height: 600,
+          show: true,
+        });
+      },
     },
     {
       label: 'Connection Test...',
-      enabled: false,
+      // enabled: false,
+      click: async () => {
+        const getTcpPIngTest = async (i) => {
+          const protocol = i.outbound.protocol;
+          let host = '',
+            port = '';
+          if (protocol === 'vmess' || protocol === 'vless') {
+            host = i.outbound.settings.vnext[0].address;
+            port = i.outbound.settings.vnext[0].port;
+          } else if (protocol === 'trojan') {
+            host = i.outbound.settings.servers[0].address;
+            port = i.outbound.settings.servers[0].port;
+          }
+          const res = await tcpPing({ host, port });
+          i.latency = isNaN(res[0].ave) ? 'Timeout' : `${res[0].ave}ms`;
+          return i;
+        };
+        const localServers = db.data.servers;
+        const subscriptionList = db.data.subscriptionList;
+        db.data.servers = await Promise.all(localServers.map(async (i) => await getTcpPIngTest(i)));
+        db.data.subscriptionList = await Promise.all(
+          subscriptionList.map(async (i) => {
+            i.requestServers = await Promise.all(
+              i.requestServers.map(async (j) => await getTcpPIngTest(j)),
+            );
+            return i;
+          }),
+        );
+        await db.write();
+      },
     },
     {
       type: 'separator',
     },
     {
       label: 'Import Server From Pasteboard',
-      enabled: false,
+      click: async () => {
+        new Window('/index/servers').mainWin?.show();
+        const link = clipboard.readText();
+        const factory = link.includes('vmess://')
+          ? new VMess(link)
+          : link.includes('vless://')
+            ? new VLess(link)
+            : link.includes('trojan://')
+              ? new Trojan(link)
+              : null;
+        if (!factory) {
+          new Notification({
+            title: 'Import From Clipboard',
+            body: 'Import Server Failed',
+            silent: false,
+          }).show();
+          return;
+        }
+        const saveItem = {
+          id: hash(factory.getOutbound()),
+          link,
+          ps: factory.getPs(),
+          latency: '',
+          outbound: factory.getOutbound(),
+        };
+
+        db.data = db.chain.set('servers', uniqBy([...db.data.servers, saveItem], 'id')).value();
+        await db.write();
+        new Notification({
+          title: 'Import From Clipboard',
+          body: 'Import Server Success',
+          silent: false,
+        }).show();
+        // localStorage.setItem('serverAddOrEdit', 'add');
+      },
     },
     {
-      label: 'Scan QR Code from Screen',
+      label: 'Scan QR Code From Screen',
+      click: () => {
+        new Window('/index/servers').mainWin?.show();
+        Window.createWindow(
+          '/servers/add',
+          {
+            title: 'Server Configuration',
+            width: 800,
+            height: 600,
+            show: true,
+          },
+          { parentName: 'mainWindow', modalStatus: true },
+        );
+        // localStorage.setItem('serverAddOrEdit', 'add');
+      },
       enabled: false,
     },
     {
       label: 'Share Link/QR Code',
       enabled: false,
+      click: () => {
+        Window.createWindow('/share/qrcode', {
+          width: 420,
+          height: 420,
+          show: true,
+        });
+      },
     },
     {
       type: 'separator',
     },
     {
-      label: 'Copy HTTP Proxy Shell Export Command',
+      label: 'Copy HTTP Proxy Shell Command',
       accelerator: 'CmdOrCtrl+e',
       click: () => {
         const pasteData = isWindows
@@ -202,7 +315,8 @@ export const createTray = (mainWindow: Object, createWindow: Function) => {
     },
     {
       label: 'Preferences...',
-      enabled: false,
+      accelerator: 'CmdOrCtrl+,',
+      click: () => new Window('/index/settings').mainWin?.show(),
     },
     {
       label: isMacOS ? 'Check Offical Website' : 'Check for Updates',
@@ -239,14 +353,32 @@ export const createTray = (mainWindow: Object, createWindow: Function) => {
   tray.setToolTip('click for more operations');
   tray.setContextMenu(contextMenu);
   emitter.on('tray-v2ray:update', (running: boolean) => {
+    const currentServerId = db.chain.get('currentServerId').value()?.[0] ?? '';
+
     const proxyMode = db.data.settings.proxyMode;
     template[0].label = `v2ray-core: ${running ? 'On' : 'Off'} (v${app.getVersion()})`;
     template[1].label = `Turn v2ray-core ${running ? 'Off' : 'On'}`;
+    template[1].enabled = currentServerId !== '';
+    template[19].enabled = currentServerId !== '';
+
     // @ts-ignore
-    const config = db.chain
-      .get('servers')
-      .find({ id: db.chain.get('currentServerId').value() })
-      .value()?.config;
+    const outbounds = flattenDeep([
+      db.chain.get('servers').value(),
+      db.chain
+        .get('subscriptionList')
+        .value()
+        .map((i) => i.requestServers),
+    ]);
+    const outbound = find(outbounds, { id: currentServerId ?? '' })?.outbound;
+    const serverTemplate = db.chain.get('serverTemplate').value();
+    const v2rayLogsFolder = db.chain.get('management.generalSettings.v2rayLogsFolder').value();
+    serverTemplate.log = {
+      error: v2rayLogsFolder.concat('error.log'),
+      loglevel: 'info',
+      access: v2rayLogsFolder.concat('access.log'),
+    };
+    serverTemplate.outbounds = [outbound];
+    const config = serverTemplate;
     template[1].enabled = config ? true : false;
     template[1].click = () => {
       if (config) {
@@ -272,21 +404,28 @@ export const createTray = (mainWindow: Object, createWindow: Function) => {
     tray.setContextMenu(Menu.buildFromTemplate(template));
   });
   emitter.on('tray-servers:update', () => {
-    const servers = db.chain.get('servers').value();
-    const currentServerId = db.chain.get('currentServerId').value();
-    const currentServer: Server = find(servers, { id: currentServerId });
-    const pastePort = currentServerId ? currentServer.config.inbounds[1].port : 10871;
-    const serversSubMenu = servers.map((server: Server) => {
+    const currentServerId = db.chain.get('currentServerId').value()?.[0] ?? '';
+    const outbounds = flattenDeep([
+      db.chain.get('servers').value(),
+      db.chain
+        .get('subscriptionList')
+        .value()
+        .map((i) => i.requestServers),
+    ]);
+    const pastePort = db.data.management.v2rayConfigure.inbounds[1].port ?? 10871;
+    const serversSubMenu = outbounds.map((server: Server) => {
       return {
-        label: server.ps,
+        label: server.latency
+          ? `${server.latency === 'Timeout' ? 'Timeout' : server.latency}  ${server.ps}`
+          : server.ps,
         type: 'radio',
         checked: server.id === currentServerId,
         enabled: false,
         click: async () => {
-          // db.data = db.chain.set('currentServerId', server.id).value();
+          // db.data = db.chain.set('currentServerId', [server.id]).value();
           // await db.write();
-          // const mainWindow = BrowserWindow.getAllWindows()[0];
-          // mainWindow?.webContents?.send('crrentServer:change', server.id);
+          // const mainWindow = new Window().mainWin;
+          /* mainWindow?.webContents?.send('crrentServer:change', server.id); */
           // emitter.emit('currentServer:change', server.id);
         },
       };
@@ -307,14 +446,15 @@ export const createTray = (mainWindow: Object, createWindow: Function) => {
     tray.setContextMenu(Menu.buildFromTemplate(template));
   });
   tray.on('double-click', function () {
-    if (mainWindow === null) {
-      mainWindow = createWindow();
-    } else {
-      if (BrowserWindow.getAllWindows().length === 0) {
-        mainWindow = createWindow();
-      } else {
-        mainWindow.show();
-      }
-    }
+    if (isMacOS) return;
+    // if (mainWindow === null) {
+    //   mainWindow = new Window().mainWin;
+    // } else {
+    //   if (BrowserWindow.getAllWindows().length === 0) {
+    //     mainWindow = new Window().mainWin;
+    //   } else {
+    //     mainWindow.show();
+    //   }
+    // }
   });
 };

@@ -1,10 +1,12 @@
 import { configureStore } from '@reduxjs/toolkit';
 import logger from 'redux-logger';
 import serversPageReducer from './serversPageSlice';
+import settingsPageReducer from './settingsPageSlice';
 
 const store = configureStore({
   reducer: {
     serversPage: serversPageReducer,
+    settingsPage: settingsPageReducer,
   },
   middleware: (getDefaultMiddleware) => getDefaultMiddleware().concat(logger),
   devTools: process.env.NODE_ENV !== 'production',

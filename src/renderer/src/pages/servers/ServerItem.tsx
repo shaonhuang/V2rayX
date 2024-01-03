@@ -1,4 +1,15 @@
-import { List, ListItem, ListItemIcon, ListItemButton, ListItemText, Chip } from '@mui/material';
+import {
+  List,
+  ListItem,
+  ListItemIcon,
+  ListItemButton,
+  ListItemText,
+  Chip,
+  Box,
+  Stack,
+  Paper,
+  Typography,
+} from '@mui/material';
 import ScreenShareIcon from '@mui/icons-material/ScreenShare';
 import IosShareIcon from '@mui/icons-material/IosShare';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
@@ -27,7 +38,7 @@ const theme = createTheme({
 // );
 
 const Index = (props: any) => {
-  const protocol = props.data.outbounds[0].protocol.toUpperCase() ?? 'Vmess';
+  const protocol = props.data.protocol.toUpperCase();
   const handleSelectServerStop = throttle((e: any) => {
     e.stopPropagation();
     window.v2rayService.stopService();
@@ -38,21 +49,36 @@ const Index = (props: any) => {
   }, 1000);
 
   return (
-    <div
-      className={`m-2 grid h-16 w-5/6 items-center rounded-xl ${props.className}`}
-      style={{ gridTemplateColumns: '0.5fr 1.5fr 0.5fr 1.5fr 0.5fr 1fr 1fr' }}
+    <Box
+      className={`m-2 grid h-20 items-center rounded-xl ${props.className} border border-gray-50 shadow`}
+      style={{ gridTemplateColumns: '0.5fr 2.5fr 1.5fr 0.5fr 1fr' }}
       onClick={props.onClick}
     >
       <div className="ml-3 mr-6 inline-flex h-12 w-12 items-center rounded-xl bg-purple-600">
         <Storage style={{}} className="m-auto" />
       </div>
-      <span className="inline-flex w-fit items-center font-bold">{props.serverName}</span>
-      <span className="w-fit justify-self-center text-black-dim">{protocol}</span>
+      <Stack alignItems={'flex-start'}>
+        <Typography variant="subtitle1" display="block">
+          {props.serverName}
+        </Typography>
+        <Stack spacing={1} direction="row">
+          <Chip color="info" style={{ height: '1rem' }} label={protocol} />
+          {props.latency !== '' && (
+            <Chip
+              color={props.latency !== 'Timeout' ? 'success' : 'error'}
+              style={{ height: '1rem' }}
+              label={props.latency}
+            />
+          )}
+        </Stack>
+      </Stack>
+
       {
         // placeholder for data usage status
       }
       {props.isSeleted ? (
         <Chip
+          classes={{ label: 'cursor-default' }}
           label={props.running ? 'running' : 'stopped'}
           color={props.running ? 'success' : 'error'}
           variant="outlined"
@@ -85,67 +111,64 @@ const Index = (props: any) => {
       )}
 
       <ThemeProvider theme={theme}>
-        <PopoverMenu>
-          <Share className="justify-self-center" fontSize="medium" />
-          <List>
-            <ListItem disablePadding>
-              <ListItemButton
-                disabled
-                onClick={() => {
-                  props.handleQR(props.index);
-                }}
-              >
-                <ListItemIcon>
-                  <ScreenShareIcon />
-                </ListItemIcon>
-                <ListItemText primary="Share QR Code" />
-              </ListItemButton>
-            </ListItem>
-            <ListItem disablePadding>
-              <ListItemButton
-                onClick={() => {
-                  props.handleLink(props.index);
-                }}
-              >
-                <ListItemIcon>
-                  <IosShareIcon />
-                </ListItemIcon>
-                <ListItemText primary="Share Link" />
-              </ListItemButton>
-            </ListItem>
-          </List>
-        </PopoverMenu>
-        <PopoverMenu>
-          <MoreHoriz className="justify-self-end" fontSize="large" />
-          <List>
-            <ListItem disablePadding>
-              <ListItemButton
-                onClick={() => {
-                  props.handleEdit(props.index);
-                }}
-              >
-                <ListItemIcon>
-                  <Edit />
-                </ListItemIcon>
-                <ListItemText primary="Edit" />
-              </ListItemButton>
-            </ListItem>
-            <ListItem disablePadding>
-              <ListItemButton
-                onClick={() => {
-                  props.handleDelete(props.index);
-                }}
-              >
-                <ListItemIcon>
-                  <Delete />
-                </ListItemIcon>
-                <ListItemText primary="Delete" />
-              </ListItemButton>
-            </ListItem>
-          </List>
-        </PopoverMenu>
+        <Stack direction="row" spacing={1} justifyContent={'center'} alignItems={'center'} mx={2}>
+          <PopoverMenu>
+            <Share className="justify-self-center" fontSize="medium" />
+            <List>
+              <ListItem disablePadding>
+                <ListItemButton onClick={() => props.handleQR(props.index, props.cIndex)}>
+                  <ListItemIcon>
+                    <ScreenShareIcon />
+                  </ListItemIcon>
+                  <ListItemText primary="Share QR Code" />
+                </ListItemButton>
+              </ListItem>
+              <ListItem disablePadding>
+                <ListItemButton
+                  onClick={() => {
+                    props.handleLink(props.index, props.cIndex);
+                  }}
+                >
+                  <ListItemIcon>
+                    <IosShareIcon />
+                  </ListItemIcon>
+                  <ListItemText primary="Share Link" />
+                </ListItemButton>
+              </ListItem>
+            </List>
+          </PopoverMenu>
+          <PopoverMenu>
+            <MoreHoriz className="justify-self-end" fontSize="large" />
+            <List>
+              <ListItem disablePadding>
+                <ListItemButton
+                  onClick={() => {
+                    props.handleEdit(props.server);
+                  }}
+                >
+                  <ListItemIcon>
+                    <Edit />
+                  </ListItemIcon>
+                  <ListItemText primary="Edit" />
+                </ListItemButton>
+              </ListItem>
+              <ListItem disablePadding>
+                <ListItemButton
+                  onClick={() => {
+                    props.handleDelete(props.index);
+                  }}
+                >
+                  <ListItemIcon>
+                    <Delete />
+                  </ListItemIcon>
+                  <ListItemText primary="Delete" />
+                </ListItemButton>
+              </ListItem>
+            </List>
+          </PopoverMenu>
+        </Stack>
       </ThemeProvider>
-    </div>
+    </Box>
   );
 };
 

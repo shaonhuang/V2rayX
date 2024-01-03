@@ -1,5 +1,5 @@
-import os from 'os';
-import path from 'path';
+import os from 'node:os';
+import path from 'node:path';
 import { app } from 'electron';
 import { is } from '@electron-toolkit/utils';
 
@@ -32,6 +32,7 @@ export const isWindows = platform === 'win32';
 export const isLinux = platform === 'linux';
 export const packageName = 'v2rayx';
 export const v2rayPackageName = 'v2ray-core';
+export const singBoxPackageName = 'single-box';
 export const appDataPath = path.join(electronAppPath, packageName);
 export const v2rayBin = path.join(
   app.getPath('userData'),
@@ -73,6 +74,7 @@ export const getPathRuntime = (p: string) => path.join(pathRuntime, p);
 export const pacDir = getPathRuntime('pac');
 export const binDir = getPathRuntime('bin');
 export const v2rayDir = path.join(app.getPath('userData'), v2rayPackageName);
+export const singleBoxDir = path.join(app.getPath('userData'), singBoxPackageName);
 export const globalPacConf = path.resolve(pacDir, 'gfwlist.txt');
 export const userPacConf = path.resolve(pacDir, 'gfwlist-user.txt');
 export const v2rayPackagePath = path.join(
@@ -81,6 +83,143 @@ export const v2rayPackagePath = path.join(
   arch,
   `v2ray-${v2rayPlatform.get(platform)}-${v2rayArch.get(arch)}.zip`,
 );
+
+export const emptyV2Template = () => {
+  const config: any = {
+    log: {
+      error: '',
+      loglevel: 'info',
+      access: '',
+    },
+    inbounds: [
+      {
+        listen: '127.0.0.1',
+        port: 10801,
+        protocol: 'socks',
+        tag: 'socks-inbound',
+        allocate: {
+          strategy: 'always',
+          refresh: 5,
+          concurrency: 3,
+        },
+      },
+      {
+        listen: '127.0.0.1',
+        port: 10871,
+        protocol: 'http',
+        tag: 'http-inbound',
+        allocate: {
+          strategy: 'always',
+          refresh: 5,
+          concurrency: 3,
+        },
+      },
+
+      {
+        listen: '127.0.0.1',
+        port: 10085,
+        protocol: 'dokodemo-door',
+        settings: {
+          address: '127.0.0.1',
+        },
+        tag: 'api',
+      },
+    ],
+    stats: {},
+    api: {
+      services: ['HandlerService', 'LoggerService', 'StatsService'],
+      tag: 'api',
+    },
+    policy: {
+      levels: {
+        '0': {
+          statsUserUplink: true,
+          statsUserDownlink: true,
+        },
+      },
+      system: {
+        statsInboundUplink: true,
+        statsInboundDownlink: true,
+        statsOutboundUplink: true,
+        statsOutboundDownlink: true,
+      },
+    },
+    outbounds: [],
+    dns: {},
+    routing: {
+      settings: {
+        domainStrategy: 'AsIs',
+        rules: [
+          {
+            inboundTag: ['api'],
+            outboundTag: 'api',
+            type: 'field',
+          },
+        ],
+      },
+    },
+    transport: {},
+  };
+  const outboundsInjection = [
+    {
+      tag: 'direct',
+      protocol: 'freedom',
+      settings: {
+        domainStrategy: 'UseIP',
+        userLevel: 0,
+      },
+    },
+    {
+      tag: 'block',
+      protocol: 'blackhole',
+      settings: {
+        response: {
+          type: 'none',
+        },
+      },
+    },
+  ];
+  const outbounds: any = {
+    mux: {
+      enabled: false,
+      concurrency: 8,
+    },
+    protocol: 'vmess',
+    streamSettings: {
+      wsSettings: {
+        path: '',
+        headers: {
+          host: '',
+        },
+      },
+      tlsSettings: {
+        serverName: '',
+        allowInsecure: false,
+      },
+      security: 'none',
+      network: '',
+    },
+    tag: 'proxy',
+    settings: {
+      vnext: [
+        {
+          address: '',
+          users: [
+            {
+              id: '',
+              alterId: 0,
+              level: 0,
+              security: '',
+            },
+          ],
+          port: 0,
+        },
+      ],
+    },
+  };
+  config.outbounds = [outbounds, ...outboundsInjection];
+  return config;
+};
 
 export default {
   v2rayPackageName,

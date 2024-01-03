@@ -1,20 +1,8 @@
-const admZip = require('adm-zip');
-import * as fs from 'fs';
-import { join } from 'path';
+import admZip from 'adm-zip';
+import fs from 'node:fs';
 
 import logger from '@main/lib/logs';
-import {
-  platform,
-  v2rayPackage,
-  v2rayDir,
-  v2rayBin,
-  isMacOS,
-  isLinux,
-  arch,
-  v2rayPlatform,
-  v2rayArch,
-  v2rayPackagePath,
-} from '@main/lib/constant';
+import { v2rayDir, v2rayBin, isMacOS, isLinux, v2rayPackagePath } from '@main/lib/constant';
 
 const unzip = (zipFile: string, outputDir: string) => {
   const zip = new admZip(zipFile);

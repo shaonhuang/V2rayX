@@ -25,25 +25,79 @@ const MenuProps = {
 
 type formDataType = {
   security: string;
-  tlsDomain: string;
+  serverName: string;
   allowInsecure: boolean;
+  publicKey: string;
+  shortId: string;
+  fingerprint: string;
 };
 
 const Index = (props: any) => {
-  const { outbounds } = props.data.server.config;
-  const { streamSettings } = outbounds[0];
+  const { security } = props.data.streamSettings;
+  let serverName, allowInsecure, fingerprint, publicKey, shortId;
+  switch (security) {
+    case 'none':
+      break;
+    case 'tls':
+      serverName = props.data.streamSettings.tlsSettings.serverName;
+      allowInsecure = props.data.streamSettings.tlsSettings.allowInsecure;
+      fingerprint = props.data.streamSettings.tlsSettings.fingerprint;
+      break;
+    case 'xtls':
+      serverName = props.data.streamSettings.xtlsSettings.serverName;
+      allowInsecure = props.data.streamSettings.xtlsSettings.allowInsecure;
+      fingerprint = props.data.streamSettings.xtlsSettings.fingerprint;
+      break;
+    case 'reality':
+      serverName = props.data.streamSettings.realitySettings.serverName;
+      allowInsecure = props.data.streamSettings.realitySettings.allowInsecure;
+      fingerprint = props.data.streamSettings.realitySettings.fingerprint;
+      publicKey = props.data.streamSettings.realitySettings.publicKey;
+      shortId = props.data.streamSettings.realitySettings.shortId;
+      break;
+  }
   const [formData, setFormData] = useState<formDataType>({
-    security: streamSettings.security,
-    tlsDomain: streamSettings.tlsSettings.serverName,
-    allowInsecure: streamSettings.tlsSettings.allowInsecure,
+    security: security ?? 'none',
+    serverName: serverName ?? '',
+    allowInsecure: allowInsecure ?? true,
+    publicKey: publicKey ?? '',
+    shortId: shortId ?? '',
+    fingerprint,
   });
   const [formError, setFormError] = useState<boolean>(false);
 
   useEffect(() => {
-    props.data.server.config.outbounds[0].streamSettings.security = formData.security;
-    props.data.server.config.outbounds[0].streamSettings.tlsSettings.serverName = formData.tlsDomain;
-    props.data.server.config.outbounds[0].streamSettings.tlsSettings.allowInsecure =
-      formData.allowInsecure;
+    const { serverName, allowInsecure, fingerprint, publicKey, shortId, security } = formData;
+    props.data.streamSettings.security = security;
+    switch (security) {
+      case 'none':
+        break;
+      case 'tls':
+        props.data.streamSettings.tlsSettings = {
+          serverName,
+          allowInsecure,
+          fingerprint,
+        };
+        break;
+      case 'xtls':
+        props.data.streamSettings.xtlsSettings = {
+          serverName,
+          allowInsecure,
+          fingerprint,
+        };
+        break;
+      case 'reality':
+        props.data.streamSettings.realitySettings = {
+          serverName,
+          allowInsecure,
+          fingerprint,
+          publicKey,
+          shortId,
+          show: true,
+          spiderX: '',
+        };
+        break;
+    }
   }, [formData]);
 
   return (
@@ -65,38 +119,86 @@ const Index = (props: any) => {
               </MenuItem>
               <MenuItem value={'tls'}>tls</MenuItem>
               <MenuItem value={'xtls'}>xtls</MenuItem>
+              <MenuItem value={'reality'}>reality</MenuItem>
             </Select>
           </FormControl>
         </Grid>
-        <Grid xs={6}></Grid>
-        <Grid xs="auto">
-          <FormGroup className="w-fit">
-            <FormControlLabel
-              control={
-                <Checkbox
-                  checked={formData.allowInsecure}
-                  onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
-                    setFormData({ ...formData, allowInsecure: event.target.checked })
+        {formData.security !== 'reality' ? (
+          <>
+            <Grid xs={6}></Grid>
+            <Grid xs="auto">
+              <FormGroup className="w-fit">
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={formData.allowInsecure}
+                      onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
+                        setFormData({ ...formData, allowInsecure: event.target.checked })
+                      }
+                    />
                   }
+                  label="Allow Insecure"
                 />
-              }
-              label="Allow Insecure"
-            />
-          </FormGroup>
+              </FormGroup>
+            </Grid>
+          </>
+        ) : (
+          <Grid xs={10}></Grid>
+        )}
+      </Grid>
+      {formData.security !== 'reality' ? (
+        <Grid xs={16}>
+          <TextField
+            size="small"
+            fullWidth
+            label="Server Name"
+            id="fullWidth"
+            value={formData.serverName}
+            onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
+              setFormData({ ...formData, serverName: event.target.value });
+            }}
+          />
         </Grid>
-      </Grid>
-      <Grid xs={16}>
-        <TextField
-          size="small"
-          fullWidth
-          label="Tls Server Domain"
-          id="fullWidth"
-          value={formData.tlsDomain}
-          onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
-            setFormData({ ...formData, tlsDomain: event.target.value });
-          }}
-        />
-      </Grid>
+      ) : (
+        <>
+          <Grid xs={16}>
+            <TextField
+              size="small"
+              fullWidth
+              label="Server Name"
+              id="fullWidth"
+              value={formData.serverName}
+              onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
+                setFormData({ ...formData, serverName: event.target.value });
+              }}
+            />
+          </Grid>
+          <Grid xs={16}>
+            <TextField
+              size="small"
+              fullWidth
+              label="Public Key"
+              id="fullWidth"
+              value={formData.publicKey}
+              onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
+                setFormData({ ...formData, publicKey: event.target.value });
+              }}
+            />
+          </Grid>
+          <Grid xs={16}>
+            <TextField
+              size="small"
+              fullWidth
+              label="Short Id"
+              id="fullWidth"
+              value={formData.shortId}
+              onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
+                setFormData({ ...formData, shortId: event.target.value });
+              }}
+            />
+          </Grid>
+        </>
+      )}
     </Grid>
   );
 };

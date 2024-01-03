@@ -2,7 +2,7 @@ import beforeReady from './beforeReady';
 import afterReady from './afterReady';
 import ready from './ready';
 import beforeQuit from './beforeQuit';
-import { ElectronApp } from '@main/app';
+import { ElectronApp } from '@lib/app';
 
 export default (electronApp: ElectronApp) => {
   beforeReady(electronApp);

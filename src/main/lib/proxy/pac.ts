@@ -1,6 +1,6 @@
 import http from 'http';
-import fs from 'fs';
-import path from 'path';
+import fs from 'node:fs';
+import path from 'node:path';
 import fsExtra from 'fs-extra';
 import logger from '@main/lib/logs';
 import { globalPacConf, pacDir, userPacConf } from '@main/lib/constant';

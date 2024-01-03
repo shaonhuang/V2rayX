@@ -10,4 +10,9 @@ const domainReg = new RegExp(
 );
 
 const isMac: boolean = platform === 'darwin';
-export { platform, portReg, ipReg, domainReg, isMac };
+const isWin: boolean = platform === 'win32';
+const isLin = platform === 'linux';
+
+const isDev: boolean = window.electron.electronAPI.process.env.NODE_ENV === 'development';
+
+export { platform, portReg, ipReg, domainReg, isMac, isDev, isWin, isLin };

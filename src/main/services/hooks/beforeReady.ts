@@ -1,8 +1,8 @@
-import path from 'path';
-import os from 'os';
+import path from 'node:path';
+import os from 'node:os';
 import * as Sentry from '@sentry/electron';
 import logger from '@lib/logs';
-import { ElectronApp } from '@main/app';
+import { ElectronApp } from '@lib/app';
 import { checkEnvFiles as check, copyDir, chmod } from '@lib/utils/misc/utils';
 import { appDataPath, platform, pathRuntime, pathExecutable, pacDir, binDir } from '@lib/constant';
 import { is } from '@electron-toolkit/utils';
@@ -10,7 +10,7 @@ import { Install } from '@main/services/install';
 
 import ThemeService from '@main/services/theme';
 import * as fs from 'fs-extra';
-import { resolve } from 'path';
+import { resolve } from 'node:path';
 import { PacServer as PS } from '@lib/proxy/pac';
 import { mountListeners } from '../core/listener';
 import { binPath, pacPath, v2rayDir, v2rayPackagePath } from '@lib/constant';

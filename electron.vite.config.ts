@@ -1,15 +1,23 @@
-import { resolve } from 'path';
+import { resolve } from 'node:path';
 import { defineConfig, externalizeDepsPlugin } from 'electron-vite';
 import react from '@vitejs/plugin-react';
 
 export default defineConfig({
   main: {
-    plugins: [externalizeDepsPlugin({ exclude: ['load-json-file', 'lowdb'] })],
+    // ssr: {
+    //   noExternal: true,
+    // },
+    plugins: [
+      externalizeDepsPlugin({
+        exclude: ['electron-updater', 'lodash'],
+      }),
+    ],
     resolve: {
       alias: {
         '@main': resolve('src/main'),
         '@resources': resolve('resources'),
         '@lib': resolve('src/main/lib'),
+        '@services': resolve('src/main/services'),
       },
     },
   },

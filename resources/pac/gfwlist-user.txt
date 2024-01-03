@@ -35,6 +35,6 @@
 ! Demo[05] -------------
 ! The line starts with ! is comment.
 
-
-
+! Put user rules line by line in this file.
+! See https://adblockplus.org/en/filter-cheatsheet
 
