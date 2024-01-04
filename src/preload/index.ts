@@ -62,7 +62,7 @@ const customApi = {
 if (process.contextIsolated) {
   const api = {
     db: {
-      read: async (key: string, query?: Object) => ipcRenderer.invoke('v2rayx:db:read', key, query),
+      read: async (key: string) => ipcRenderer.invoke('v2rayx:db:read', key),
       write: async (key: string, data: JSON) => ipcRenderer.invoke('v2rayx:db:write', key, data),
     },
     autoLaunch: {

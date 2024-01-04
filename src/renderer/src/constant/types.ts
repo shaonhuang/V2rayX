@@ -90,6 +90,30 @@ export type Servers = Server[];
 
 export type EmptyObject = Record<string, never>;
 
+export type Serverx = {
+  id: string;
+  link: string;
+  ps: string;
+  speedTestType: string;
+  group: string;
+  groupId: string;
+  latency: string;
+  outbound: Record<string, any>;
+};
+
+export type ServersGroup = {
+  groupId: string;
+  group: string;
+  link: string;
+  speedTestType: string;
+  subServers: Serverx[];
+};
+
+export type Subscription = {
+  remark: string;
+  link: string;
+};
+
 type V2RayCore = {
   version: string;
   isReinstallV2rayPackage: boolean;

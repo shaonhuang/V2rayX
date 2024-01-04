@@ -15,41 +15,34 @@ import {
 } from 'material-react-table';
 import { useAppDispatch, useAppSelector } from '@renderer/store/hooks';
 import { setSubscriptionList } from '@renderer/store/serversPageSlice';
-import { Server } from '@renderer/constant/types';
 import { Buffer } from 'buffer';
 import { decode } from 'js-base64';
 import Snackbar from '@mui/material/Snackbar';
 import MuiAlert, { AlertColor, AlertProps } from '@mui/material/Alert';
 import { VMess, VLess, Trojan } from '@renderer/utils/protocol/';
-import { find, cloneDeep } from 'lodash';
+import { find } from 'lodash';
+import { ServersGroup, Subscription } from '@renderer/constant/types';
 
-type Subscription = {
-  remark: string;
-  link: string;
-  speedTestType: string;
-  requestServers: Server[];
-};
 const Alert = forwardRef<HTMLDivElement, AlertProps>(function Alert(props, ref) {
   return <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />;
 });
 
 const Index = () => {
   const dispatch = useAppDispatch();
+  const subscriptionList = useAppSelector((state) => state.serversPage.subscriptionList);
+
+  const [formData, setFormData] = useState<Subscription>({
+    remark: '',
+    link: '',
+  });
+
   const [notice, setNotice] = useState({
     status: false,
     type: 'success',
     message: '',
   });
-  const subscriptionList = useAppSelector(
-    (state) => state.serversPage.subscriptionList,
-  ) as Subscription[];
-  const [formData, setFormData] = useState<Subscription>({
-    remark: '',
-    link: '',
-    speedTestType: 'icmp',
-    requestServers: [],
-  });
-  const [tableData, setTableData] = useState<Subscription[]>(subscriptionList);
+
+  const [tableData, setTableData] = useState<Subscription[]>([]);
   const [rowSelection, setRowSelection] = useState<MRT_RowSelectionState>({});
   useEffect(() => {
     setTableData(subscriptionList);
@@ -68,13 +61,98 @@ const Index = () => {
     [],
   );
 
-  const handleNoticeClose = (event?: React.SyntheticEvent | Event, reason?: string) => {
-    if (reason === 'clickaway') {
-      return;
+  const getSubscribeServersLink = async (url: string) => {
+    let linkArr: string[] = [];
+    return window.net.request(url).then((res) => {
+      linkArr = decode(Buffer.from(res).toString('utf8')).split('\n');
+      linkArr[linkArr.length - 1] === '' && linkArr.pop();
+      console.log(linkArr);
+      return linkArr;
+    });
+  };
+  const handleSubscriptionLinkRequest = async () => {
+    try {
+      const groups: ServersGroup[] = [];
+      Promise.all(
+        Object.entries(rowSelection).map(async ([key, isSelected]) => {
+          if (isSelected) {
+            const selectItem = find(subscriptionList, { remark: key })!;
+            const serversGroup: ServersGroup = {
+              groupId: '',
+              group: selectItem.remark,
+              link: selectItem.link,
+              speedTestType: 'icmp',
+              subServers: [],
+            };
+            // TODO: fix type error of subServers
+            serversGroup.subServers = (await getSubscribeServersLink(serversGroup.link))
+              .map((link) => {
+                const protocol = link.includes('vmess')
+                  ? 'vmess'
+                  : link.includes('vless')
+                    ? 'vless'
+                    : link.includes('trojan')
+                      ? 'trojan'
+                      : null;
+                if (!protocol)
+                  return {
+                    link,
+                    error: 'parse protocol error',
+                  };
+                const protocolObj =
+                  protocol === 'vmess'
+                    ? new VMess(link || {})
+                    : protocol === 'vless'
+                      ? new VLess(link || {})
+                      : new Trojan(link || {});
+                return {
+                  id: window.electron.electronAPI.hash(protocolObj.getOutbound()),
+                  link,
+                  ps: protocolObj.getPs(),
+                  speedTestType: 'icmp',
+                  group: serversGroup.group,
+                  groupId: window.electron.electronAPI.hash.MD5(serversGroup.group),
+                  latency: '',
+                  outbound: protocolObj.getOutbound(),
+                };
+              })
+              .filter((i) => {
+                if (i.error !== undefined) {
+                  console.error(i.link, i.error);
+                  return false;
+                }
+                return true;
+              }) as [];
+            groups.push(serversGroup);
+          }
+        }),
+      ).then(() => {
+        console.log(groups);
+        setNotice({
+          status: true,
+          message: 'Updating Subscription Servers have been successfully ',
+          type: 'success',
+        });
+        window.api.send('v2rayx:server:subscription:update:toMain', {
+          subscriptionList,
+          serversGroup: groups,
+        });
+      });
+    } catch (err) {
+      setNotice({
+        status: true,
+        message: 'Updating Subscription Servers have error',
+        type: 'error',
+      });
+      console.error(err);
     }
+  };
 
+  const handleNoticeClose = (_: React.SyntheticEvent | Event, reason?: string) => {
+    if (reason === 'clickaway') return;
     setNotice({ ...notice, status: false });
   };
+
   const table = useMaterialReactTable({
     enableRowSelection: true,
     enableColumnActions: false,
@@ -107,7 +185,6 @@ const Index = () => {
       const handleDelete = () => {
         const shouldDelete: string[] = [];
         table.getSelectedRowModel().flatRows.map((row) => {
-          console.log(row);
           shouldDelete.push(row.getValue('remark'));
         });
         setTableData(tableData.filter((item: Subscription) => !shouldDelete.includes(item.remark)));
@@ -143,7 +220,7 @@ const Index = () => {
   return (
     <Container
       maxWidth="sm"
-      className={'overflow-x-hidden overflow-y-scroll rounded-2xl bg-sky-600/30 py-4 pb-8'}
+      className="overflow-x-hidden overflow-y-scroll rounded-2xl bg-sky-600/30 py-4 pb-8"
     >
       <IconButton sx={{ position: 'fixed', top: 32, left: 16 }} onClick={() => close()}>
         <CloseIcon />
@@ -194,74 +271,7 @@ const Index = () => {
           component="label"
           variant="contained"
           startIcon={<UpdateIcon />}
-          onClick={async () => {
-            const getSubscribeServersLink = async (url) => {
-              let linkArr: string[] = [];
-              return window.net.request(url).then((res) => {
-                linkArr = decode(Buffer.from(res).toString('utf8')).split('\n');
-                linkArr[linkArr.length - 1] === '' && linkArr.pop();
-                console.log(linkArr);
-                return linkArr;
-              });
-            };
-            try {
-              const modifyTableData = cloneDeep(tableData);
-              Promise.all(
-                Object.entries(rowSelection).map(async ([key, isSelected]) => {
-                  if (isSelected) {
-                    find(modifyTableData, { remark: key }).requestServers = (
-                      await getSubscribeServersLink(find(modifyTableData, { remark: key }).link)
-                    ).map((link) => {
-                      const protocol = link.includes('vmess')
-                        ? 'vmess'
-                        : link.includes('vless')
-                          ? 'vless'
-                          : link.includes('trojan')
-                            ? 'trojan'
-                            : null;
-                      if (!protocol)
-                        return {
-                          id: window.electron.electronAPI.hash(link),
-                          link,
-                          latency: '',
-                          ps: 'not support type',
-                          outbound: {},
-                        };
-                      const protocolObj =
-                        protocol === 'vmess'
-                          ? new VMess(link || {})
-                          : protocol === 'vless'
-                            ? new VLess(link || {})
-                            : new Trojan(link || {});
-                      return {
-                        id: window.electron.electronAPI.hash(protocolObj.getOutbound()),
-                        link,
-                        latency: '',
-                        ps: protocolObj.getPs(),
-                        outbound: protocolObj.getOutbound(),
-                      };
-                    });
-                  }
-                }),
-              ).then(() => {
-                console.log(modifyTableData);
-                dispatch(setSubscriptionList(modifyTableData));
-                setNotice({
-                  status: true,
-                  message: 'Updating Subscription Servers have been successfully ',
-                  type: 'success',
-                });
-                window.api.send('v2rayx:server:subscription:update:toMain');
-              });
-            } catch (err) {
-              setNotice({
-                status: true,
-                message: 'Updating Subscription Servers have error',
-                type: 'error',
-              });
-              console.error(err);
-            }
-          }}
+          onClick={() => handleSubscriptionLinkRequest()}
         >
           Update Servers
         </Button>

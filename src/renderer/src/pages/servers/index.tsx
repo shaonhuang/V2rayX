@@ -7,22 +7,23 @@ import {
   SpeedDialAction,
   Stack,
   IconButton,
-  Switch,
-  Paper,
-  Tooltip,
   Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+  useMediaQuery,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
+  Typography,
+  InputLabel,
+  MenuItem,
+  FormControl,
 } from '@mui/material';
-import Dialog from '@mui/material/Dialog';
-import DialogActions from '@mui/material/DialogActions';
-import DialogContent from '@mui/material/DialogContent';
-import DialogContentText from '@mui/material/DialogContentText';
-import DialogTitle from '@mui/material/DialogTitle';
-import useMediaQuery from '@mui/material/useMediaQuery';
+
 import CachedIcon from '@mui/icons-material/Cached';
-import Accordion from '@mui/material/Accordion';
-import AccordionSummary from '@mui/material/AccordionSummary';
-import AccordionDetails from '@mui/material/AccordionDetails';
-import Typography from '@mui/material/Typography';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { cloneDeep, findIndex, uniqBy, debounce } from 'lodash';
 import { useAppSelector, useAppDispatch } from '@store/hooks';
@@ -30,7 +31,7 @@ import {
   setServersState,
   setCurrentServerId,
   setSubscriptionList,
-  readSubscriptionListFromDB,
+  readSubscriptionListAndServersGroupsFromDB,
 } from '@store/serversPageSlice';
 import ServerItem from './ServerItem';
 import { Server } from '@renderer/constant/types';
@@ -38,13 +39,11 @@ import QrCodeScannerIcon from '@mui/icons-material/QrCodeScanner';
 import AddLinkIcon from '@mui/icons-material/AddLink';
 import SubscriptionsIcon from '@mui/icons-material/Subscriptions';
 import DriveFileRenameOutlineIcon from '@mui/icons-material/DriveFileRenameOutline';
-import InputLabel from '@mui/material/InputLabel';
-import MenuItem from '@mui/material/MenuItem';
-import FormControl from '@mui/material/FormControl';
 import Select, { SelectChangeEvent } from '@mui/material/Select';
 import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
 import { VMess, VLess, Trojan } from '@renderer/utils/protocol/';
 import { useTheme } from '@mui/material/styles';
+import { Subscription, ServersGroup } from '@renderer/constant/types';
 
 const actions = [
   { icon: <DriveFileRenameOutlineIcon />, name: 'Create From Boilerplate' },
@@ -241,7 +240,9 @@ const LocalServersAndSubscriptionsServers = (props) => {
 const Index = (): JSX.Element => {
   const [running, setRunning] = useState(false);
   const [cacheSelectedId, setCacheSeletedId] = useState<string[]>([]);
-  const subscriptionList = useAppSelector((state) => state.serversPage.subscriptionList);
+  const subscriptionList: Subscription[] = useAppSelector(
+    (state) => state.serversPage.subscriptionList,
+  );
   const theme = useTheme();
   const fullScreen = useMediaQuery(theme.breakpoints.down('md'));
   const [checkDeleteDialog, setCheckDeleteDialog] = useState(false);
@@ -452,12 +453,15 @@ const Index = (): JSX.Element => {
       window.api.send('v2rayx:service:selected');
     });
 
-    window.api.receive('v2rayx:server:subscription:update:fromMain', () => {
-      window.db.read('subscriptionList').then((subscriptionList) => {
-        console.log(subscriptionList, 'subscriptionListx');
-        dispatch(readSubscriptionListFromDB(subscriptionList));
-      });
-      console.log('test triger');
+    window.api.receive('v2rayx:server:subscription:update:fromMain', async () => {
+      const subscriptionList: Subscription[] = await window.db.read('subscriptionList');
+      const serversGroups: ServersGroup[] = await window.db.read('serversGroups');
+      dispatch(
+        readSubscriptionListAndServersGroupsFromDB({
+          subscriptionList,
+          serversGroups,
+        }),
+      );
     });
 
     // FIXME: type error

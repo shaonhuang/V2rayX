@@ -2,28 +2,7 @@ import { app } from 'electron';
 import { Mode } from '@lib/constant/types';
 import { SettingsPageType } from '@lib/constant/types';
 import { emptyV2Template, isWindows } from '../constant';
-
-type Server = {
-  id: number;
-  item: JSON;
-};
-type Serverx = {
-  id: string;
-  link: string;
-  ps: string;
-  speedTestType: string;
-  group: string;
-  groupId: string;
-  latency: string;
-};
-
-type ServersGroup = {
-  groupId: string;
-  group: string;
-  link: string;
-  speedTestType: string;
-  subServers: Serverx[];
-};
+import { ServersGroup, Serverx, Subscription } from '@lib/constant/types';
 
 type Settings = {
   appearance: 'system' | 'light' | 'dark';
@@ -32,13 +11,13 @@ type Settings = {
 
 export type Data = {
   autoLaunch: boolean;
-  servers: Server[];
+  servers: Serverx[];
   serversGroups: ServersGroup[];
   appVersion: string;
   settings: Settings;
   serviceRunningState: boolean;
   updateAvailableVersion: string;
-  subscriptionList: [];
+  subscriptionList: Subscription[];
   currentServerId: [];
   serverTemplate: Record<string, any>;
   management: SettingsPageType;

@@ -17,12 +17,14 @@ import { BrowserWindow } from 'electron';
 import { validatedIpcMain } from '@lib/bridge';
 import Window from '@main/services/browser';
 import tcpPing from '@lib/utils/misc/tcpPing';
+import { findIndex } from 'lodash';
 // import { getQrCodeFromScreenResources } from '../misc';
 
 import logListeners from './logs';
 import v2rayListeners from './v2ray';
 import updateListeners from './appUpdate';
 import * as constVariables from '@lib/constant';
+import { ServersGroup, Subscription } from '@main/lib/constant/types';
 
 const registerChannels = [
   {
@@ -224,10 +226,24 @@ validatedIpcMain.on('v2rayx:server:add/edit:toMain', (_, serverItem: any) => {
   mainWindow?.webContents.send('v2rayx:server:add/edit:fromMain', serverItem);
 });
 
-validatedIpcMain.on('v2rayx:server:subscription:update:toMain', (_) => {
-  const mainWindow = new Window().mainWin;
-  mainWindow?.webContents.send('v2rayx:server:subscription:update:fromMain');
-});
+validatedIpcMain.on(
+  'v2rayx:server:subscription:update:toMain',
+  async (_, params: { subscriptionList: Subscription[]; serversGroups: ServersGroup[] }) => {
+    // write subscriptionList, serversGroups to database.then as browser refresh redux
+    const mainWindow = new Window().mainWin;
+    db.data.subscriptionList = params.subscriptionList;
+    params.serversGroups.map((i: ServersGroup) => {
+      const index = findIndex(db.data.serversGroups, { groupId: i.groupId });
+      if (index !== -1) {
+        db.data.serversGroups[index] = i;
+      } else {
+        db.data.serversGroups.push(i);
+      }
+    });
+    await db.write();
+    mainWindow?.webContents.send('v2rayx:server:subscription:update:fromMain');
+  },
+);
 
 validatedIpcMain.on('v2rayx:restart-app', () => {
   app.relaunch();

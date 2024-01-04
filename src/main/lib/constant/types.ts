@@ -530,3 +530,26 @@ export type SettingsPageType = {
   proxies: Proxies;
   v2rayConfigure: V2rayConfigure;
 };
+
+export type Serverx = {
+  id: string;
+  link: string;
+  ps: string;
+  speedTestType: string;
+  group: string;
+  groupId: string;
+  latency: string;
+};
+
+export type ServersGroup = {
+  groupId: string;
+  group: string;
+  link: string;
+  speedTestType: string;
+  subServers: Serverx[];
+};
+
+export type Subscription = {
+  remark: string;
+  link: string;
+};

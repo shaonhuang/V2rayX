@@ -2,16 +2,18 @@ import { createSlice, PayloadAction, createAsyncThunk } from '@reduxjs/toolkit';
 import { Servers, VmessObjConfiguration } from '@renderer/constant/types';
 import { set, cloneDeep } from 'lodash';
 import { emptyVmessV2 } from '@renderer/utils/protocol';
+import { Subscription, ServersGroup } from '@renderer/constant/types';
 
 interface ServersPageState {
   serverTemplate?: VmessObjConfiguration;
   currentServerId: string[];
   serviceRunningState: boolean;
+  serversGroups: ServersGroup[];
+  subscriptionList: Subscription[];
   servers: Servers;
   subscriptionServers: {
     string?: Servers;
   };
-  subscriptionList: [{ string: string }] | [];
 }
 
 export const readFromDb = createAsyncThunk('readFromDb', async () => {
@@ -32,6 +34,7 @@ export const readFromDb = createAsyncThunk('readFromDb', async () => {
 
 const initialState: ServersPageState = {
   servers: [],
+  serversGroups: [],
   subscriptionServers: {},
   subscriptionList: [],
   currentServerId: [],
@@ -60,7 +63,7 @@ const serversPageSlice = createSlice({
       state.serviceRunningState = action.payload;
       window.db.write('serviceRunningState', action.payload);
     },
-    setSubscriptionList: (state, action: PayloadAction<[]>) => {
+    setSubscriptionList: (state, action: PayloadAction<Subscription[]>) => {
       state.subscriptionList = action.payload;
       window.db.write('subscriptionList', action.payload);
     },
@@ -69,8 +72,12 @@ const serversPageSlice = createSlice({
       state.subscriptionServers = set(state.subscriptionServers, key, value);
       window.db.write('subscriptionServers', cloneDeep(state.subscriptionServers));
     },
-    readSubscriptionListFromDB: (state, action: PayloadAction<[]>) => {
-      state.subscriptionList = action.payload;
+    readSubscriptionListAndServersGroupsFromDB: (
+      state,
+      action: PayloadAction<{ subscriptionList: Subscription[]; serversGroups: ServersGroup[] }>,
+    ) => {
+      state.subscriptionList = action.payload.subscriptionList;
+      state.serversGroups = action.payload.serversGroups;
     },
   },
   extraReducers: (builder) => {
@@ -91,7 +98,7 @@ export const {
   setSubscriptionList,
   setSubscriptionServers,
   setServerTemplate,
-  readSubscriptionListFromDB,
+  readSubscriptionListAndServersGroupsFromDB,
 } = serversPageSlice.actions;
 
 export default serversPageSlice.reducer;
