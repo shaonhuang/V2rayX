@@ -1,5 +1,14 @@
 import * as React from 'react';
-import { Button, FormControl, Input, InputAdornment, InputLabel } from '@mui/material';
+import {
+  Button,
+  FormControl,
+  Input,
+  InputAdornment,
+  InputLabel,
+  Switch,
+  Typography,
+  Paper,
+} from '@mui/material';
 import IconButton from '@mui/material/IconButton';
 import ContextMenu from '@renderer/components/ContextMenu';
 import { useState, useEffect, useRef } from 'react';
@@ -26,6 +35,7 @@ import { VMess, VLess, Trojan } from '@renderer/pages/servers/config/protocols';
 import { Server } from '@renderer/constant/types';
 import { H2, Kcp, Quic, Tcp, Ws, Grpc } from '@renderer/pages/servers/config/stream';
 import Security from '@renderer/pages/servers/config/security';
+import Editor from '@monaco-editor/react';
 
 export interface AddServerDialogProps {
   open: boolean;
@@ -39,6 +49,7 @@ type formDataType = {
   protocol: string;
   network: string;
   server: Server;
+  advanced: boolean;
   error: boolean[];
 };
 
@@ -68,6 +79,7 @@ const Index = () => {
         : '',
     protocol: 'vmess',
     network: 'tcp',
+    advanced: false,
     server: {
       id: '',
       ps: '',
@@ -128,6 +140,9 @@ const Index = () => {
       error: formData.error.map((e, i) => (i === index ? error : e)),
     });
   };
+  const handleEditorChange = (v) => {
+    setFormData({ ...formData, server: { ...formData.server, outbound: JSON.parse(v) } });
+  };
   const initEdit = () => {
     const { link, id, ps, outbound } = JSON.parse(localStorage.getItem('editObj'));
     let protocolFactory;
@@ -169,199 +184,257 @@ const Index = () => {
     window.location.hash.includes('edit') && initEdit();
   }, []);
   return (
-    <Container
-      maxWidth="sm"
-      className={'overflow-x-hidden overflow-y-scroll rounded-2xl bg-sky-600/30 py-4 pb-8'}
-    >
-      <IconButton sx={{ position: 'fixed', top: 32, left: 16 }} onClick={() => close()}>
-        <CloseIcon />
-      </IconButton>
-      <Box sx={{ width: '100%' }} className="py-4 pb-12">
-        <Stack spacing={2}>
-          <Grid container spacing={2} xs={12}>
-            <Grid xs={12}>
-              <h1 className="text-xl dark:text-gray-300">Configure Server</h1>
-            </Grid>
-            <Grid container spacing={2} xs={12}>
-              <Grid container xs={12}>
-                <FormControl
-                  variant="standard"
-                  className="rounded-xl"
-                  id="fullWidth"
-                  fullWidth
-                  error={
-                    formData.importStr !== '' &&
-                    ['vmess', 'vless', 'trojan'].includes(formData.importStr.split('://')[0])
-                  }
-                >
-                  <InputLabel>Url</InputLabel>
-                  <Input
-                    value={formData.importStr}
-                    placeholder="Support VMess/VLess/Trojan"
-                    onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
-                      setFormData({
-                        ...formData,
-                        importStr: event.target.value,
-                      })
-                    }
-                    className="dark:text-gray-300"
-                    endAdornment={
-                      <InputAdornment position="end">
-                        <ContextMenu
-                          handleCutImportData={() => {
-                            window.clipboard.paste(formData.importStr);
-                            setFormData({ ...formData, importStr: '' });
-                          }}
-                          handleCopyImportData={() => window.clipboard.paste(formData.importStr)}
-                          handlePasteImportData={() => {
-                            // FIXME: fix any
-                            // @ts-ignore
-                            window.clipboard.read().then((data: any) => {
-                              setFormData({ ...formData, importStr: data });
-                            });
-                          }}
-                        />
-                        <Button
-                          onClick={handleImportUrl}
-                          disabled={
-                            formData.importStr === '' ||
-                            !['vmess', 'vless', 'trojan'].includes(
-                              formData.importStr.split('://')[0],
-                            )
-                          }
-                        >
-                          Import
-                        </Button>
-                      </InputAdornment>
-                    }
-                  />
-                  <FormHelperText id="component-error-text">
-                    {formData.importStr !== '' &&
-                      !['vmess', 'vless', 'trojan'].includes(formData.importStr.split('://')[0]) &&
-                      'Support VMess/VLess/Trojan Only'}
-                  </FormHelperText>
-                </FormControl>
-              </Grid>
-            </Grid>
-            <Grid container spacing={2}>
-              <Grid container spacing={2}>
+    <Container className={'overflow-x-hidden overflow-y-scroll'}>
+      <Paper className="mx-14 my-8 p-8">
+        <Box>
+          <IconButton sx={{ position: 'fixed', top: 32, left: 16 }} onClick={() => close()}>
+            <CloseIcon />
+          </IconButton>
+          <Box sx={{ width: '100%' }} className="py-4 pb-12">
+            <Stack spacing={2}>
+              <Grid container spacing={2} xs={12}>
+                <Grid xs={12}>
+                  <h1 className="text-xl dark:text-gray-300">Configure Server</h1>
+                </Grid>
                 <Grid container spacing={2} xs={12}>
-                  <FormControl sx={{ m: 1, width: 300 }}>
-                    <InputLabel>Protocol</InputLabel>
-                    <Select
-                      value={formData.protocol}
-                      input={<OutlinedInput label="Protocol" />}
-                      MenuProps={MenuProps}
-                      onChange={(event: SelectChangeEvent) => {
-                        const protocol = event.target.value;
-                        const outbound = (
-                          protocol === 'vmess'
-                            ? new VMessData(formData.importStr || {})
-                            : protocol === 'vless'
-                              ? new VLessData(formData.importStr || {})
-                              : new TrojanData(formData.importStr || {})
-                        ).getOutbound();
-                        formData.network = 'tcp';
-                        setFormData({
-                          ...formData,
-                          protocol,
-                          server: { ...formData.server, ps: '', outbound },
-                        });
-                        setOutbound(outbound);
-                      }}
+                  <Grid container xs={12}>
+                    <FormControl
+                      variant="standard"
+                      className="rounded-xl"
+                      id="fullWidth"
+                      fullWidth
+                      error={
+                        formData.importStr !== '' &&
+                        ['vmess', 'vless', 'trojan'].includes(formData.importStr.split('://')[0])
+                      }
                     >
-                      {protocols.map((protocol) => (
-                        <MenuItem key={protocol} value={protocol}>
-                          {upperFirst(protocol)}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
+                      <InputLabel>Url</InputLabel>
+                      <Input
+                        disabled={formData.advanced}
+                        value={formData.importStr}
+                        placeholder="Support VMess/VLess/Trojan"
+                        onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
+                          setFormData({
+                            ...formData,
+                            importStr: event.target.value,
+                          })
+                        }
+                        className="dark:text-gray-300"
+                        endAdornment={
+                          <InputAdornment position="end">
+                            <ContextMenu
+                              handleCutImportData={() => {
+                                window.clipboard.paste(formData.importStr);
+                                setFormData({ ...formData, importStr: '' });
+                              }}
+                              handleCopyImportData={() => window.clipboard.paste(formData.importStr)}
+                              handlePasteImportData={() => {
+                                // FIXME: fix any
+                                // @ts-ignore
+                                window.clipboard.read().then((data: any) => {
+                                  setFormData({ ...formData, importStr: data });
+                                });
+                              }}
+                            />
+                            <Button
+                              onClick={handleImportUrl}
+                              disabled={
+                                formData.advanced ||
+                                formData.importStr === '' ||
+                                !['vmess', 'vless', 'trojan'].includes(
+                                  formData.importStr.split('://')[0],
+                                )
+                              }
+                            >
+                              Import
+                            </Button>
+                          </InputAdornment>
+                        }
+                      />
+                      <FormHelperText id="component-error-text">
+                        {formData.importStr !== '' &&
+                          !['vmess', 'vless', 'trojan'].includes(
+                            formData.importStr.split('://')[0],
+                          ) &&
+                          'Support VMess/VLess/Trojan Only'}
+                      </FormHelperText>
+                    </FormControl>
+                  </Grid>
+                </Grid>
+                <Grid container spacing={2}>
+                  <Grid container spacing={2}>
+                    <Grid container spacing={2} xs={10}>
+                      <FormControl sx={{ m: 1, width: 300 }}>
+                        <InputLabel>Protocol</InputLabel>
+                        <Select
+                          disabled={formData.advanced}
+                          value={formData.protocol}
+                          input={<OutlinedInput label="Protocol" />}
+                          MenuProps={MenuProps}
+                          onChange={(event: SelectChangeEvent) => {
+                            const protocol = event.target.value;
+                            const outbound = (
+                              protocol === 'vmess'
+                                ? new VMessData(formData.importStr || {})
+                                : protocol === 'vless'
+                                  ? new VLessData(formData.importStr || {})
+                                  : new TrojanData(formData.importStr || {})
+                            ).getOutbound();
+                            formData.network = 'tcp';
+                            setFormData({
+                              ...formData,
+                              protocol,
+                              server: { ...formData.server, ps: '', outbound },
+                            });
+                            setOutbound(outbound);
+                          }}
+                        >
+                          {protocols.map((protocol) => (
+                            <MenuItem key={protocol} value={protocol}>
+                              {upperFirst(protocol)}
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      </FormControl>
+                    </Grid>
+                    <Grid xs={2} className="flex items-center justify-start">
+                      <Stack direction={'row'} justifyContent={'center'} alignItems={'center'}>
+                        <Switch
+                          value={formData.advanced}
+                          onChange={(event: React.ChangeEvent) =>
+                            setFormData({ ...formData, advanced: event.target.checked })
+                          }
+                        />
+                        <Typography>Advanced</Typography>
+                      </Stack>
+                    </Grid>
+                  </Grid>
+                  {!formData.advanced ? (
+                    <>
+                      <Grid xs={16}>
+                        {
+                          [
+                            <VMess
+                              data={outbound}
+                              handleError={handleError}
+                              key={0}
+                              ref={vmessRef}
+                            />,
+                            <VLess
+                              data={outbound}
+                              handleError={handleError}
+                              key={1}
+                              ref={vlessRef}
+                            />,
+                            <Trojan
+                              data={outbound}
+                              handleError={handleError}
+                              key={2}
+                              ref={trojanRef}
+                            />,
+                            // <Socks data={formData} handleError={handleError} key={3} />,
+                          ][protocols.findIndex((v) => formData.protocol === v)]
+                        }
+                      </Grid>
+                      <Grid container xs={16}>
+                        <Grid xs="auto">
+                          <div className="flex h-full flex-col justify-center">
+                            <span className="text-xl">Stream Setting</span>
+                          </div>
+                        </Grid>
+                        <Grid xs={5}></Grid>
+                        <Grid xs className="mr-[-3.4rem]">
+                          <FormControl sx={{ width: 120 }} required>
+                            <InputLabel>Network</InputLabel>
+                            <Select
+                              value={formData.network}
+                              input={<OutlinedInput label="Network" />}
+                              MenuProps={MenuProps}
+                              onChange={(event) => {
+                                setFormData({ ...formData, network: event.target.value });
+                              }}
+                            >
+                              {networks.map((i) => (
+                                <MenuItem key={i} value={i}>
+                                  {i}
+                                </MenuItem>
+                              ))}
+                            </Select>
+                          </FormControl>
+                        </Grid>
+                      </Grid>
+                      <Grid xs={16}>
+                        {
+                          [
+                            <H2 data={formData.server.outbound} handleError={handleError} key={0} />,
+                            <Kcp
+                              data={formData.server.outbound}
+                              handleError={handleError}
+                              key={1}
+                            />,
+                            <Quic
+                              data={formData.server.outbound}
+                              handleError={handleError}
+                              key={2}
+                            />,
+                            <Tcp
+                              data={formData.server.outbound}
+                              handleError={handleError}
+                              key={3}
+                            />,
+                            <Ws data={formData.server.outbound} handleError={handleError} key={4} />,
+                            <Grpc
+                              data={formData.server.outbound}
+                              handleError={handleError}
+                              key={5}
+                            />,
+                          ][networks.findIndex((v) => formData.network === v)]
+                        }
+                      </Grid>
+                      <Grid xs={16}>
+                        <Security data={formData.server.outbound} handleError={handleError} />
+                      </Grid>
+                    </>
+                  ) : (
+                    <Editor
+                      className="py-2"
+                      height="84vh"
+                      defaultLanguage="json"
+                      defaultValue={JSON.stringify(formData.server.outbound, null, 2)}
+                      onChange={handleEditorChange}
+                    />
+                  )}
                 </Grid>
               </Grid>
-              <Grid xs={16}>
-                {
-                  [
-                    <VMess data={outbound} handleError={handleError} key={0} ref={vmessRef} />,
-                    <VLess data={outbound} handleError={handleError} key={1} ref={vlessRef} />,
-                    <Trojan data={outbound} handleError={handleError} key={2} ref={trojanRef} />,
-                    // <Socks data={formData} handleError={handleError} key={3} />,
-                  ][protocols.findIndex((v) => formData.protocol === v)]
-                }
-              </Grid>
-              <Grid container xs={16}>
-                <Grid xs="auto">
-                  <div className="flex h-full flex-col justify-center">
-                    <span className="text-xl">Stream Setting</span>
-                  </div>
-                </Grid>
-                <Grid xs={5}></Grid>
-                <Grid xs className="mr-[-3.4rem]">
-                  <FormControl sx={{ width: 120 }} required>
-                    <InputLabel>Network</InputLabel>
-                    <Select
-                      value={formData.network}
-                      input={<OutlinedInput label="Network" />}
-                      MenuProps={MenuProps}
-                      onChange={(event) => {
-                        setFormData({ ...formData, network: event.target.value });
-                      }}
-                    >
-                      {networks.map((i) => (
-                        <MenuItem key={i} value={i}>
-                          {i}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                </Grid>
-              </Grid>
-              <Grid xs={16}>
-                {
-                  [
-                    <H2 data={formData.server.outbound} handleError={handleError} key={0} />,
-                    <Kcp data={formData.server.outbound} handleError={handleError} key={1} />,
-                    <Quic data={formData.server.outbound} handleError={handleError} key={2} />,
-                    <Tcp data={formData.server.outbound} handleError={handleError} key={3} />,
-                    <Ws data={formData.server.outbound} handleError={handleError} key={4} />,
-                    <Grpc data={formData.server.outbound} handleError={handleError} key={5} />,
-                  ][networks.findIndex((v) => formData.network === v)]
-                }
-              </Grid>
-              <Grid xs={16}>
-                <Security data={formData.server.outbound} handleError={handleError} />
-              </Grid>
-            </Grid>
-          </Grid>
-        </Stack>
-      </Box>
-
-      {formData.error.find((b) => b) ? (
-        <Tooltip title="Not Satisfy Condition">
-          <SaveAltIcon color="disabled" />
-        </Tooltip>
-      ) : (
-        <IconButton
-          disabled={formData.error.find((b) => b)}
-          onClick={() => {
-            const { importStr, server } = formData;
-            const hash = window.electron.electronAPI.hash(server.outbound);
-            const link = importStr;
-            window.api.send(`v2rayx:server:add/edit:toMain`, {
-              id: hash,
-              link,
-              ps: server.ps,
-              outbound: server.outbound,
-              latency: '',
-            });
-            // TODO:
-            window.close();
-            // window.win.close('');
-          }}
-        >
-          <SaveAltIcon />
-        </IconButton>
-      )}
+            </Stack>
+          </Box>
+          {!formData.error.find((b) => b) || formData.advanced ? (
+            <IconButton
+              onClick={() => {
+                const { importStr, server } = formData;
+                const hash = window.electron.electronAPI.hash(server.outbound);
+                const link = importStr;
+                window.api.send(`v2rayx:server:add/edit:toMain`, {
+                  id: hash,
+                  link,
+                  ps: server.ps,
+                  outbound: server.outbound,
+                  latency: '',
+                });
+                // TODO:
+                window.close();
+                // window.win.close('');
+              }}
+            >
+              <SaveAltIcon />
+            </IconButton>
+          ) : (
+            <Tooltip title="Not Satisfy Condition">
+              <SaveAltIcon color="disabled" />
+            </Tooltip>
+          )}
+        </Box>
+      </Paper>
     </Container>
   );
 };
