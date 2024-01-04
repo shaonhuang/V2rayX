@@ -368,6 +368,7 @@ type Appearance = {
   customStyle: boolean;
   styleInJson: string;
   followSystemTheme: boolean;
+  darkMode: boolean;
   fontFamily: string;
   hideTrayBar: boolean;
   enhancedTrayIcon: string;

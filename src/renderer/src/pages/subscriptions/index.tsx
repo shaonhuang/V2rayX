@@ -1,14 +1,5 @@
 import { useEffect, useState, forwardRef } from 'react';
-import {
-  Stack,
-  Button,
-  IconButton,
-  Skeleton,
-  Container,
-  TextField,
-  Box,
-  lighten,
-} from '@mui/material';
+import { Stack, Button, IconButton, Container, TextField, Box, lighten } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import LinkIcon from '@mui/icons-material/Link';
 import CreateIcon from '@mui/icons-material/Create';
@@ -23,7 +14,7 @@ import {
   type MRT_RowSelectionState,
 } from 'material-react-table';
 import { useAppDispatch, useAppSelector } from '@renderer/store/hooks';
-import { setSubscriptionList, setSubscriptionServers } from '@renderer/store/serversPageSlice';
+import { setSubscriptionList } from '@renderer/store/serversPageSlice';
 import { Server } from '@renderer/constant/types';
 import { Buffer } from 'buffer';
 import { decode } from 'js-base64';

@@ -7,13 +7,15 @@ import {
   shell,
   clipboard,
   Notification,
+  NativeImage,
+  MenuItemConstructorOptions,
 } from 'electron';
 import fs from 'node:fs';
 import { join } from 'node:path';
 import logger from '@lib/logs';
 import db from '@lib/lowdb';
 import emitter from '@lib/event-emitter';
-import { isMacOS, isWindows, userPacConf } from '@main/lib/constant';
+import { isMacOS, isWindows, userPacConf, v2rayRuntimeConfigPath } from '@lib/constant';
 import { autoUpdater } from 'electron-updater';
 import icon from '@resources/icon.png?asset';
 import { find, flattenDeep } from 'lodash';
@@ -23,6 +25,244 @@ import tcpPing from '@lib/utils/misc/tcpPing';
 import { VMess, VLess, Trojan } from '@main/lib/utils/misc/protocol';
 import hash from 'object-hash';
 import { uniqBy } from 'lodash';
+import { TraySingleton } from './Tray';
+import path from 'node:path';
+import { resourcesPath } from '@lib/constant';
+
+export class TrayService {
+  private v2rayLogsFolder: string;
+  private pastePort: number;
+  private icon: string | NativeImage;
+  private serversSubMenu: MenuItemConstructorOptions[];
+  constructor(params: {
+    v2rayLogsFolder: string;
+    pastePort: number;
+    serversSubMenu: MenuItemConstructorOptions[];
+    icon: string | NativeImage;
+  }) {
+    this.v2rayLogsFolder = params.v2rayLogsFolder;
+    this.pastePort = params.pastePort;
+    this.icon =
+      params.icon === ''
+        ? nativeImage.createFromPath(path.join(resourcesPath, 'tray-icon.png'))
+        : params.icon;
+    this.serversSubMenu = params.serversSubMenu;
+  }
+
+  public init() {
+    const service = new TraySingleton(this.icon);
+
+    service.updateTemplate({
+      id: '0',
+      label: `v2ray-core: Off (v${app.getVersion()})`,
+      enabled: false,
+    });
+    service.updateTemplate({
+      id: '1',
+      label: 'Turn v2ray-core On',
+      accelerator: 'CmdOrCtrl+t',
+      enabled: false,
+      click: () => {
+        emitter.emit('v2ray:stop', {});
+      },
+    });
+    service.updateTemplate({
+      id: '2',
+      label: 'View Config.json',
+      click: () => {
+        const path = v2rayRuntimeConfigPath;
+        if (fs.existsSync(path)) {
+          logger.info('v2ray runtime tmp.json', path);
+          shell.openExternal(`file://${path}`);
+        }
+      },
+    });
+    service.updateTemplate({
+      id: '3',
+      label: 'View PAC File',
+      click: () => {
+        const pac = userPacConf;
+        if (fs.existsSync(pac)) {
+          shell.openExternal(`file://${pac}`);
+        }
+      },
+    });
+    service.updateTemplate({
+      id: '4',
+      label: 'View Logs',
+      click: () => {
+        const logFile = `${this.v2rayLogsFolder}access.log`;
+        if (fs.existsSync(logFile)) {
+          shell.openPath(logFile);
+        }
+      },
+    });
+    service.updateTemplate({
+      id: '5',
+      label: 'Pac Mode',
+      type: 'radio',
+      checked: false,
+      click: async () => {
+        db.data = db.chain.set('settings.proxyMode', 'PAC').value();
+        await db.write();
+        const mainWindow = new Window().mainWin;
+        mainWindow?.webContents.send('proxyMode:change', 'PAC');
+        emitter.emit('proxyMode:change', 'PAC');
+      },
+    });
+    service.updateTemplate({
+      id: '6',
+      label: 'Global Mode',
+      type: 'radio',
+      checked: false,
+      click: async () => {
+        db.data = db.chain.set('settings.proxyMode', 'Global').value();
+        await db.write();
+        const mainWindow = new Window().mainWin;
+        mainWindow?.webContents?.send('proxyMode:change', 'Global');
+        emitter.emit('proxyMode:change', 'Global');
+      },
+    });
+    service.updateTemplate({
+      id: '7',
+      label: 'Manual Mode',
+      type: 'radio',
+      checked: false,
+      click: async () => {
+        db.data = db.chain.set('settings.proxyMode', 'Manual').value();
+        await db.write();
+        const mainWindow = new Window().mainWin;
+        mainWindow?.webContents?.send('proxyMode:change', 'Manual');
+        emitter.emit('proxyMode:change', 'Manual');
+      },
+    });
+    service.updateTemplate({
+      id: '8',
+      label: 'Servers...',
+      submenu: this.serversSubMenu,
+    });
+    service.updateTemplate({
+      id: '9',
+      label: 'Configure...',
+      accelerator: 'CmdOrCtrl+c',
+      click: () => {
+        const mainWindow = new Window().mainWin;
+        mainWindow?.show();
+      },
+    });
+    service.updateTemplate({
+      id: '10',
+      label: 'Subscriptions...',
+      click: () => {
+        new Window('/index/servers').mainWin?.show();
+        Window.createWindow(
+          '/manage/subscription',
+          {
+            width: 800,
+            height: 600,
+            show: true,
+          },
+          {
+            parentName: 'mainWindow',
+            modalStatus: true,
+          },
+        );
+      },
+    });
+    service.updateTemplate({
+      id: '11',
+      label: 'PAC Settings...',
+      click: () => {
+        Window.createWindow('/manage/pac', {
+          width: 800,
+          height: 600,
+          show: true,
+        });
+      },
+    });
+    service.updateTemplate({
+      id: '12',
+      label: 'Connection Test...',
+      enabled: false,
+    });
+    service.updateTemplate({
+      id: '13',
+      label: 'Import Server From Pasteboard',
+      enabled: false,
+    });
+    service.updateTemplate({
+      id: '14',
+      label: 'Scan QR Code From Screen',
+      click: () => {
+        new Window('/index/servers').mainWin?.show();
+      },
+      enabled: false,
+    });
+    service.updateTemplate({
+      id: '15',
+      label: 'Share Link/QR Code',
+      enabled: false,
+      click: () => {
+        Window.createWindow('/share/qrcode', {
+          width: 420,
+          height: 420,
+          show: true,
+        });
+      },
+    });
+    service.updateTemplate({
+      id: '16',
+      label: 'Copy HTTP Proxy Shell Command',
+      accelerator: 'CmdOrCtrl+e',
+      click: () => {
+        const pasteData = isWindows
+          ? `set http_proxy=http://127.0.0.1:${this.pastePort}`
+          : `export http_proxy=http://127.0.0.1:${this.pastePort};export https_proxy=http://127.0.0.1:${this.pastePort};`;
+        clipboard.writeText(pasteData);
+        new Notification({
+          title: 'V2rayX',
+          body: `Command has pasted to clipboard -- ${pasteData}`,
+          silent: true,
+          icon,
+        }).show();
+      },
+    });
+    service.updateTemplate({
+      id: '17',
+      label: 'Preferences...',
+      accelerator: 'CmdOrCtrl+,',
+      click: () => new Window('/index/settings').mainWin?.show(),
+    });
+    service.updateTemplate({
+      id: '18',
+      label: isMacOS ? 'Check Offical Website' : 'Check for Updates',
+      click: () => {
+        if (isMacOS) {
+          shell.openExternal('https://github.com/shaonhuang/V2rayX/releases');
+          return;
+        }
+        autoUpdater.checkForUpdates();
+      },
+    });
+    service.updateTemplate({
+      id: '19',
+      label: 'Help',
+      click: () => {
+        shell.openExternal('https://github.com/shaonhuang/V2rayX/issues');
+      },
+    });
+    service.updateTemplate({
+      id: '20',
+      label: 'Quit',
+      accelerator: 'CmdOrCtrl+q',
+      click: () => {
+        app.quit();
+      },
+    });
+
+    service.refreshTray();
+  }
+}
 
 let tray: any = null;
 
@@ -32,7 +272,6 @@ export const createTray = () => {
       'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAASpJREFUOE+lk7FKA0EQhv85FSuLu/MRXAJqKTY2prZII4KtlazY2oiQSsgDZE8LX8BYiC9ginRWFhHC3htoNhFbb0cuGrnoeXuH2+3y/98M/84Q/nko9YftuMXEJxVYfbC9MUe15gQQqPgRHu+bQ/E0uV/oVVj0i4AMdEdS1L8AmqdiI8Wvt79AqdYJYMYzgA5bdMbHopvp8NpIse4EfFanByNXNv0o3iLmXrbbMoBx8o4Nu2hfFxLqAVSrBPCAxosUd34U3xJzI5uHMwMCTodSnIdR3GLmHXjY+/4ppbkQECqthlLIINIHYFz9rBy4AKkhL7QpyAlYuhws54WWGgtDtAnq83P0lhDO8kLLnQNf6XsCtivsAmZHuT1ogrxdAGslIbPLVNKUK/sAFubAEc0R7fYAAAAASUVORK5CYII=',
   );
   tray = new Tray(menuIcon);
-  const mainWindow = new Window().mainWin;
 
   const currentServerId = db.data.currentServerId?.[0] ?? '';
   const pastePort = db.data.management.v2rayConfigure.inbounds[1].port ?? 10871;
@@ -444,17 +683,5 @@ export const createTray = () => {
     };
     template[11].submenu = serversSubMenu;
     tray.setContextMenu(Menu.buildFromTemplate(template));
-  });
-  tray.on('double-click', function () {
-    if (isMacOS) return;
-    // if (mainWindow === null) {
-    //   mainWindow = new Window().mainWin;
-    // } else {
-    //   if (BrowserWindow.getAllWindows().length === 0) {
-    //     mainWindow = new Window().mainWin;
-    //   } else {
-    //     mainWindow.show();
-    //   }
-    // }
   });
 };

@@ -5,13 +5,32 @@ import { createTray } from '@main/services/tray';
 import { CronJob } from 'cron';
 import logger from '@main/lib/logs';
 import db from '@main/lib/lowdb';
+import { TrayService } from '@main/services/tray';
 
 const tasks: Array<(electronApp: ElectronApp) => void> = [];
 
 const loadTray = (electronApp: ElectronApp) => {
   electronApp.registryHooksAsyncWhenReady('loadingTray', async (app, callback) => {
     console.log('hooks: >> load Tray Plugins');
-    db.data.management.appearance.hideTrayBar || createTray();
+    // db.data.management.appearance.hideTrayBar || createTray();
+    //     v2rayLogsFolder: string;
+    // pastePort: number;
+    // serversSubMenu: MenuItemConstructorOptions[];
+    // icon?: string;
+    const v2rayLogsFolder = db.data.management.generalSettings.v2rayLogsFolder;
+    const pastePort = db.data.management.v2rayConfigure.inbounds[1].port;
+    const icon = db.data.management.appearance.enhancedTrayIcon;
+    const serversSubMenu = [];
+    if (!db.data.management.appearance.hideTrayBar) {
+      console.log('tray start')
+      new TrayService({
+        v2rayLogsFolder,
+        pastePort,
+        icon,
+        serversSubMenu,
+      }).init();
+    }
+
     callback();
   });
 };

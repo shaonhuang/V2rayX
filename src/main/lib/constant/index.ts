@@ -3,7 +3,7 @@ import path from 'node:path';
 import { app } from 'electron';
 import { is } from '@electron-toolkit/utils';
 
-const resourcesPath = path
+export const resourcesPath = path
   .join(__dirname, '../../resources/')
   .replace('app.asar', 'app.asar.unpacked');
 
@@ -36,8 +36,14 @@ export const singBoxPackageName = 'single-box';
 export const appDataPath = path.join(electronAppPath, packageName);
 export const v2rayBin = path.join(
   app.getPath('userData'),
-  'v2ray-core',
+  v2rayPackageName,
   `v2ray${isWindows ? '.exe' : ''}`,
+);
+
+export const v2rayRuntimeConfigPath = path.join(
+  app.getPath('userData'),
+  v2rayPackageName,
+  'tmp.json',
 );
 export const pathRuntime = path.join(appDataPath, 'runtime/');
 export const pathExecutable = is.dev

@@ -1,5 +1,5 @@
 import logger from '@lib/logs';
-import { BrowserWindow } from 'electron';
+import { BrowserWindow, BrowserWindowConstructorOptions } from 'electron';
 import { join } from 'node:path';
 import { is } from '@electron-toolkit/utils';
 import icon from '@resources/icon.png?asset';
@@ -36,7 +36,7 @@ export default class Window {
   }
   static createWindow(
     suffix: string = '/index/home',
-    options?: BrowserWindow,
+    options?: BrowserWindowConstructorOptions,
     customConfig?: any,
   ): BrowserWindow {
     const parentName = customConfig?.parentName;
