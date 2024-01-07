@@ -113,7 +113,7 @@ const initialState: SettingsPageType = {
   },
   proxies: {
     latencyTest: {
-      url: 'https:www.google.com',
+      url: 'http://www.gstatic.com/generate_204',
       timeout: 3000,
     },
   },

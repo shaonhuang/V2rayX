@@ -275,7 +275,7 @@ export class VMess {
   getData() {
     return this.data;
   }
-  upateData(arg) {
+  updateData(arg) {
     this.data = Object.assign(this.data, arg);
     return this.data;
   }

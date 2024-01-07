@@ -1,3 +1,6 @@
+import { parseInt } from 'lodash';
+import { Protocol } from './index';
+
 /**
  - {"type":"ss","name":"v2rayse_test_1","server":"198.57.27.218","port":5004,"cipher":"aes-256-gcm","password":"g5MeD6Ft3CWlJId"}
  - {"type":"ssr","name":"v2rayse_test_3","server":"20.239.49.44","port":59814,"protocol":"origin","cipher":"dummy","obfs":"plain","password":"3df57276-03ef-45cf-bdd4-4edb6dfaa0ef"}
@@ -8,8 +11,6 @@
  - {"type":"socks5","name":"socks5_proxy","server":"124.15.12.24","port":2312,"udp":true}
  - {"type":"socks5","name":"telegram_proxy","server":"1.2.3.4","port":123,"username":"username","password":"password","udp":true}
  */
-import { parseInt } from 'lodash';
-import { Protocol } from './index';
 
 export type TrojanType = Partial<{
   password: string;
@@ -24,23 +25,17 @@ export type TrojanType = Partial<{
 }>;
 
 // trojan://pass@remote_host:443?flow=xtls-rprx-origin&security=xtls&sni=sni&host=remote_host#trojan
-export class Trojan {
-  private data: TrojanType = {};
-  private outbound: Record<string, any> = {};
-
-  constructor(arg: Partial<{ trojan: TrojanType; outbound: Record<string, any> }> | string) {
-    try {
-      if (typeof arg === 'string' && /^trojan:\/\//i.test(arg)) {
-        this.data = this.parseTrojan(arg);
-        this.outbound = this.getOutbound();
-        return this;
-      } else if (typeof arg === 'object') {
-        this.data = arg?.data ?? {};
-        this.outbound = this.getOutbound() ?? {};
-        return this;
-      }
-      throw new Error();
-    } catch (err) {}
+export class Trojan extends Protocol {
+  constructor(link: string) {
+    super(link);
+    if (/^trojan:\/\//i.test(link)) {
+      this.shareLinkParseData = this.parseTrojan(link);
+      this.setProtocol('trojan');
+      this.genOutboundFromLink();
+      this.genPs();
+      return this;
+    }
+    throw new Error(`Trojan parse error: please check link ${link}`);
   }
 
   private parseTrojan(arg: string): TrojanType {
@@ -60,70 +55,43 @@ export class Trojan {
       fp: url.get('fp') ?? '',
     };
   }
-  getLink() {
-    const url = new URLSearchParams();
-    Object.entries(this.data).forEach(
-      ([key, value]) => key !== 'remark' && url.append(key, String(value)),
-    );
-    return `trojan://${url.toString()}#${this.data.remark}`;
+  genPs() {
+    if (!this.getPs()) {
+      this.ps = this.outbound.settings?.servers?.[0].address ?? '';
+    }
+    this.ps = this.getPs();
   }
-  getData() {
-    return this.data;
-  }
-  upadteData(arg) {
-    this.data = Object.assign(this.data, arg);
-    return this.data;
-  }
-  getOutbound() {
-    const { address, port, password, remark, security, sni, host, flow, fp } = this.data;
-    const outbound = {
-      mux: {
-        enabled: false,
-        concurrency: 8,
-      },
-      protocol: 'trojan',
-      streamSettings: {
-        kcpSettings: {},
-        httpSettings: {},
-        quicSettings: {},
-        dsSettings: {},
-        grpcSettings: {},
-        wsSettings: {},
-        tcpSettings: {},
-        xtlsSettings: {},
-        realitySettings: {},
-        security: '',
-        network: '',
-      },
-      tag: 'proxy',
-      settings: {
-        servers: [
-          {
-            password: 'pass',
-            port: 443,
-            email: '',
-            level: 0,
-            flow: '',
-            address: 'remote_host',
-          },
-        ],
-      },
-    };
-    outbound.settings.servers[0].address = address ?? '';
-    outbound.settings.servers[0].port = port ?? 443;
-    outbound.settings.servers[0].flow = flow ?? '';
-    outbound.settings.servers[0].email = '';
-    outbound.settings.servers[0].password = password ?? '';
-    outbound.streamSettings.network = 'tcp';
-    outbound.streamSettings.security = security ?? 'none';
-    // FIXME:
-    const type: string = 'tcp';
-    // outbound.settings.servers[0].users[0].encryption = encryption ?? '';
-    // outbound.settings.servers[0].users[0].id = id ?? '';
 
-    switch (type) {
+  // getLink() {
+
+  // }
+
+  genOutboundFromLink() {
+    const { address, port, password, remark, security, sni, host, flow, fp } = this
+      .shareLinkParseData as TrojanType;
+    this.protocol = 'trojan';
+    if (!remark) {
+      this.genPs();
+    } else {
+      this.ps = remark;
+    }
+    this.settings = {
+      servers: [
+        {
+          password: password,
+          port: port,
+          email: '',
+          level: 0,
+          flow: flow,
+          address: address,
+        },
+      ],
+    };
+    this.streamSettings.network = 'tcp';
+    this.streamSettings.security = security ?? 'tls';
+    switch (this.streamSettings.network) {
       case 'ws':
-        outbound.streamSettings.wsSettings = {
+        this.streamSettings.wsSettings = {
           // path: path,
           headers: {
             host: host,
@@ -131,45 +99,47 @@ export class Trojan {
         };
         break;
       case 'tcp':
-        outbound.streamSettings.tcpSettings = {
+        this.streamSettings.tcpSettings = {
           acceptProxyProtocol: false,
           header: {
             type: 'none',
           },
         };
         break;
-      case 'grpc':
-        outbound.streamSettings.grpcSettings = {};
-        break;
-      case 'h2':
-        outbound.streamSettings.httpSettings = {};
-        break;
-      case 'kcp':
-        outbound.streamSettings.kcpSettings = {};
-        break;
-      case 'quic':
-        outbound.streamSettings.quicSettings = {};
-        break;
-      // FIXME
-      case 'ds':
-        outbound.streamSettings.dsSettings = {};
-        break;
     }
-    switch (security) {
-      case 'reality':
-        outbound.streamSettings.realitySettings = {};
+    switch (security || 'tls') {
+      case 'tls':
+        this.streamSettings.tlsSettings = {
+          fingerprint: fp,
+        };
         break;
       case 'xtls':
-        outbound.streamSettings.xtlsSettings = {
+        this.streamSettings.xtlsSettings = {
           serverName: sni,
           allowInsecure: true,
           fingerprint: fp,
         };
         break;
     }
-    return outbound;
   }
-  getPs() {
-    return this.data.remark || this.data.address || '';
+  genStreamSettings(type: 'tcp' | 'kcp' | 'ws' | 'h2' | 'quic' | 'grpc', obj) {
+    this.streamSettings[`${type === 'h2' ? 'http' : type}Settings`] = obj;
+  }
+  genShareLink() {
+    const scheme = 'trojan';
+    const remark = this.getPs();
+    const { settings, streamSettings } = this.outbound;
+    const share: TrojanType = {};
+    share.host = settings?.servers?.[0].address;
+    share.port = settings?.servers?.[0].port;
+    share.password = settings?.servers?.[0].password;
+    share.flow = settings?.servers?.[0].flow;
+    share.security = 'tls';
+    share.fp = streamSettings?.tlsSettings?.fingerprint;
+    const url = new URLSearchParams();
+    Object.entries(share).forEach(
+      ([key, value]) => key !== 'remark' && url.append(key, String(value)),
+    );
+    return `${scheme}://${url.toString()}#${remark}`;
   }
 }

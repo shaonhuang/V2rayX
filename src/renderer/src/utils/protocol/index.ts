@@ -1,96 +1,224 @@
 import { VMess, VMessV2 } from './VMess';
 import { VLess, VLessType } from './VLess';
 import { Trojan, TrojanType } from './Trojan';
+import {
+  Outbound,
+  StreamSettings,
+  Mux,
+  VMessSettings,
+  VLessSettings,
+  TrojanSettings,
+} from '@renderer/constant/types';
 
 export class Protocol {
-  private type;
-  private data;
-  private outbound;
-  constructor() {
-    this.data = {};
-    this.outbound = {};
-  }
-}
-
-export const v2rayTemplate = () => {
-  const config = {
-    log: {
-      error: '',
-      loglevel: 'info',
-      access: '',
-    },
-    inbounds: [
+  protected mux = {
+    enabled: false,
+    concurrency: 8,
+  };
+  protected protocol: string = '';
+  protected streamSettingsMap = new Map([
+    [
+      'tcp',
       {
-        listen: '127.0.0.1',
-        port: 10801,
-        protocol: 'socks',
-        tag: 'socks-inbound',
-        allocate: {
-          strategy: 'always',
-          refresh: 5,
-          concurrency: 3,
+        acceptProxyProtocol: false,
+        header: {
+          type: 'none',
         },
-      },
-      {
-        listen: '127.0.0.1',
-        port: 10871,
-        protocol: 'http',
-        tag: 'http-inbound',
-        allocate: {
-          strategy: 'always',
-          refresh: 5,
-          concurrency: 3,
-        },
-      },
-
-      {
-        listen: '127.0.0.1',
-        port: 10085,
-        protocol: 'dokodemo-door',
-        settings: {
-          address: '127.0.0.1',
-        },
-        tag: 'api',
       },
     ],
-    stats: {},
-    api: {
-      services: ['HandlerService', 'LoggerService', 'StatsService'],
-      tag: 'api',
-    },
-    policy: {
-      levels: {
-        '0': {
-          statsUserUplink: true,
-          statsUserDownlink: true,
+    [
+      'kcp',
+      {
+        header: {
+          type: '',
+        },
+        mtu: 1350,
+        congestion: false,
+        tti: 20,
+        uplinkCapacity: 50,
+        writeBufferSize: 1,
+        readBufferSize: 1,
+        downlinkCapacity: 20,
+      },
+    ],
+    [
+      'ws',
+      {
+        path: '',
+        headers: {
+          host: '',
         },
       },
-      system: {
-        statsInboundUplink: true,
-        statsInboundDownlink: true,
-        statsOutboundUplink: true,
-        statsOutboundDownlink: true,
+    ],
+    [
+      'h2',
+      {
+        path: '',
+        host: [''],
+      },
+    ],
+    [
+      'quic',
+      {
+        key: '',
+        header: {
+          type: 'utp',
+        },
+      },
+    ],
+    [
+      'grpc',
+      {
+        initial_windows_size: 0,
+        health_check_timeout: 60,
+        multiMode: true,
+        idle_timeout: 60,
+        serviceName: '',
+        permit_without_stream: false,
+        user_agent: '',
+      },
+    ],
+    [
+      'ds',
+      {
+        path: '',
+      },
+    ],
+  ]);
+  protected streamSettingsTemplate: StreamSettings = {
+    tcpSettings: {
+      acceptProxyProtocol: false,
+      header: {
+        type: 'none',
       },
     },
-    outbounds: [],
-    dns: {},
-    routing: {
-      settings: {
-        domainStrategy: 'AsIs',
-        rules: [
-          {
-            inboundTag: ['api'],
-            outboundTag: 'api',
-            type: 'field',
-          },
-        ],
+    kcpSettings: {
+      header: {
+        type: '',
+      },
+      mtu: 1350,
+      congestion: false,
+      tti: 20,
+      uplinkCapacity: 50,
+      writeBufferSize: 1,
+      readBufferSize: 1,
+      downlinkCapacity: 20,
+    },
+    httpSettings: {
+      path: '',
+      host: [''],
+    },
+    quicSettings: {
+      key: '',
+      header: {
+        type: 'utp',
       },
     },
-    transport: {},
+    dsSettings: {
+      path: '',
+    },
+    grpcSettings: {
+      initial_windows_size: 0,
+      health_check_timeout: 60,
+      multiMode: true,
+      idle_timeout: 60,
+      serviceName: '',
+      permit_without_stream: false,
+      user_agent: '',
+    },
+    wsSettings: {
+      path: '',
+      headers: {
+        host: '',
+      },
+    },
+    realitySettings: {
+      spiderX: '',
+      publicKey: '',
+      show: true,
+      serverName: '',
+      shortId: '',
+      fingerprint: '',
+    },
+    xtlsSettings: {
+      serverName: '',
+      allowInsecure: true,
+      fingerprint: '',
+    },
+    tlsSettings: {
+      serverName: '',
+      allowInsecure: true,
+    },
+    security: 'none',
+    network: 'tcp',
   };
-  config.outbounds = {};
-  return config;
-};
+  protected streamSettings = {
+    tcpSettings: {},
+    kcpSettings: {},
+    httpSettings: {},
+    quicSettings: {},
+    dsSettings: {},
+    grpcSettings: {},
+    wsSettings: {},
+    realitySettings: {},
+    xtlsSettings: {},
+    tlsSettings: {},
+    security: 'none',
+    network: '',
+  };
+  protected tag: string = 'proxy';
+  protected settings = {};
+  protected shareLinkParseData: VMessV2 | VLessType | TrojanType = {};
+  protected link: string = '';
+  protected ps: string = '';
+  protected outbound: Outbound = {
+    mux: this.mux,
+    protocol: this.protocol,
+    streamSettings: this.streamSettings as StreamSettings,
+    tag: this.tag,
+    settings: this.settings,
+  };
+  constructor(shareLink: string) {
+    if (
+      shareLink.includes('vmess://') ||
+      shareLink.includes('vless://') ||
+      shareLink.includes('trojan://')
+    ) {
+      this.link = shareLink;
+      return this;
+    }
+    throw new Error('nonsupport protocol type');
+  }
+  getLink() {
+    return this.link;
+  }
+
+  getPs() {
+    return this.ps;
+  }
+  getOutbound() {
+    return this.outbound;
+  }
+
+  setShareLinkParseData(data: Partial<VMessV2 & VLess & Trojan>) {
+    this.shareLinkParseData = data;
+  }
+  setMux(mux: Mux) {
+    this.outbound.mux = mux;
+  }
+  setTag(tag: string) {
+    this.tag = tag;
+  }
+  setProtocol(protocol: string) {
+    this.protocol = protocol;
+  }
+  setSettings(settings: Partial<VMessSettings & VLessSettings & TrojanSettings>) {
+    this.settings = settings;
+  }
+  setOutbound(outbound: Outbound) {
+    this.outbound = outbound;
+  }
+}
 
 export { VMess, VLess, Trojan };
 export type { VLessType, TrojanType, VMessV2 };

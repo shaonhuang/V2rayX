@@ -73,11 +73,11 @@ export interface VMessV1 {
 */
 export type VMessV2 = Partial<{
   v: string;
-  ps: string;
+  ps: string; // others is extra field in v2ray-core configuration which will drop. not working
   add: string;
   port: number;
   id: string;
-  aid: string;
+  aid: number;
   net: 'tcp' | 'kcp' | 'ws' | 'h2' | 'quic' | 'grpc';
   type: string;
   host: string;
@@ -103,36 +103,6 @@ export type VMessV2Object = Partial<{
   tls: string;
 }>;
 
-export const outbound2VMess2 = (json): VMessV2 => {
-  const { outbounds, other } = json;
-  const { settings, streamSettings } = outbounds[0];
-  const ps = encodeURIComponent(other?.ps ?? ''),
-    add = settings.vnext[0].address,
-    port = settings.vnext[0].port,
-    tls = streamSettings.security,
-    net = streamSettings.network,
-    scy = settings.vnext[0].users[0].security,
-    id = settings.vnext[0].users[0].id,
-    aid = settings.vnext[0].users[0].alterId,
-    type = 'none',
-    host = streamSettings.wsSettings.headers.host,
-    path = streamSettings.wsSettings.path;
-
-  return {
-    v: '2',
-    ps,
-    add,
-    port,
-    id,
-    aid,
-    net,
-    type,
-    host,
-    path,
-    tls,
-    scy,
-  };
-};
 const v1ToV2Mapper = {
   remarks: 'ps',
   obfsParam: 'host',
@@ -143,8 +113,6 @@ const v1ToV2Mapper = {
 const v2ToStdV2Mapper = {
   security: 'scy',
 };
-
-const v1Converter = {};
 
 const v2Converter = {
   ps: (v) => encodeURIComponent(v ?? ''),
@@ -172,40 +140,56 @@ const v2Converter = {
         }
         return v;
       }
-    } catch (e) {}
+    } catch (e) {
+      console.error(e);
+    }
     return v;
   },
   tls: (v) => (v === '1' ? 'tls' : ''),
 };
 
-export class VMess {
-  private data: VMessV2 = {};
-  private outbound: Record<string, any> = {};
+const v2ToV1Mapper = {
+  ps: 'remarks',
+  host: 'obfsParam',
+  net: 'obfs',
+};
 
-  constructor(arg: Partial<{ vmess: VMessV2; outbound: Record<string, any> }> | string) {
-    try {
-      if (typeof arg === 'string') {
-        if (
-          (/^vmess:\/\//i.test(arg) && this.isVMessLinkV1(arg)) ||
-          this.isVMessLinkV2(arg as string)
-        ) {
-          if (this.isVMessLinkV1(arg as string)) {
-            this.data = this.parseV1Link(arg as string);
-          }
-          this.data = this.parseV2Link(arg as string) as VMessV2;
-          this.outbound = this.getOutbound();
-          return this;
-        }
-      } else if (typeof arg === 'object') {
-        this.data = arg?.data ?? {};
-        this.outbound = this.getOutbound() ?? {};
-        return this;
+const v1Converter = {};
+
+const VMessV2ToV1Link = (obj: VMessV2): string => {
+  const { type, id, port, add, ...others } = obj;
+  const searchParams = new URLSearchParams();
+  Object.keys(others).forEach((k) => {
+    const newKey = v2ToV1Mapper[k] || k;
+    const newValue = v1Converter[newKey] ? v1Converter[newKey](others[k]) : others[k];
+    searchParams.append(newKey, newValue);
+  });
+  return `vmess://${encode(`${type}:${id}@${add}:${port}`)}?${decodeURIComponent(
+    searchParams.toString(),
+  )}`;
+};
+
+const VMessV2ToV2Link = (obj: VMessV2): string => {
+  return `vmess://${encode(JSON.stringify({ ...obj, v: '2' }))}`;
+};
+
+export class VMess extends Protocol {
+  constructor(link: string) {
+    super(link);
+    if ((/^vmess:\/\//i.test(link) && this.isVMessLinkV1(link)) || this.isVMessLinkV2(link)) {
+      if (this.isVMessLinkV1(link)) {
+        this.shareLinkParseData = this.parseV1Link(link);
       }
-      throw new Error();
-    } catch (err) {}
+      this.shareLinkParseData = this.parseV2Link(link);
+      this.setProtocol('vmess');
+      this.genOutboundFromLink();
+      this.genPs();
+      return this;
+    }
+    throw new Error(`VMess parse error: please check link ${link}`);
   }
 
-  private tryToParseJson(str: string): any {
+  private tryToParseJson(str: string) {
     try {
       return JSON.parse(str);
     } catch (e) {
@@ -221,12 +205,6 @@ export class VMess {
     }
   }
 
-  private isVMessLink(link: string): boolean {
-    return (
-      /^vmess:\/\//i.test(link) &&
-      (Boolean(this.parseV1Link(link)) || Boolean(this.parseV2Link(link)))
-    );
-  }
   private isVMessLinkV1(link: string): boolean {
     const linkBody = link.replace(/^vmess:\/\//i, '');
     return linkBody.includes('?');
@@ -256,7 +234,7 @@ export class VMess {
     };
   }
 
-  private parseV2Link(link: string): VMessV2 | undefined {
+  private parseV2Link(link: string): VMessV2 {
     const v2ToStdV2Converter = {
       scy: (v) => encodeURIComponent(v),
     };
@@ -269,105 +247,112 @@ export class VMess {
     });
     return params;
   }
-  getLink(): string {
-    return `vmess://${encode(JSON.stringify({ ...this.data, v: '2' }))}`;
-  }
-  getData() {
-    return this.data;
-  }
-  upateData(arg) {
-    this.data = Object.assign(this.data, arg);
-    return this.data;
-  }
-  getOutbound(obj?: VmessV2) {
-    const { ps, add, port, id, aid, net, type, host, path, tls, scy, alpn, sni, fp } =
-      obj ?? this.data;
-    const outbound: any = {
-      mux: {
-        enabled: false,
-        concurrency: 8,
-      },
-      protocol: 'vmess',
-      streamSettings: {
-        tcpSettings: {},
-        kcpSettings: {},
-        httpSettings: {},
-        quicSettings: {},
-        dsSettings: {},
-        grpcSettings: {},
-        wsSettings: {},
-        tlsSettings: {
-          serverName: '',
-          allowInsecure: true,
-        },
-        security: 'none',
-        network: '',
-      },
-      tag: 'proxy',
-      settings: {
-        vnext: [
-          {
-            address: '',
-            users: [
-              {
-                id: '',
-                alterId: 0,
-                level: 0,
-                security: '',
-              },
-            ],
-            port: 0,
-          },
-        ],
-      },
-    };
-    outbound.settings.vnext[0].address = add ?? '';
-    outbound.settings.vnext[0].port = port ?? 443;
-    outbound.streamSettings.security = tls ?? 'none';
-    outbound.streamSettings.network = net ?? 'tcp';
-    outbound.settings.vnext[0].users[0].security = scy ?? 'none';
-    outbound.settings.vnext[0].users[0].id = id ?? '';
-    outbound.settings.vnext[0].users[0].alterId = aid ?? 0;
-    // type:伪装类型（none\http\srtp\utp\wechat-video）
 
+  genPs() {
+    if (!this.getPs()) {
+      this.ps = this.outbound.settings?.vnext?.[0].address as string;
+    }
+    this.ps = this.getPs();
+  }
+
+  genOutboundFromLink() {
+    const { ps, add, port, id, aid, net, type, host, path, tls, scy, alpn, sni, fp } = this
+      .shareLinkParseData as VMessV2;
+    const streamType: 'tcp' | 'kcp' | 'ws' | 'h2' | 'quic' | 'grpc' = net ?? 'tcp';
+    this.protocol = 'vmess';
+    // @ts-ignore configuration is complete in a easy way
+    this.streamSettings[`${streamType === 'h2' ? 'http' : streamType}Settings`] =
+      this.streamSettingsTemplate[`${streamType === 'h2' ? 'http' : streamType}Settings`];
+    this.streamSettings.security = tls ?? 'none';
+    this.streamSettings.network = streamType;
+    this.settings = {
+      vnext: [
+        {
+          address: add ?? '',
+          users: [
+            {
+              id: id ?? '',
+              alterId: aid ?? 0,
+              level: 0,
+              security: scy ?? 'none',
+            },
+          ],
+          port: port ?? 443,
+        },
+      ],
+    };
+    this.streamSettings.tlsSettings = {
+      serverName: sni ?? '',
+      fingerprint: fp ?? '',
+    };
+    // type:伪装类型（none\http\srtp\utp\wechat-video）
     switch (net) {
-      case 'ws':
-        outbound.streamSettings.wsSettings = {
-          path: path,
-          headers: {
-            host: host,
-          },
-        };
+      case 'h2':
+        // @ts-ignore defined
+        this.streamSettings.httpSettings.host = [host];
+        // @ts-ignore defined
+        this.streamSettings.httpSettings.path = path;
         break;
-      case 'tcp':
-        outbound.streamSettings.tcpSettings = {
-          acceptProxyProtocol: false,
-          header: {
-            type: 'none',
-          },
+      case 'ws':
+        // @ts-ignore defined
+        this.streamSettings.wsSettings.path = path;
+        // @ts-ignore defined
+        this.streamSettings.wsSettings.headers = {
+          host: host ?? '',
         };
         break;
       case 'grpc':
-        outbound.streamSettings.grpcSettings = {};
-        break;
-      case 'h2':
-        outbound.streamSettings.httpSettings = {};
-        break;
-      case 'kcp':
-        outbound.streamSettings.kcpSettings = {};
-        break;
-      case 'quic':
-        outbound.streamSettings.quicSettings = {};
-        break;
-      // FIXME
-      case 'ds':
-        outbound.streamSettings.dsSettings = {};
+        // @ts-ignore defined
+        this.streamSettings.grpcSettings.serviceName = path;
+        // @ts-ignore defined
+        this.streamSettings.grpcSettings.multiMode = type === 'multi';
         break;
     }
-
-    return outbound;
   }
-  getPs() {
-    return this.data.ps || this.data.add || '';
+
+  genStreamSettings(net: 'tcp' | 'kcp' | 'ws' | 'h2' | 'quic' | 'grpc', obj) {
+    this.streamSettings[`${net === 'h2' ? 'http' : net}Settings`] = obj;
+  }
+  genShareLink() {
+    const { settings, streamSettings } = this.outbound;
+    const add = settings?.vnext?.[0].address,
+      port = settings?.vnext?.[0].port,
+      tls = streamSettings?.security,
+      net = streamSettings?.network ?? 'tcp',
+      scy = settings?.vnext?.[0].users[0].security,
+      id = settings?.vnext?.[0].users[0].id,
+      aid = settings?.vnext?.[0].users[0].alterId;
+    let type = 'none',
+      host = '',
+      path = '';
+    if (net === 'h2') {
+      host = (
+        streamSettings?.httpSettings?.host?.length ?? 0 > 0
+          ? streamSettings?.httpSettings?.host[0]
+          : ''
+      )!;
+      path = streamSettings?.httpSettings?.path ?? '';
+    } else if (net === 'ws') {
+      host = streamSettings?.wsSettings?.headers?.host ?? '';
+      path = streamSettings?.wsSettings?.path ?? '';
+    } else if (net === 'grpc') {
+      path = streamSettings?.grpcSettings?.serviceName ?? '';
+      type = streamSettings?.grpcSettings?.multiMode ? 'multi' : 'none';
+    }
+
+    return VMessV2ToV2Link({
+      v: '2',
+      ps: '',
+      add,
+      port,
+      id,
+      aid,
+      net,
+      type,
+      host,
+      path,
+      tls,
+      scy,
+    });
   }
 }

@@ -27,36 +27,6 @@ type Inbound = {
   port: number;
 };
 
-type Outbound = {
-  mux?: {
-    enabled: boolean;
-    concurrency: number;
-  };
-  protocol: string;
-  streamSettings: {
-    network: string;
-    tcpSettings: {
-      header: {
-        type: string;
-      };
-    };
-    security: string;
-  };
-  tag: string;
-  settings: {
-    vnext: {
-      address: string;
-      users: {
-        id: string;
-        alterId: number;
-        level: number;
-        security: string;
-      }[];
-      port: number;
-    }[];
-  };
-};
-
 type DNS = Record<string, any>; // Placeholder for the actual DNS configuration type
 
 type Routing = {
@@ -157,29 +127,29 @@ type Proxies = {
 };
 
 // Define SniffingObject type
-interface SniffingObject {
+type SniffingObject = {
   enabled: boolean;
   destOverride: string[];
   metadataOnly: boolean;
-}
+};
 
 // Define AllocateObject type
-interface AllocateObject {
+type AllocateObject = {
   strategy: string;
   refresh: number;
   concurrency: number;
-}
+};
 
 // TcpObject
-interface TcpObject {
-  connectionReuse: boolean;
+type TcpObject = {
+  acceptProxyProtocol: boolean;
   header: {
     type: string;
   };
-}
+};
 
 // KcpObject
-interface KcpObject {
+type KcpObject = {
   mtu: number;
   tti: number;
   uplinkCapacity: number;
@@ -190,87 +160,73 @@ interface KcpObject {
   header: {
     type: string;
   };
-}
+};
 
 // WebSocketObject
-interface WebSocketObject {
+type WebSocketObject = {
   path: string;
   headers: Record<string, string>;
-}
+};
 
 // HttpObject
-interface HttpObject {
+type HttpObject = {
   host: string[];
   path: string;
-  headers: Record<string, string>;
-}
+};
 
 // QuicObject
-interface QuicObject {
-  security: string;
+type QuicObject = {
   key: string;
   header: {
     type: string;
   };
-}
+};
 
 // DomainSocketObject
-interface DomainSocketObject {
+type DomainSocketObject = {
   path: string;
-}
+};
 
 // GrpcObject
-interface GrpcObject {
+type GrpcObject = {
+  initial_windows_size: number;
+  health_check_timeout: number;
+  idle_timeout: number;
+  permit_without_stream: boolean;
+  user_agent: string;
   serviceName: string;
-  multiplex: boolean;
-  header: {
-    type: string;
-  };
-}
+  multiMode: boolean;
+};
 
 // SockoptObject
-interface SockoptObject {
+type SockoptObject = {
   mark: number;
   tcpFastOpen: boolean;
   tcpFastOpenQueueLength: number;
   tproxy: 'redirect' | 'tproxy' | 'off';
   tcpKeepAliveInterval: number;
-}
-
-// StreamSettingsObject
-export interface StreamSettingsObject {
-  network: 'tcp' | 'kcp' | 'ws' | 'http' | 'domainsocket' | 'quic' | 'grpc';
-  security: 'none' | 'tls';
-  tlsSettings?: TLSObject;
-  tcpSettings?: TcpObject;
-  kcpSettings?: KcpObject;
-  wsSettings?: WebSocketObject;
-  httpSettings?: HttpObject;
-  quicSettings?: QuicObject;
-  dsSettings?: DomainSocketObject;
-  grpcSettings?: GrpcObject;
-  sockopt?: SockoptObject;
-}
+};
 
 // TLSObject
-interface TLSObject {
+type TLSObject = Partial<{
   serverName: string;
   alpn: string[];
   allowInsecure: boolean;
   disableSystemRoot: boolean;
   certificates: CertificateObject[];
   verifyClientCertificate: boolean;
+  fingerprint: string;
   pinnedPeerCertificateChainSha256: string;
-}
+}>;
 
 // CertificateObject
-interface CertificateObject {
+type CertificateObject = {
   usage: 'encipherment' | 'verify' | 'issue' | 'verifyclient';
   certificateFile: string;
   certificate: string[];
   keyFile: string;
   key: string[];
-}
+};
 
 // Define InboundObject type
 export interface InboundObject {
@@ -288,6 +244,101 @@ type V2rayConfigure = {
   inbounds: InboundObject[];
   dns: string;
 };
+// StreamSettingsObject
+export interface StreamSettingsObject {
+  network: 'tcp' | 'kcp' | 'ws' | 'http' | 'domainsocket' | 'quic' | 'grpc';
+  security: 'none' | 'tls';
+  tlsSettings?: TLSObject;
+  tcpSettings?: TcpObject;
+  kcpSettings?: KcpObject;
+  wsSettings?: WebSocketObject;
+  httpSettings?: HttpObject;
+  quicSettings?: QuicObject;
+  dsSettings?: DomainSocketObject;
+  grpcSettings?: GrpcObject;
+  sockopt?: SockoptObject;
+}
+
+type realitySettings = {
+  spiderX: string;
+  publicKey: string;
+  show: boolean;
+  serverName: string;
+  shortId: string;
+  fingerprint: string;
+};
+
+type xtlsSettings = {
+  serverName: string;
+  allowInsecure: boolean;
+  fingerprint: string;
+};
+
+export type StreamSettings = {
+  network: 'tcp' | 'kcp' | 'ws' | 'h2' | 'quic' | 'grpc';
+  security: 'none' | 'tls' | 'reality';
+  tlsSettings?: TLSObject;
+  tcpSettings?: TcpObject;
+  kcpSettings?: KcpObject;
+  wsSettings?: WebSocketObject;
+  httpSettings?: HttpObject;
+  quicSettings?: QuicObject;
+  dsSettings?: DomainSocketObject;
+  grpcSettings?: GrpcObject;
+  realitySettings?: realitySettings;
+  xtlsSettings?: xtlsSettings;
+  sockopt?: SockoptObject;
+};
+
+export type Mux = {
+  enabled: boolean;
+  concurrency: number;
+};
+
+export type VMessSettings = Partial<{
+  vnext: {
+    address: string;
+    users: {
+      id: string;
+      alterId: number;
+      level: number;
+      security: string;
+    }[];
+    port: number;
+  }[];
+}>;
+
+export type VLessSettings = Partial<{
+  vnext: {
+    address: string;
+    users: {
+      id: string;
+      level: number;
+      encryption: string;
+      flow: string;
+    }[];
+    port: number;
+  }[];
+}>;
+
+export type TrojanSettings = Partial<{
+  servers: {
+    password: string;
+    port: number;
+    email: string;
+    level: number;
+    flow: string;
+    address: string;
+  }[];
+}>;
+
+export type Outbound = Partial<{
+  mux?: Mux;
+  protocol: string;
+  streamSettings: StreamSettings;
+  tag: string;
+  settings: Partial<VMessSettings & VLessSettings & TrojanSettings>;
+}>;
 
 export type SettingsPageType = {
   v2rayCore: V2RayCore;
