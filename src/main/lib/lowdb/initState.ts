@@ -1,20 +1,10 @@
 import { app } from 'electron';
-import { Mode } from '@lib/constant/types';
 import { SettingsPageType } from '@lib/constant/types';
 import { emptyV2Template, isWindows } from '../constant';
-import { ServersGroup, Serverx, Subscription } from '@lib/constant/types';
-
-type Settings = {
-  appearance: 'system' | 'light' | 'dark';
-  proxyMode: Mode;
-};
+import { ServersGroup, Server, Subscription, Mode } from '@lib/constant/types';
 
 export type Data = {
-  autoLaunch: boolean;
-  servers: Serverx[];
   serversGroups: ServersGroup[];
-  appVersion: string;
-  settings: Settings;
   serviceRunningState: boolean;
   updateAvailableVersion: string;
   subscriptionList: Subscription[];
@@ -77,6 +67,8 @@ const initialState: SettingsPageType = {
     isReinstallV2rayPackage: false,
   },
   generalSettings: {
+    appVersion: '0.0.0',
+    autoLaunch: false,
     allowSystemNotification: true,
     autoStartProxy: false,
     dashboardPopWhenStart: true,
@@ -98,6 +90,7 @@ const initialState: SettingsPageType = {
     enhancedTrayIcon: '',
   },
   systemProxy: {
+    proxyMode: 'Manual',
     bypassDomains: `bypass:
   - 127.0.0.1
   - 192.168.0.0/16
@@ -128,15 +121,8 @@ const initialState: SettingsPageType = {
 };
 
 export const defaultData: Data = {
-  autoLaunch: false,
-  servers: [],
   serversGroups: [],
   currentServerId: [],
-  appVersion: '0.0.0',
-  settings: {
-    appearance: 'light',
-    proxyMode: 'Manual',
-  },
   subscriptionList: [],
   serverTemplate: emptyV2Template(),
   serviceRunningState: false,

@@ -1,5 +1,6 @@
 import { decode, encode } from 'js-base64';
-import { Protocol } from './index';
+import { Protocol } from './Protocol';
+import { Outbound } from '@renderer/constant/types';
 
 // reference https://github.com/kyuuseiryuu/v2ray-tools.git
 // https://github.com/v2ray/v2ray-core/issues/1139
@@ -176,7 +177,7 @@ const VMessV2ToV2Link = (obj: VMessV2): string => {
 export class VMess extends Protocol {
   constructor(link: string) {
     super(link);
-    if ((/^vmess:\/\//i.test(link) && this.isVMessLinkV1(link)) || this.isVMessLinkV2(link)) {
+    if (/^vmess:\/\//i.test(link) && (this.isVMessLinkV1(link) || this.isVMessLinkV2(link))) {
       if (this.isVMessLinkV1(link)) {
         this.shareLinkParseData = this.parseV1Link(link);
       }
@@ -184,6 +185,9 @@ export class VMess extends Protocol {
       this.setProtocol('vmess');
       this.genOutboundFromLink();
       this.genPs();
+      return this;
+    } else if (link === '') {
+      this.initTemplate();
       return this;
     }
     throw new Error(`VMess parse error: please check link ${link}`);
@@ -308,13 +312,15 @@ export class VMess extends Protocol {
         this.streamSettings.grpcSettings.multiMode = type === 'multi';
         break;
     }
+    this.updateOutbound();
   }
 
   genStreamSettings(net: 'tcp' | 'kcp' | 'ws' | 'h2' | 'quic' | 'grpc', obj) {
     this.streamSettings[`${net === 'h2' ? 'http' : net}Settings`] = obj;
+    this.updateOutbound();
   }
   genShareLink() {
-    const { settings, streamSettings } = this.outbound;
+    const { settings, streamSettings } =  this.outbound;
     const add = settings?.vnext?.[0].address,
       port = settings?.vnext?.[0].port,
       tls = streamSettings?.security,
@@ -354,5 +360,28 @@ export class VMess extends Protocol {
       tls,
       scy,
     });
+  }
+  initTemplate() {
+    const streamType = 'tcp';
+    this.protocol = 'vmess';
+    this.settings = {
+      vnext: [
+        {
+          address: '',
+          users: [
+            {
+              id: '',
+              alterId: 0,
+              level: 0,
+              security: 'none',
+            },
+          ],
+          port: 443,
+        },
+      ],
+    };
+    this.streamSettings.network = streamType;
+    this.streamSettings.tcpSettings = this.streamSettingsTemplate.tcpSettings!;
+    this.updateOutbound();
   }
 }

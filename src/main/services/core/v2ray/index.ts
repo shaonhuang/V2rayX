@@ -33,6 +33,7 @@ export default class Service {
     }
   }
   start(data?: JSON) {
+    if (this.status) return;
     if (data) {
       fs.writeFileSync(path.join(v2rayDir, `tmp.json`), JSON.stringify(data));
       logger.info('tmp.json file has written successfully.');

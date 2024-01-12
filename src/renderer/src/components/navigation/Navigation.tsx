@@ -5,6 +5,8 @@ import Button from '@mui/material/Button';
 import HomeIcon from '@mui/icons-material/Home';
 import LinkIcon from '@mui/icons-material/Link';
 import SettingsIcon from '@mui/icons-material/Settings';
+import InfoIcon from '@mui/icons-material/Info';
+import LogoDevIcon from '@mui/icons-material/LogoDev';
 import { Paper } from '@mui/material';
 import { Link, useLocation } from 'react-router-dom';
 import { useEffect } from 'react';
@@ -41,23 +43,22 @@ const Navigation = () => {
               <LinkIcon />
             </NavButton>
           </Link>
-
           <Link to="/index/logs">
             <NavButton className="w-20" variant={tabName === 'logs' ? 'contained' : 'outlined'}>
               Logs
-              <LinkIcon />
+              <LogoDevIcon />
             </NavButton>
           </Link>
           <Link to="/index/settings">
             <NavButton className="w-20" variant={tabName === 'settings' ? 'contained' : 'outlined'}>
               Settings
-              <LinkIcon />
+              <SettingsIcon />
             </NavButton>
           </Link>
           <Link to="/index/about">
             <NavButton className="w-20" variant={tabName === 'about' ? 'contained' : 'outlined'}>
               About
-              <SettingsIcon />
+              <InfoIcon />
             </NavButton>
           </Link>
         </Stack>

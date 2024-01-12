@@ -1,16 +1,13 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import {
   Stack,
   Button,
-  IconButton,
-  Skeleton,
   Container,
   TextField,
-  Box,
-  lighten,
   FormControl,
   InputLabel,
   FilledInput,
+  Paper,
 } from '@mui/material';
 import UpdateIcon from '@mui/icons-material/Update';
 
@@ -63,46 +60,44 @@ const Index = () => {
 ||github.io`);
   return (
     <Container sx={{ my: 'auto' }}>
-      <Stack spacing={2}>
-        <FormControl variant="filled">
-          <InputLabel htmlFor="component-filled">GFW List Url</InputLabel>
-          <FilledInput
-            id="component-filled"
-            defaultValue="https://raw.githubusercontent.com/gfwlist/gfwlist/master/gfwlist.txt"
-          />
-        </FormControl>
-        <Button
-          variant="contained"
-          onClick={async () => {
-            const pac = await window.mainConst.get('userPacConf');
-            try {
-              console.log(pac);
+      <Paper>
+        <Stack spacing={2} padding={4}>
+          <FormControl variant="filled">
+            <InputLabel htmlFor="component-filled">GFW List Url</InputLabel>
+            <FilledInput
+              id="component-filled"
+              defaultValue="https://raw.githubusercontent.com/gfwlist/gfwlist/master/gfwlist.txt"
+            />
+          </FormControl>
+          <Button
+            variant="contained"
+            onClick={async () => {
+              const pac = await window.mainConst.get('userPacConf');
               window.electron.electronAPI.shell.openExternal(`file://${pac}`);
-            } catch (err) {}
-          }}
-        >
-          View PAC File
-        </Button>
-        <TextField
-          id="filled-multiline-static"
-          label="User Rules"
-          multiline
-          rows={10}
-          value={customRules}
-          variant="filled"
-        />
-        <Button
-          variant="contained"
-          startIcon={<UpdateIcon />}
-          onClick={async () => {
-            console.log(customRules);
-            const pac = await window.mainConst.get('userPacConf');
-            await window.writeToFile.write({ path: pac, content: customRules });
-          }}
-        >
-          Save And Update PAC From Custom List
-        </Button>
-      </Stack>
+            }}
+          >
+            View PAC File
+          </Button>
+          <TextField
+            id="filled-multiline-static"
+            label="User Rules"
+            multiline
+            rows={7}
+            value={customRules}
+            variant="filled"
+          />
+          <Button
+            variant="contained"
+            startIcon={<UpdateIcon />}
+            onClick={async () => {
+              const pac = await window.mainConst.get('userPacConf');
+              await window.writeToFile.write({ path: pac, content: customRules });
+            }}
+          >
+            Save And Update PAC From Custom List
+          </Button>
+        </Stack>
+      </Paper>
     </Container>
   );
 };

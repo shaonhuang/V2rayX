@@ -17,7 +17,6 @@ const Index = () => {
   const generateQR = async (text: string) => {
     try {
       setQRCode(await QRCode.toDataURL(text));
-      console.log(qrcode);
     } catch (err) {
       console.error(err);
     }

@@ -1,5 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
+import { useMemo, useState, useLayoutEffect } from 'react';
 import './assets/index.css';
 import App from './App';
 import { Provider } from 'react-redux';
@@ -10,6 +11,7 @@ import CssBaseline from '@mui/material/CssBaseline';
 import { from } from 'rxjs';
 import { debounceTime, map } from 'rxjs/operators';
 import { set } from 'lodash';
+import { nightMode } from './components/Theme';
 
 import store from '@store/index';
 
@@ -28,10 +30,10 @@ window.localStorage.setItem = function (key, value) {
 };
 
 const Page = () => {
-  const [mode, setMode] = React.useState<'light' | 'dark'>('light');
-  const [styleInJson, setStyleInJson] = React.useState({
+  const [mode, setMode] = useState<'light' | 'dark'>('light');
+  const [styleInJson, setStyleInJson] = useState({
     palette: {
-      mode: 'light',
+      mode,
       primary: {
         main: '#1976d2',
         contrastText: '#ffffff',
@@ -44,20 +46,17 @@ const Page = () => {
       },
     },
     typography: {
-      fontFamily: 'Source Sans Pro, sans-serif',
+      fontFamily: '',
     },
   });
   const state$ = from(store);
-  React.useLayoutEffect(() => {
-    const localStorageSetHandler = (e: any) => {
-      if (e.key === 'theme') {
-        setMode(e.value);
-      }
-    };
+  const localStorageSetHandler = (e) => {
+    if (e.key === 'theme') {
+      setMode(e.value);
+    }
+  };
 
-    window.db.read('settings').then((res) => {
-      res.appearance === 'dark' ? setMode('dark') : setMode('light');
-    });
+  useLayoutEffect(() => {
     document.addEventListener('itemInserted', localStorageSetHandler, false);
     // Subscribe to state changes using RxJS
     const subscription = state$
@@ -67,16 +66,35 @@ const Page = () => {
       )
       .subscribe((styleInJson) => {
         try {
-          setStyleInJson(JSON.parse(styleInJson));
-        } catch (err) {}
+          const config = JSON.parse(styleInJson);
+          if (store.getState().settingsPage.appearance.customStyle) {
+            nightMode(config?.palette?.mode === 'dark');
+          } else {
+            nightMode(store.getState().settingsPage.appearance.darkMode);
+            set(
+              config,
+              'palette.mode',
+              store.getState().settingsPage.appearance.darkMode ? 'dark' : 'light',
+            );
+          }
+          setStyleInJson(config);
+        } catch (err) {
+          window.notification.send({
+            title: 'Change Style Error',
+            body: `${styleInJson}
+            is not JSON format. Please check it`,
+            silent: true,
+          });
+        }
       });
 
     return () => {
       subscription.unsubscribe();
     };
   }, []);
-  const theme: ThemeOptions = React.useMemo(() => {
-    return createTheme(set(styleInJson, 'palette.mode', mode));
+
+  const theme: ThemeOptions = useMemo(() => {
+    return createTheme(styleInJson);
   }, [mode, styleInJson]);
   return (
     <React.StrictMode>

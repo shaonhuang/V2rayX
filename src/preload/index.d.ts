@@ -28,6 +28,7 @@ declare global {
       startService: (data?: any) => void;
       stopService: () => void;
       checkService: () => boolean | Promise<boolean>;
+      updatePort: () => void;
     };
     update: {
       checkForUpdate: () => void;

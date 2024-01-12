@@ -9,7 +9,7 @@ import emitter from '@lib/event-emitter';
 const changeProxyMode = async (mode: Mode) => {
   await db.read();
   new ProxyService().updateMode(mode);
-  db.data = db.chain.set('settings.proxyMode', mode).value();
+  db.data = db.chain.set('management.systemProxy.proxyMode', mode).value();
   await db.write();
   emitter.emit('tray-mode:update', mode);
 };

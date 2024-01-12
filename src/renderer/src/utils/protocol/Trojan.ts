@@ -1,5 +1,5 @@
 import { parseInt } from 'lodash';
-import { Protocol } from './index';
+import { Protocol } from './Protocol';
 
 /**
  - {"type":"ss","name":"v2rayse_test_1","server":"198.57.27.218","port":5004,"cipher":"aes-256-gcm","password":"g5MeD6Ft3CWlJId"}
@@ -34,14 +34,17 @@ export class Trojan extends Protocol {
       this.genOutboundFromLink();
       this.genPs();
       return this;
+    } else if (link === '') {
+      this.initTemplate();
+      return this;
     }
     throw new Error(`Trojan parse error: please check link ${link}`);
   }
 
   private parseTrojan(arg: string): TrojanType {
     const [address, port] = arg.includes('?')
-      ? arg.slice(8).split('?')[0].split(':')
-      : arg.slice(8).split('#')[0].split(':');
+      ? arg.slice(9).split('?')[0].split(':')
+      : arg.slice(9).split('#')[0].split(':');
     const url = new URLSearchParams(arg.slice(8).split('?')[1].split('#')[0]);
     return {
       password: address.split('@')[0],
@@ -61,10 +64,6 @@ export class Trojan extends Protocol {
     }
     this.ps = this.getPs();
   }
-
-  // getLink() {
-
-  // }
 
   genOutboundFromLink() {
     const { address, port, password, remark, security, sni, host, flow, fp } = this
@@ -121,25 +120,47 @@ export class Trojan extends Protocol {
         };
         break;
     }
+    this.updateOutbound();
   }
   genStreamSettings(type: 'tcp' | 'kcp' | 'ws' | 'h2' | 'quic' | 'grpc', obj) {
     this.streamSettings[`${type === 'h2' ? 'http' : type}Settings`] = obj;
+    this.updateOutbound();
   }
   genShareLink() {
     const scheme = 'trojan';
     const remark = this.getPs();
     const { settings, streamSettings } = this.outbound;
+    const host = settings?.servers?.[0].address;
+    const port = settings?.servers?.[0].port;
+    const password = settings?.servers?.[0].password;
     const share: TrojanType = {};
-    share.host = settings?.servers?.[0].address;
-    share.port = settings?.servers?.[0].port;
-    share.password = settings?.servers?.[0].password;
     share.flow = settings?.servers?.[0].flow;
     share.security = 'tls';
-    share.fp = streamSettings?.tlsSettings?.fingerprint;
+    share.fp = streamSettings?.tlsSettings?.fingerprint ?? '';
     const url = new URLSearchParams();
     Object.entries(share).forEach(
       ([key, value]) => key !== 'remark' && url.append(key, String(value)),
     );
-    return `${scheme}://${url.toString()}#${remark}`;
+    // trojan://pass@remote_host:443?flow=xtls-rprx-origin&security=xtls&sni=sni&host=remote_host#trojan
+    return `${scheme}://${password}@${host}:${port}?${url.toString()}#${remark}`;
+  }
+  initTemplate() {
+    const streamType = 'tcp';
+    this.protocol = 'vless';
+    this.settings = {
+      servers: [
+        {
+          password: '',
+          port: 443,
+          email: '',
+          level: 0,
+          flow: '',
+          address: '',
+        },
+      ],
+    };
+    this.streamSettings.network = streamType;
+    this.streamSettings.tcpSettings = this.streamSettingsTemplate.tcpSettings!;
+    this.updateOutbound();
   }
 }

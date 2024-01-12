@@ -62,9 +62,43 @@ const Index = (props: any) => {
     allowInsecure: allowInsecure ?? true,
     publicKey: publicKey ?? '',
     shortId: shortId ?? '',
-    fingerprint,
+    fingerprint: fingerprint ?? '',
   });
-  const [formError, setFormError] = useState<boolean>(false);
+
+  useEffect(() => {
+    const { security } = props.data.streamSettings;
+    let serverName, allowInsecure, fingerprint, publicKey, shortId;
+    switch (security) {
+      case 'none':
+        break;
+      case 'tls':
+        serverName = props.data.streamSettings.tlsSettings.serverName;
+        allowInsecure = props.data.streamSettings.tlsSettings.allowInsecure;
+        fingerprint = props.data.streamSettings.tlsSettings.fingerprint;
+        break;
+      case 'xtls':
+        serverName = props.data.streamSettings.xtlsSettings.serverName;
+        allowInsecure = props.data.streamSettings.xtlsSettings.allowInsecure;
+        fingerprint = props.data.streamSettings.xtlsSettings.fingerprint;
+        break;
+      case 'reality':
+        serverName = props.data.streamSettings.realitySettings.serverName;
+        allowInsecure = props.data.streamSettings.realitySettings.allowInsecure;
+        fingerprint = props.data.streamSettings.realitySettings.fingerprint;
+        publicKey = props.data.streamSettings.realitySettings.publicKey;
+        shortId = props.data.streamSettings.realitySettings.shortId;
+        break;
+    }
+
+    setFormData({
+      security: security ?? 'none',
+      serverName: serverName ?? '',
+      allowInsecure: allowInsecure ?? true,
+      publicKey: publicKey ?? '',
+      shortId: shortId ?? '',
+      fingerprint: fingerprint ?? '',
+    });
+  }, [props.data]);
 
   useEffect(() => {
     const { serverName, allowInsecure, fingerprint, publicKey, shortId, security } = formData;

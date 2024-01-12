@@ -20,6 +20,15 @@ const Index = (props: any) => {
   });
 
   useEffect(() => {
+    const { key, header, security } = props.data.streamSettings.quicSettings;
+    setFormData({
+      key: key ?? '',
+      security: security ?? 'none',
+      header: header ?? { type: 'none' },
+    });
+  }, [props.data]);
+
+  useEffect(() => {
     const { key, header, security } = formData;
     props.data.streamSettings.quicSettings = {
       key,

@@ -1,7 +1,3 @@
-import { nightMode } from './Theme';
-
-nightMode();
-
 interface LayoutProps {
   children: JSX.Element[] | JSX.Element;
 }

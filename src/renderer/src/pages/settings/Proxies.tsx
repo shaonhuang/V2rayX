@@ -1,16 +1,4 @@
-import {
-  Container,
-  Box,
-  Paper,
-  Switch,
-  Stack,
-  TextField,
-  Typography,
-  Button,
-  Tooltip,
-  Chip,
-} from '@mui/material';
-
+import { Container, Paper, Stack, TextField, Typography, Tooltip } from '@mui/material';
 import Grid from '@mui/material/Unstable_Grid2';
 import { useAppSelector, useAppDispatch } from '@store/hooks';
 import { setSettingsPageState } from '@renderer/store/settingsPageSlice';
@@ -20,10 +8,6 @@ export const ProxyItemWidth = () => {
   return <Container>proxyItemWidth</Container>;
 };
 
-type TitleWithTooltipType = {
-  title: string;
-  tooltip?: string;
-};
 const TitleWithTooltip = (props: TitleWithTooltipType) => {
   return (
     <Grid

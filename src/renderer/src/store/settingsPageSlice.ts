@@ -1,6 +1,7 @@
 import { createSlice, PayloadAction, createAsyncThunk } from '@reduxjs/toolkit';
 import { set, cloneDeep } from 'lodash';
 import { SettingsPageType } from '@renderer/constant/types';
+import { Mode } from '@renderer/constant/types';
 
 export const readFromDbSettings = createAsyncThunk('readFromDbSettings', async () => {
   const state: SettingsPageType = await window.db.read('management');
@@ -64,6 +65,8 @@ const initialState: SettingsPageType = {
     isReinstallV2rayPackage: false,
   },
   generalSettings: {
+    appVersion: '0.0.0',
+    autoLaunch: false,
     allowSystemNotification: true,
     autoStartProxy: false,
     dashboardPopWhenStart: true,
@@ -79,11 +82,13 @@ const initialState: SettingsPageType = {
     customStyle: false,
     styleInJson: styleInJson,
     followSystemTheme: false,
+    darkMode: false,
     fontFamily: '',
     hideTrayBar: false,
     enhancedTrayIcon: '',
   },
   systemProxy: {
+    proxyMode: 'Manual',
     bypassDomains: `bypass:
   - 127.0.0.1
   - 192.168.0.0/16
@@ -119,8 +124,11 @@ const settingsPageSlice = createSlice({
   reducers: {
     setSettingsPageState: (state, action: PayloadAction<Record<string, any>>) => {
       const { key, value } = action.payload;
-      state = set(state, key, value);
+      set(state, key, value);
       window.db.write('management', cloneDeep(state));
+    },
+    syncProxyMode: (state, action: PayloadAction<Mode>) => {
+      state.systemProxy.proxyMode = action.payload;
     },
   },
   extraReducers: (builder) => {
@@ -131,6 +139,6 @@ const settingsPageSlice = createSlice({
   },
 });
 
-export const { setSettingsPageState } = settingsPageSlice.actions;
+export const { setSettingsPageState, syncProxyMode } = settingsPageSlice.actions;
 
 export default settingsPageSlice.reducer;

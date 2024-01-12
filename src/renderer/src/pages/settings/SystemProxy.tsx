@@ -1,33 +1,16 @@
-import {
-  Container,
-  Box,
-  Paper,
-  Switch,
-  Stack,
-  TextField,
-  Typography,
-  Button,
-  Tooltip,
-  Chip,
-} from '@mui/material';
-import Fade from '@mui/material/Fade';
-
+import { Container, Paper, Stack, Typography, Button, Tooltip, Fade } from '@mui/material';
 import Grid from '@mui/material/Unstable_Grid2';
 import TipsAndUpdatesIcon from '@mui/icons-material/TipsAndUpdates';
 import { useAppSelector, useAppDispatch } from '@store/hooks';
 import { setSettingsPageState } from '@renderer/store/settingsPageSlice';
-
 import Editor from '@monaco-editor/react';
-import { useEffect } from 'react';
 
 export const BypassDomainIPNet = () => {
   const systemProxy = useAppSelector((state) => state.settingsPage.systemProxy);
   const dispatch = useAppDispatch();
   const handleEditorChange = (e) => {
-    console.log(e);
     dispatch(setSettingsPageState({ key: 'systemProxy.bypassDomains', value: e }));
   };
-  useEffect(() => console.log(systemProxy), [systemProxy]);
   return (
     <Container>
       <Paper>

@@ -213,12 +213,12 @@ validatedIpcMain.on(
 
 validatedIpcMain.on('v2rayx:service:selected', (_) => {
   emitter.emit('tray-v2ray:update', false);
-  emitter.emit('tray-servers:update', _);
+  emitter.emit('tray-servers:update', {});
 });
 
 validatedIpcMain.on('v2rayx:service:empty', (_) => {
   emitter.emit('tray-v2ray:update', false);
-  emitter.emit('tray-servers:update', _);
+  emitter.emit('tray-servers:update', {});
 });
 
 validatedIpcMain.on('v2rayx:server:add/edit:toMain', (_, serverItem: any) => {
@@ -234,7 +234,7 @@ validatedIpcMain.on(
     db.data.subscriptionList = params.subscriptionList;
     params.serversGroups.map((i: ServersGroup) => {
       const index = findIndex(db.data.serversGroups, { groupId: i.groupId });
-      if (index !== -1) {
+      if (index > -1) {
         db.data.serversGroups[index] = i;
       } else {
         db.data.serversGroups.push(i);

@@ -1,16 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Stack, Box, Paper, ListItemButton, ListItemText } from '@mui/material';
-import { styled } from '@mui/material/styles';
+import { Stack, Box, ListItemButton, ListItemText } from '@mui/material';
 import Grid from '@mui/material/Unstable_Grid2';
 import KeyboardArrowDown from '@mui/icons-material/KeyboardArrowDown';
 import { V2rayCoreUpdate } from './Security';
-import {
-  NotificationType,
-  SlientStart,
-  GUILogFolder,
-  V2rayLogsFolder,
-  AutomaticUpgrade,
-} from './General';
+import { NotificationType, SlientStart, GUILogFolder, V2rayLogsFolder } from './General';
 import {
   AppTheme,
   FollowSystemTheme,
@@ -207,36 +200,6 @@ const Index = () => {
   );
   const [detailLabel, setDetailLabel] = useState(pages[0]?.label ?? '');
   const [buttonStates, setButtonStates] = useState(Array(data.length).fill(true));
-  const [state, setState] = useState({
-    top: false,
-    left: false,
-    bottom: false,
-    right: false,
-  });
-  const toggleDrawer =
-    (anchor, open: boolean) => (event: React.KeyboardEvent | React.MouseEvent) => {
-      if (
-        event.type === 'keydown' &&
-        ((event as React.KeyboardEvent).key === 'Tab' ||
-          (event as React.KeyboardEvent).key === 'Shift')
-      ) {
-        return;
-      }
-
-      setState({ ...state, [anchor]: open });
-    };
-  useEffect(() => {
-    console.log(
-      flatten(
-        data.map(
-          (item) =>
-            item?.subRows?.map((subItem) => {
-              return { label: subItem.label, element: subItem.element };
-            }),
-        ),
-      ),
-    );
-  }, [buttonStates]);
   return (
     <>
       <Grid container spacing={2} sx={{ py: 2, pl: 2 }}>
@@ -307,9 +270,6 @@ const Index = () => {
           <Stack>{pages.find((item) => item?.label === detailLabel)?.element}</Stack>
         </Grid>
       </Grid>
-      {/*<Drawer anchor={anchor} open={state[anchor]} onClose={toggleDrawer(anchor, false)}>
-        {list(anchor)}
-      </Drawer>*/}
     </>
   );
 };

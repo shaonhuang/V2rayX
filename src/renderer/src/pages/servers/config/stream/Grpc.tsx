@@ -18,6 +18,15 @@ const Index = (props: any) => {
   });
 
   useEffect(() => {
+    const { serviceName, user_agent, multiMode } = props.data.streamSettings.grpcSettings;
+    setFormData({
+      serviceName: serviceName ?? '',
+      userAgent: user_agent ?? '',
+      multiMode: multiMode ?? false,
+    });
+  }, [props.data]);
+
+  useEffect(() => {
     const { serviceName, userAgent, multiMode } = formData;
     props.data.streamSettings.grpcSettings = {
       initial_windows_size: 0,

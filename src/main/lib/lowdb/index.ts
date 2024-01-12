@@ -13,8 +13,8 @@ class LowWithLodash<T> extends Low<T> {
 }
 
 const userData = app.getPath('userData');
-const dbPathOld = join(userData, 'lowdb', 'db.json');
-const dbPath = join(userData, 'lowdb', 'dbv2.json');
+const dbPathOld = join(userData, 'lowdb', 'dbv2.json');
+const dbPath = join(userData, 'lowdb', 'dbv3.json');
 const parentDir = join(userData, 'lowdb');
 if (existsSync(dbPathOld)) {
   // Use the unlink method to delete the file

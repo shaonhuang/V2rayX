@@ -15,13 +15,17 @@ type formDataType = {
 
 const Index = forwardRef((props: any, ref) => {
   const internalRef = useRef(null);
+  const { settings } = props.data;
+  const { vnext } = settings;
+  const { address, users, port } = vnext[0] ?? {};
+  const { id, level, flow } = users ? users[0] : {};
 
   const [formData, setFormData] = useState<formDataType>({
-    address: '',
-    port: 0,
-    uuid: '',
-    level: 0,
-    flow: '',
+    address,
+    port,
+    uuid: id,
+    level,
+    flow,
   });
   const [formError, setFormError] = useState<boolean>(false);
 
@@ -37,7 +41,6 @@ const Index = forwardRef((props: any, ref) => {
       level,
       flow,
     });
-    console.log('props.data change');
   }, [props.data]);
 
   useEffect(() => {

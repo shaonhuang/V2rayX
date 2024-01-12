@@ -1,6 +1,5 @@
 import {
   Container,
-  Box,
   Paper,
   Switch,
   Stack,
@@ -8,15 +7,11 @@ import {
   Typography,
   Button,
   Tooltip,
-  Chip,
 } from '@mui/material';
-
 import Grid from '@mui/material/Unstable_Grid2';
 import TipsAndUpdatesIcon from '@mui/icons-material/TipsAndUpdates';
 import { useAppSelector, useAppDispatch } from '@store/hooks';
 import { setSettingsPageState } from '@renderer/store/settingsPageSlice';
-import { isWin } from '@renderer/constant';
-import { setServerTemplate, setServersState } from '@renderer/store/serversPageSlice';
 
 type TitleWithTooltipType = {
   title: string;
@@ -91,7 +86,6 @@ export const SlientStart = () => {
             <TitleWithTooltip title="Auto-Start Proxy" tooltip="Enable Proxy Service Autostart" />
             <Grid xs={4}>
               <Switch
-                disabled
                 checked={generalSettings.autoStartProxy}
                 onChange={(event) =>
                   dispatch(
@@ -238,22 +232,7 @@ export const V2rayLogsFolder = () => {
               </Button>
             </Grid>
             <Grid xs={8}>
-              <Button
-                onClick={() => {
-                  dispatch(
-                    setServerTemplate({
-                      key: 'log',
-                      value: {
-                        error: `${generalSettings.v2rayLogsFolder}error.log`,
-                        loglevel: 'info',
-                        access: `${generalSettings.v2rayLogsFolder}access.log`,
-                      },
-                    }),
-                  );
-                }}
-              >
-                Save it
-              </Button>
+              <Button onClick={() => {}}>Save it</Button>
             </Grid>
           </Grid>
         </Stack>

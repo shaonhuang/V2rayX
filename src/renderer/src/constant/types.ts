@@ -10,6 +10,11 @@
 import { VMessV2, TrojanType, VLessType } from '../utils/protocol/index';
 export type { VMessV2, TrojanType, VLessType };
 
+export type TitleWithTooltipType = {
+  title: string;
+  tooltip?: string;
+};
+
 type Log = {
   error: string | 'none';
   loglevel: 'debug' | 'info' | 'warning' | 'error' | 'none';
@@ -48,19 +53,11 @@ export type VmessObjConfiguration = {
   other: Record<string, any>;
 };
 
-export type Server = {
-  id: string;
-  ps: string;
-  link: string;
-  latency: string;
-  outbound: Record<string, any>;
-};
-
 export type Servers = Server[];
 
 export type EmptyObject = Record<string, never>;
 
-export type Serverx = {
+export type Server = {
   id: string;
   link: string;
   ps: string;
@@ -74,9 +71,10 @@ export type Serverx = {
 export type ServersGroup = {
   groupId: string;
   group: string;
+  remark: string;
   link: string;
   speedTestType: string;
-  subServers: Serverx[];
+  subServers: Server[];
 };
 
 export type Subscription = {
@@ -90,6 +88,8 @@ type V2RayCore = {
 };
 
 type GeneralSettings = {
+  appVersion: string;
+  autoLaunch: boolean;
   allowSystemNotification: boolean;
   autoStartProxy: boolean;
   dashboardPopWhenStart: boolean;
@@ -106,12 +106,15 @@ type Appearance = {
   customStyle: boolean;
   styleInJson: string;
   followSystemTheme: boolean;
+  darkMode: boolean;
   fontFamily: string;
   hideTrayBar: boolean;
   enhancedTrayIcon: string;
 };
+export type Mode = 'PAC' | 'Global' | 'Manual';
 
 type SystemProxy = {
+  proxyMode: Mode;
   bypassDomains: string;
   pacSetting: {
     banListUrl: string;

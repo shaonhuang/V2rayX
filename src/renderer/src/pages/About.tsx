@@ -1,12 +1,13 @@
-import { useState, useEffect, useLayoutEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Button, Skeleton } from '@mui/material';
 import icon from '../public/icon.png';
 import { platform } from '@renderer/constant';
 import { versionCompare } from '@renderer/utils/tools';
 import { isDev } from '@renderer/constant';
+import { useAppSelector } from '@renderer/store/hooks';
 
 const AboutPage = (): JSX.Element => {
-  const [version, setVersion] = useState('0.0.0');
+  const generalSettings = useAppSelector((state) => state.settingsPage.generalSettings);
   const [updateAvailable, setUpdateAvailable] = useState(false);
   const handleCheckUpdate = () => {
     platform === 'darwin' &&
@@ -18,23 +19,25 @@ const AboutPage = (): JSX.Element => {
     window.api.send('v2rayx:checkForUpdateClick');
     window.update.checkForUpdate();
   };
-  useLayoutEffect(() => {
-    window.db.read('appVersion').then((version) => {
-      setVersion(version);
-    });
-  }, []);
   useEffect(() => {
     window.db.read('updateAvailableVersion').then((latestVersion) => {
-      setUpdateAvailable(versionCompare(latestVersion, version) && version !== '0.0.0');
+      setUpdateAvailable(
+        versionCompare(latestVersion, generalSettings.appVersion) &&
+          generalSettings.appVersion !== '0.0.0',
+      );
     });
-  }, [version]);
+  }, [generalSettings.appVersion]);
   return (
     <section className="flex flex-1 flex-row items-center justify-around">
       <div className={'items-center justify-around rounded-xl bg-white p-9 dark:bg-slate-700'}>
         <div className="m-4 flex flex-col items-center">
           <img src={icon} alt="" className="m-4 h-24 w-24" />
           <p className="flex text-xl" id="appVersion">
-            {version === '0.0.0' ? <Skeleton width={64} /> : `V2rayX(${version})`}
+            {generalSettings.appVersion === '0.0.0' ? (
+              <Skeleton width={64} />
+            ) : (
+              `V2rayX(${generalSettings.appVersion})`
+            )}
           </p>
         </div>
         <p>An all platform (Macos Windows Linux) V2ray client build with electron.</p>

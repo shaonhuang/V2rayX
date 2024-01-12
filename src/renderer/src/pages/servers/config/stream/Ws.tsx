@@ -14,6 +14,14 @@ const Index = (props: any) => {
   });
 
   useEffect(() => {
+    const { headers, path } = props.data.streamSettings.wsSettings;
+    setFormData({
+      host: headers?.host ?? '',
+      path: path ?? '',
+    });
+  }, [props.data]);
+
+  useEffect(() => {
     const { host, path } = formData;
     props.data.streamSettings.wsSettings = {
       path,

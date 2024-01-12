@@ -8,11 +8,6 @@ import {
   Switch,
   Typography,
   Paper,
-} from '@mui/material';
-import IconButton from '@mui/material/IconButton';
-import ContextMenu from '@renderer/components/ContextMenu';
-import { useState, useEffect, useRef } from 'react';
-import {
   Box,
   Stack,
   OutlinedInput,
@@ -21,6 +16,9 @@ import {
   FormHelperText,
   Container,
 } from '@mui/material';
+import IconButton from '@mui/material/IconButton';
+import ContextMenu from '@renderer/components/ContextMenu';
+import { useState, useEffect, useRef } from 'react';
 import Select, { SelectChangeEvent } from '@mui/material/Select';
 import SaveAltIcon from '@mui/icons-material/SaveAlt';
 import CloseIcon from '@mui/icons-material/Close';
@@ -29,13 +27,14 @@ import {
   VMess as VMessData,
   VLess as VLessData,
   Trojan as TrojanData,
-} from '@renderer/utils/protocol/';
-import { cloneDeep, upperFirst } from 'lodash';
+} from '@renderer/utils/protocol';
+import { upperFirst } from 'lodash';
 import { VMess, VLess, Trojan } from '@renderer/pages/servers/config/protocols';
 import { Server } from '@renderer/constant/types';
 import { H2, Kcp, Quic, Tcp, Ws, Grpc } from '@renderer/pages/servers/config/stream';
 import Security from '@renderer/pages/servers/config/security';
 import Editor from '@monaco-editor/react';
+import { cloneDeep } from 'lodash';
 
 export interface AddServerDialogProps {
   open: boolean;
@@ -71,6 +70,7 @@ const Index = () => {
   const vmessRef = useRef(null);
   const vlessRef = useRef(null);
   const trojanRef = useRef(null);
+  let protocolFactory: any = new VMessData('');
 
   const [formData, setFormData] = useState<formDataType>({
     importStr:
@@ -84,40 +84,27 @@ const Index = () => {
       id: '',
       ps: '',
       link: '',
-      outbound: new VMessData({}).getOutbound(),
+      latency: '',
+      speedTestType: '',
+      group: '',
+      groupId: '',
+      outbound: new VMessData('').getOutbound(),
     },
     error: [false, false, false, false],
   });
-  const [outbound, setOutbound] = useState(new VMessData({}).getOutbound());
 
   const handleImportUrl = () => {
     const importData = formData.importStr;
-    // FIXME: fix any
-    // TODO: abstract to a class protocol
-    let protocolFactory;
-    try {
-      protocolFactory = importData.includes('vmess')
-        ? new VMessData(importData)
-        : importData.includes('vless')
-          ? new VLessData(importData)
-          : importData.includes('trojan')
-            ? new TrojanData(importData)
-            : null;
-    } catch (err) {
-      protocolFactory = () => {};
-    }
-    if (!protocolFactory) return;
+    protocolFactory = importData.includes('vmess')
+      ? new VMessData(importData)
+      : importData.includes('vless')
+        ? new VLessData(importData)
+        : new TrojanData(importData);
 
-    const network = importData.includes('vless')
-      ? protocolFactory.getData().type
-      : new VMessData(importData).getData().net ?? 'tcp';
+    const network = protocolFactory.getOutbound().streamSettings?.network ?? 'tcp';
     setFormData({
-      ...formData,
-      protocol: importData.includes('vmess')
-        ? 'vmess'
-        : importData.includes('vless')
-          ? 'vless'
-          : 'trojan',
+      ...cloneDeep(formData),
+      protocol: protocolFactory.getOutbound().protocol ?? 'vmess',
       network,
       server: {
         ...formData.server,
@@ -126,13 +113,7 @@ const Index = () => {
       },
       error: [false, false, false, false],
     });
-    setOutbound(protocolFactory.getOutbound());
   };
-  useEffect(() => {
-    if (vmessRef.current || vlessRef.current || trojanRef.current) {
-      setOutbound(formData.server.outbound);
-    }
-  }, [vmessRef.current, vlessRef.current, trojanRef.current]);
 
   const handleError = (index: number, error: boolean) => {
     setFormData({
@@ -141,43 +122,87 @@ const Index = () => {
     });
   };
   const handleEditorChange = (v) => {
-    setFormData({ ...formData, server: { ...formData.server, outbound: JSON.parse(v) } });
+    setFormData({ ...cloneDeep(formData), server: { ...formData.server, outbound: JSON.parse(v) } });
   };
   const initEdit = () => {
-    const { link, id, ps, outbound } = JSON.parse(localStorage.getItem('editObj'));
-    let protocolFactory;
+    const { id, ps, link, latency, speedTestType, group, groupId, outbound } = JSON.parse(
+      localStorage.getItem('editObj'),
+    );
     // TODO:none support socks
     const network = outbound.streamSettings.network;
     const protocolType = outbound.protocol;
-
-    try {
-      protocolFactory =
-        protocolType === 'vmess'
-          ? new VMessData(link)
-          : protocolType === 'vless'
-            ? new VLessData(link)
-            : new TrojanData(link);
-    } catch (err) {
-      protocolFactory = () => {};
-    }
+    protocolFactory = protocolType.includes('vmess')
+      ? new VMessData(link)
+      : protocolType.includes('vless')
+        ? new VLessData(link)
+        : new TrojanData(link);
     setFormData({
       ...formData,
       server: {
         id,
-        link,
         ps,
+        link,
+        latency,
+        speedTestType,
+        group,
+        groupId,
         outbound,
       },
       network,
       importStr: link,
       protocol: protocolType,
     });
-    setOutbound(outbound);
+  };
+
+  const handleOnSave = () => {
+    const { server } = formData;
+    const hash = window.electron.electronAPI.hash(server.outbound);
+    protocolFactory.setOutbound(server.outbound);
+    window.api.send(`v2rayx:server:add/edit:toMain`, {
+      id: hash,
+      ps: server.ps,
+      link: protocolFactory.genShareLink(),
+      latency: '',
+      speedTestType: server.speedTestType,
+      group: 'localservers',
+      groupId: window.electron.electronAPI.hash('localservers', {
+        algorithm: 'md5',
+      }),
+      outbound: server.outbound,
+    });
+    // TODO: window.win.close(string) ask specific window close
+    window.close();
+    // window.win.close('');
+  };
+  const handleEditOnSave = () => {
+    const { server, protocol } = formData;
+    protocolFactory = protocol.includes('vmess')
+      ? new VMessData('')
+      : protocol.includes('vless')
+        ? new VLessData('')
+        : new TrojanData('');
+    const hash = window.electron.electronAPI.hash(server.outbound);
+    protocolFactory.setOutbound(server.outbound);
+    localStorage.setItem('previousEditId', server.id);
+    protocolFactory.genPs();
+    window.api.send(`v2rayx:server:add/edit:toMain`, {
+      id: hash,
+      ps: protocolFactory.getPs(),
+      link: protocolFactory.genShareLink(),
+      latency: '',
+      speedTestType: server.speedTestType,
+      group: server.group,
+      groupId: server.groupId,
+      outbound: server.outbound,
+    });
+    // TODO: window.win.close(string) ask specific window close
+    window.close();
+    // window.win.close('');
   };
 
   useEffect(() => {
     formData.server.outbound.streamSettings.network = formData.network;
-    // formData.server.outbound.protocol = formData.protocol;
+    formData.server.outbound.protocol = formData.protocol;
   }, [formData]);
 
   useEffect(() => {
@@ -215,7 +240,7 @@ const Index = () => {
                         placeholder="Support VMess/VLess/Trojan"
                         onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
                           setFormData({
-                            ...formData,
+                            ...cloneDeep(formData),
                             importStr: event.target.value,
                           })
                         }
@@ -246,7 +271,9 @@ const Index = () => {
                                 )
                               }
                             >
-                              Import
+                              {formData.protocol === formData.importStr.split('://')[0]
+                                ? 'Import'
+                                : 'Switch'}
                             </Button>
                           </InputAdornment>
                         }
@@ -275,18 +302,17 @@ const Index = () => {
                             const protocol = event.target.value;
                             const outbound = (
                               protocol === 'vmess'
-                                ? new VMessData(formData.importStr || {})
+                                ? new VMessData('')
                                 : protocol === 'vless'
-                                  ? new VLessData(formData.importStr || {})
-                                  : new TrojanData(formData.importStr || {})
+                                  ? new VLessData('')
+                                  : new TrojanData('')
                             ).getOutbound();
-                            formData.network = 'tcp';
                             setFormData({
-                              ...formData,
+                              ...cloneDeep(formData),
                               protocol,
+                              network: 'tcp',
                               server: { ...formData.server, ps: '', outbound },
                             });
-                            setOutbound(outbound);
                           }}
                         >
                           {protocols.map((protocol) => (
@@ -301,9 +327,9 @@ const Index = () => {
                       <Stack direction={'row'} justifyContent={'center'} alignItems={'center'}>
                         <Switch
                           value={formData.advanced}
-                          onChange={(event: React.ChangeEvent) =>
-                            setFormData({ ...formData, advanced: event.target.checked })
-                          }
+                          onChange={(event: React.ChangeEvent) => {
+                            setFormData({ ...cloneDeep(formData), advanced: event.target.checked });
+                          }}
                         />
                         <Typography>Advanced</Typography>
                       </Stack>
@@ -315,19 +341,19 @@ const Index = () => {
                         {
                           [
                             <VMess
-                              data={outbound}
+                              data={formData.server.outbound}
                               handleError={handleError}
                               key={0}
                               ref={vmessRef}
                             />,
                             <VLess
-                              data={outbound}
+                              data={formData.server.outbound}
                               handleError={handleError}
                               key={1}
                               ref={vlessRef}
                             />,
                             <Trojan
-                              data={outbound}
+                              data={formData.server.outbound}
                               handleError={handleError}
                               key={2}
                               ref={trojanRef}
@@ -351,7 +377,7 @@ const Index = () => {
                               input={<OutlinedInput label="Network" />}
                               MenuProps={MenuProps}
                               onChange={(event) => {
-                                setFormData({ ...formData, network: event.target.value });
+                                setFormData({ ...cloneDeep(formData), network: event.target.value });
                               }}
                             >
                               {networks.map((i) => (
@@ -410,21 +436,9 @@ const Index = () => {
           </Box>
           {!formData.error.find((b) => b) || formData.advanced ? (
             <IconButton
-              onClick={() => {
-                const { importStr, server } = formData;
-                const hash = window.electron.electronAPI.hash(server.outbound);
-                const link = importStr;
-                window.api.send(`v2rayx:server:add/edit:toMain`, {
-                  id: hash,
-                  link,
-                  ps: server.ps,
-                  outbound: server.outbound,
-                  latency: '',
-                });
-                // TODO:
-                window.close();
-                // window.win.close('');
-              }}
+              onClick={() =>
+                window.location.hash.includes('edit') ? handleEditOnSave() : handleOnSave()
+              }
             >
               <SaveAltIcon />
             </IconButton>

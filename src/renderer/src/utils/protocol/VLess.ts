@@ -1,5 +1,5 @@
 import { parseInt } from 'lodash';
-import { Protocol } from './index';
+import { Protocol } from './Protocol';
 
 /**
  - {"type":"ss","name":"v2rayse_test_1","server":"198.57.27.218","port":5004,"cipher":"aes-256-gcm","password":"g5MeD6Ft3CWlJId"}
@@ -51,6 +51,9 @@ export class VLess extends Protocol {
       this.setProtocol('vless');
       this.genOutboundFromLink();
       this.genPs();
+      return this;
+    } else if (link === '') {
+      this.initTemplate();
       return this;
     }
     throw new Error(`VLess parse error: please check link ${link}`);
@@ -202,10 +205,12 @@ export class VLess extends Protocol {
         };
         break;
     }
+    this.updateOutbound();
   }
 
   genStreamSettings(type: 'tcp' | 'kcp' | 'ws' | 'h2' | 'quic' | 'grpc', obj) {
     this.streamSettings[`${type === 'h2' ? 'http' : type}Settings`] = obj;
+    this.updateOutbound();
   }
 
   genShareLink() {
@@ -214,9 +219,10 @@ export class VLess extends Protocol {
     const { settings, streamSettings } = this.outbound;
     const host = settings?.vnext?.[0].address,
       port = settings?.vnext?.[0].port;
-    const share: VLessType = { host, port };
+    let id = '';
+    const share: VLessType = {};
     if (settings?.vnext?.[0].users.length ?? 0 > 0) {
-      share.id = settings?.vnext?.[0].users[0].id;
+      id = settings?.vnext?.[0].users[0].id;
       share.level = settings?.vnext?.[0].users[0].level;
       share.flow = settings?.vnext?.[0].users[0].flow;
       share.encryption = settings?.vnext?.[0].users[0].encryption;
@@ -261,6 +267,30 @@ export class VLess extends Protocol {
     Object.entries(share).forEach(
       ([key, value]) => key !== 'remark' && url.append(key, String(value)),
     );
-    return `${scheme}://${url.toString()}#${remark}`;
+    // vless://44efe52b-e143-46b5-a9e7-aadbfd77eb9c@qv2ray.net:443?encryption=none&flow=xtls-rprx-vision&security=reality&sni=sni.yahoo.com&fp=chrome&pbk=xxx&sid=88&type=tcp&headerType=none&host=hk.yahoo.com#reality
+    return `${scheme}://${id}@${host}:${port}?${url.toString()}#${remark}`;
+  }
+  initTemplate() {
+    const streamType = 'tcp';
+    this.protocol = 'vless';
+    this.settings = {
+      vnext: [
+        {
+          address: '',
+          users: [
+            {
+              id: '',
+              level: 0,
+              encryption: 'none',
+              flow: '',
+            },
+          ],
+          port: 443,
+        },
+      ],
+    };
+    this.streamSettings.network = streamType;
+    this.streamSettings.tcpSettings = this.streamSettingsTemplate.tcpSettings!;
+    this.updateOutbound();
   }
 }

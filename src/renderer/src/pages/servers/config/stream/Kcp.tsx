@@ -49,6 +49,32 @@ const Index = (props: any) => {
       downlinkCapacity,
       writeBufferSize,
       readBufferSize,
+    } = props.data.streamSettings.kcpSettings;
+
+    setFormData({
+      headers: headers ?? {
+        type: 'none',
+      },
+      mtu: mtu ?? 1350,
+      congestion: congestion ?? false,
+      tti: tti ?? 20,
+      uplinkCapacity: uplinkCapacity ?? 50,
+      downlinkCapacity: downlinkCapacity ?? 20,
+      writeBufferSize: writeBufferSize ?? 1,
+      readBufferSize: readBufferSize ?? 1,
+    });
+  }, [props.data]);
+
+  useEffect(() => {
+    const {
+      headers,
+      mtu,
+      congestion,
+      tti,
+      uplinkCapacity,
+      downlinkCapacity,
+      writeBufferSize,
+      readBufferSize,
     } = formData;
     props.data.streamSettings.kcpSettings = {
       headers,

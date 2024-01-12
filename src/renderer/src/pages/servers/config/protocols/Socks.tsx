@@ -77,7 +77,6 @@ const Index = (props: any) => {
     props.data.server.config.aid = formData.alterId;
     props.data.server.config.level = formData.level;
     props.data.server.config.scy = formData.algorithm === 'auto' ? 'auto' : formData.algorithm;
-    console.log(formData);
   }, [formData]);
 
   return (

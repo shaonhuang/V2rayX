@@ -1,23 +1,17 @@
 import { ElectronApp } from '@lib/app';
-import emitter from '@lib/event-emitter';
 import ProxyService from '../core/proxy';
 import Service from '../core/v2ray';
+import db from '@main/lib/lowdb';
 
-let proxy = true;
-let service = true;
 const tasks: Array<(electronApp: ElectronApp) => void> = [];
-
-emitter.on('v2ray:status', (status: boolean) => {
-  service = status;
-});
-emitter.on('proxy:status', (status: boolean) => {
-  proxy = status;
-});
 
 const stopProxy = (electronApp: ElectronApp) => {
   electronApp.registryHooksAsyncBeforeQuit('beforeQuit1', async (app, callback) => {
     console.log('hooks: >> turn proxy off');
     const service = new Service(process.platform);
+    await db.read();
+    db.data = db.chain.set('serviceRunningState', false).value();
+    await db.write();
     service.stop();
     callback();
   });

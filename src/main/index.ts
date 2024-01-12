@@ -33,11 +33,6 @@ electronHookApp.beforeReady(app);
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app.on('ready', async () => {
-  await db.read();
-  db.data = db.chain.set('appVersion', app.getVersion()).value();
-  // each time write something to lowdb, we have to write await db.write() weird bug for lowdb
-  await db.write();
-
   electronHookApp.ready(app);
   electronHookApp.afterReady(app, (err) => {
     if (err) console.log(err);

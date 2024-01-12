@@ -1,35 +1,33 @@
 import { Tray, MenuItemConstructorOptions, Menu, nativeImage, NativeImage } from 'electron';
-
 import { template } from './template';
 
 class TraySingleton {
-  private Instance: Tray | undefined;
+  private static Instance: Tray | undefined;
   private template = template;
 
   constructor(arg: string | NativeImage) {
-    if (!this.Instance) {
-      this.Instance = new Tray(arg);
-      this.Instance.setContextMenu(Menu.buildFromTemplate(this.template));
+    if (!TraySingleton.Instance) {
+      TraySingleton.Instance = new Tray(arg);
     }
-    this.template = template;
+    TraySingleton.Instance.setContextMenu(Menu.buildFromTemplate(this.template));
     return this;
   }
   public updateTemplate(replaceItem: MenuItemConstructorOptions) {
-    this.template = this.template.map((i) => {
+    this.template = this.template.map((i, idx) => {
       if (i.id === replaceItem.id) {
-        return replaceItem;
+        return Object.assign(this.template[idx], replaceItem);
       }
       return i;
     });
   }
   public refreshTray() {
-    this.Instance?.setContextMenu(Menu.buildFromTemplate(this.template));
+    TraySingleton.Instance?.setContextMenu(Menu.buildFromTemplate(this.template));
   }
 
   public updateMenuIcon(img: string): TraySingleton {
     const menuIcon = nativeImage.createFromDataURL(img);
-    this.Instance = new Tray(menuIcon);
-    this.Instance.setContextMenu(Menu.buildFromTemplate(this.template));
+    TraySingleton.Instance = new Tray(menuIcon);
+    TraySingleton.Instance.setContextMenu(Menu.buildFromTemplate(this.template));
     return this;
   }
 }

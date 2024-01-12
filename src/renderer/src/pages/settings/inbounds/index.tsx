@@ -1,11 +1,10 @@
 import { Button, Container, Stack, Tab, Box, TextField, Paper } from '@mui/material';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import SaveAsIcon from '@mui/icons-material/SaveAs';
-import { InboundObject } from './types';
+import { InboundObject } from '@renderer/constant/types';
 import Tabs, { tabsClasses } from '@mui/material/Tabs';
 import { useAppSelector, useAppDispatch } from '@store/hooks';
 import { setSettingsPageState } from '@renderer/store/settingsPageSlice';
-import { setServerTemplate } from '@renderer/store/serversPageSlice';
 
 const defaultHttpInboundObject: InboundObject = {
   listen: '127.0.0.1',
@@ -90,30 +89,18 @@ const DefaultInBounds = () => {
                 setFormData(defaultHttpInboundObject);
                 setInbounds(newInbounds);
                 setCurrentTab(newInbounds.length - 1);
-                // dispatch(
-                //   setSettingsPageState({
-                //     key: 'v2rayConfigure.inbounds',
-                //     value: newInbounds,
-                //   }),
-                // );
               }}
             >
               Add New InBound
             </Button>
             <Button
-              disabled={inbounds.length < 3}
+              disabled={inbounds.length < 3 || currentTab === 0 || currentTab === 1}
               onClick={() => {
                 const newInbounds = [...inbounds];
                 newInbounds.splice(currentTab, 1);
                 setFormData(inbounds[currentTab - 1]);
                 setInbounds(newInbounds);
                 setCurrentTab(currentTab - 1);
-                // dispatch(
-                //   setSettingsPageState({
-                //     key: 'v2rayConfigure.inbounds',
-                //     value: newInbounds,
-                //   }),
-                // );
               }}
             >
               Delete This InBound
@@ -164,12 +151,10 @@ const DefaultInBounds = () => {
                   value: inbounds.with(currentTab, formData),
                 }),
               );
-              dispatch(
-                setServerTemplate({
-                  key: 'inbounds',
-                  value: inbounds,
-                }),
-              );
+              // FIXME: async problem with data sync issues
+              setTimeout(() => {
+                window.v2rayService.updatePort();
+              }, 200);
             }}
           >
             Save All

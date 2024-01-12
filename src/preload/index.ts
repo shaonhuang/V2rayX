@@ -115,6 +115,7 @@ if (process.contextIsolated) {
       startService: (data?: any) => ipcRenderer.invoke('v2rayx:v2ray:start', data ?? undefined),
       stopService: () => ipcRenderer.invoke('v2rayx:v2ray:stop'),
       checkService: () => ipcRenderer.invoke('v2rayx:v2ray:check'),
+      updatePort: () => ipcRenderer.invoke('v2rayx:v2ray:port:update'),
     });
 
     contextBridge.exposeInMainWorld('proxyMode', {

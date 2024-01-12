@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import {
   Box,
   Backdrop,
@@ -6,7 +6,6 @@ import {
   SpeedDialIcon,
   SpeedDialAction,
   Stack,
-  IconButton,
   Button,
   Dialog,
   DialogActions,
@@ -14,36 +13,19 @@ import {
   DialogContentText,
   DialogTitle,
   useMediaQuery,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
-  Typography,
-  InputLabel,
-  MenuItem,
-  FormControl,
 } from '@mui/material';
-
-import CachedIcon from '@mui/icons-material/Cached';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import { cloneDeep, findIndex, uniqBy, debounce } from 'lodash';
+import { uniqBy, findIndex, cloneDeep } from 'lodash';
 import { useAppSelector, useAppDispatch } from '@store/hooks';
-import {
-  setServersState,
-  setCurrentServerId,
-  setSubscriptionList,
-  readSubscriptionListAndServersGroupsFromDB,
-} from '@store/serversPageSlice';
-import ServerItem from './ServerItem';
-import { Server } from '@renderer/constant/types';
+import { setServersGroups, setSubscriptionList } from '@store/serversPageSlice';
+import { Subscription } from '@renderer/constant/types';
 import QrCodeScannerIcon from '@mui/icons-material/QrCodeScanner';
 import AddLinkIcon from '@mui/icons-material/AddLink';
 import SubscriptionsIcon from '@mui/icons-material/Subscriptions';
 import DriveFileRenameOutlineIcon from '@mui/icons-material/DriveFileRenameOutline';
-import Select, { SelectChangeEvent } from '@mui/material/Select';
-import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
-import { VMess, VLess, Trojan } from '@renderer/utils/protocol/';
+import { VMess, VLess, Trojan } from '@renderer/utils/protocol';
 import { useTheme } from '@mui/material/styles';
-import { Subscription, ServersGroup } from '@renderer/constant/types';
+import FoldList from './components/FoldList';
+import { Server, ServersGroup } from '@renderer/constant/types';
 
 const actions = [
   { icon: <DriveFileRenameOutlineIcon />, name: 'Create From Boilerplate' },
@@ -52,230 +34,17 @@ const actions = [
   { icon: <SubscriptionsIcon />, name: 'Manage Subscriptions' },
 ];
 
-const LocalServersAndSubscriptionsServers = (props) => {
-  const dispatch = useAppDispatch();
-  const subscriptions = props.subscriptions || [];
-  const serversGroupSet = [
-    {
-      remark: 'Local Servers',
-      link: '',
-      speedTestType: 'icmp',
-      requestServers: props.localServers ?? [],
-    },
-    ...subscriptions,
-  ];
-
-  const runService = (idx: number, cmd: boolean) => {};
-
-  // const [loadBalancing, setLoadBalancing] = useState<boolean>(false);
-  const handleSpeedTypeChange = () => {};
-  // useEffect(() => {
-  //   console.log(foldStates);
-  // }, [foldStates]);
-  return (
-    <Stack className="scroll-bar-none h-full overflow-y-scroll" spacing={2}>
-      {/*<Paper>
-          <Tooltip title="Delete">
-            <Box>
-              <Switch onChange={(e) => setLoadBalancing(e.target.checked)} />
-              Load Balancing
-              {loadBalancing ? (
-                false ? (
-                  <Button>
-                    <PlayArrowIcon />
-                  </Button>
-                ) : (
-                  <Button>
-                    <StopIcon />
-                  </Button>
-                )
-              ) : (
-                <></>
-              )}
-            </Box>
-          </Tooltip>
-        </Paper>*/}
-      {serversGroupSet.map((group, idx) => {
-        return (
-          <>
-            {group.requestServers.length > 0 ? (
-              <Accordion key={idx}>
-                <AccordionSummary
-                  expandIcon={<ExpandMoreIcon />}
-                  aria-controls="panel1a-content"
-                  id="panel1a-header"
-                >
-                  <Box sx={{ width: '100%', flexShrink: 0 }}>
-                    <Stack direction={'row'} alignItems={'center'} justifyContent={'space-between'}>
-                      <Typography>{group.remark}</Typography>
-                      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                        <FormControl
-                          sx={{ m: 1, minWidth: 140 }}
-                          size="small"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                          }}
-                        >
-                          <InputLabel id="demo-select-small-label">Latency Test Type</InputLabel>
-                          <Select
-                            labelId="demo-select-small-label"
-                            id="demo-select-small"
-                            value={group.speedTestType}
-                            label="LatencyTestType"
-                            disabled
-                            onChange={handleSpeedTypeChange}
-                          >
-                            <MenuItem value={'icmp'}>ICMP</MenuItem>
-                            <MenuItem value={'tcp'}>Tcp</MenuItem>
-                            <MenuItem value={'connect'}>Connect</MenuItem>
-                          </Select>
-                        </FormControl>
-                        <IconButton
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            // setFoldStates(foldStates.with(idx, false));
-                            const testLatencyGroup = cloneDeep(group);
-                            Promise.all(
-                              testLatencyGroup.requestServers.map(async (i) => {
-                                // i.outbound
-                                const protocol = i.outbound.protocol;
-                                let host = '',
-                                  port = '';
-                                if (protocol === 'vmess' || protocol === 'vless') {
-                                  host = i.outbound.settings.vnext[0].address;
-                                  port = i.outbound.settings.vnext[0].port;
-                                } else if (protocol === 'trojan') {
-                                  host = i.outbound.settings.servers[0].address;
-                                  port = i.outbound.settings.servers[0].port;
-                                }
-                                const res = await window.net.tcpPing({ host, port });
-                                console.log(res);
-                                i.latency = isNaN(res.result.ave)
-                                  ? 'Timeout'
-                                  : `${res.result.ave}ms`;
-                                console.log(i);
-                                return i;
-                              }),
-                            ).then((group) => {
-                              if (idx === 0) {
-                                dispatch(setServersState(group));
-                              } else if (idx >= 1) {
-                                const cloneSub = cloneDeep(serversGroupSet);
-                                cloneSub[idx].requestServers = group;
-                                cloneSub.shift();
-                                dispatch(setSubscriptionList(cloneSub as []));
-                              }
-                            });
-                          }}
-                        >
-                          <CachedIcon />
-                        </IconButton>
-                        <IconButton
-                          disabled={idx === 0}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            props.handleCheckDeleteDialog(true, idx - 1);
-                          }}
-                        >
-                          <DeleteForeverIcon />
-                        </IconButton>
-                      </Box>
-                    </Stack>
-                  </Box>
-                </AccordionSummary>
-                <AccordionDetails
-                  className="scroll-bar-none"
-                  sx={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    overflowY: 'scroll',
-                  }}
-                >
-                  {group.requestServers.map(
-                    (i, cIdx) =>
-                      i && (
-                        <ServerItem
-                          className={
-                            props.selectedId.includes(i.id)
-                              ? 'bg-sky-200/70 dark:bg-sky-700/70'
-                              : 'bg-white/80 dark:bg-slate-500/50'
-                          }
-                          serverName={i.ps}
-                          isSeleted={props.selectedId.includes(i.id)}
-                          key={cIdx}
-                          cIndex={cIdx}
-                          index={idx}
-                          running={props.running}
-                          latency={i.latency}
-                          data={i.outbound}
-                          server={i}
-                          onClick={(e) => {
-                            if (e.target === e.currentTarget) {
-                              localStorage.setItem('share-qrcode-link', i.link);
-                              props.handleSelectServer(i.id);
-                            }
-                          }}
-                          handleServiceStatus={runService}
-                          handleQR={props.handleQRItem}
-                          handleLink={props.handleLinkItem}
-                          handleDelete={props.handleDeleteItem}
-                          handleEdit={props.handleEditItem}
-                        ></ServerItem>
-                      ),
-                  )}
-                </AccordionDetails>
-              </Accordion>
-            ) : (
-              <></>
-            )}
-          </>
-        );
-      })}
-    </Stack>
-  );
-};
-
 const Index = (): JSX.Element => {
-  const [running, setRunning] = useState(false);
-  const [cacheSelectedId, setCacheSeletedId] = useState<string[]>([]);
+  let deleteItemGroupId = '';
+  const dispatch = useAppDispatch();
+  const theme = useTheme();
   const subscriptionList: Subscription[] = useAppSelector(
     (state) => state.serversPage.subscriptionList,
   );
-  const theme = useTheme();
+  const serversGroups = useAppSelector((state) => state.serversPage.serversGroups);
   const fullScreen = useMediaQuery(theme.breakpoints.down('md'));
   const [checkDeleteDialog, setCheckDeleteDialog] = useState(false);
-  const [deleteItemIdx, setDeleteItemIdx] = useState(1);
-  const serversState = useAppSelector((state) => state.serversPage.servers);
-  const currentServerId: Array<string> = useAppSelector(
-    (state) => state.serversPage.currentServerId,
-  );
-  const serviceRunningState = useAppSelector((state) => state.serversPage.serviceRunningState);
-  //   const [foldStates, setFoldStates] = useState<boolean[]>([
-  //   true,
-  //   ...Array(subscriptionList.length).fill(false),
-  // ]);
-  // const [subscriptionsServers, SetSubscriptionsServers] = useState(() => linkToServerObj(example));
-  const dispatch = useAppDispatch();
-
   const [openBackdrop, setOpenBackDrop] = useState(false);
-
-  useEffect(() => {
-    console.log('subscriptionList', subscriptionList);
-  }, [subscriptionList]);
-
-  const handleSelectServer = (id: string) => {
-    if (cacheSelectedId.includes(id)) {
-      // dispatch(setCurrentServerId(currentServerId.filter((i) => i !== id)));
-      // setCacheSeletedId(cacheSelectedId.filter((i) => i !== id));
-    } else {
-      // dispatch(setCurrentServerId([...currentServerId, id]));
-      // setCacheSeletedId([...cacheSelectedId, id]);
-    }
-    setCacheSeletedId([id]);
-    window.v2rayService.stopService();
-  };
 
   const handleManageSubscription = () => {
     window.win.create(
@@ -311,15 +80,59 @@ const Index = (): JSX.Element => {
           });
           return;
         }
-        const saveItem = {
+        const saveItem: Server = {
           id: window.electron.electronAPI.hash(factory.getOutbound()),
           link,
           ps: factory.getPs(),
           latency: '',
+          speedTestType: '',
+          group: 'localservers',
+          groupId: window.electron.electronAPI.hash('localservers', {
+            algorithm: 'md5',
+          }),
           outbound: factory.getOutbound(),
         };
-
-        dispatch(setServersState(uniqBy([...serversState, saveItem], 'id')));
+        let newServersGroups: ServersGroup[] =
+          serversGroups.length > 0
+            ? cloneDeep(serversGroups)
+            : [
+                {
+                  group: 'localservers',
+                  groupId: window.electron.electronAPI.hash('localservers', { algorithm: 'md5' }),
+                  remark: 'Local Servers',
+                  link: '',
+                  speedTestType: 'icmp',
+                  subServers: [saveItem],
+                },
+              ];
+        // sort serversGroups make localservers group frist
+        let idxOfLocalServersItem = findIndex(newServersGroups, { group: 'localservers' });
+        if (idxOfLocalServersItem > -1) {
+          newServersGroups = [
+            newServersGroups[idxOfLocalServersItem],
+            ...newServersGroups.filter((i) => i.group !== 'localservers'),
+          ];
+        } else {
+          newServersGroups = [
+            {
+              group: 'localservers',
+              groupId: window.electron.electronAPI.hash('localservers', { algorithm: 'md5' }),
+              remark: 'Local Servers',
+              link: '',
+              speedTestType: 'icmp',
+              subServers: [saveItem],
+            },
+            ...newServersGroups,
+          ];
+          idxOfLocalServersItem = 0;
+        }
+        if (idxOfLocalServersItem > -1) newServersGroups[0].subServers.push(saveItem);
+        newServersGroups = newServersGroups.map((i) => {
+          const subServers = uniqBy(i.subServers, 'id');
+          i.subServers = subServers;
+          return i;
+        });
+        dispatch(setServersGroups(newServersGroups));
 
         window.notification.send({
           title: 'Import From Clipboard',
@@ -346,36 +159,6 @@ const Index = (): JSX.Element => {
       },
     );
   };
-  const handleQRItem = (idx: number, cIdx: number) => {
-    localStorage.setItem(
-      'share-qrcode-link',
-      (idx > 0 ? subscriptionList[idx - 1].requestServers[cIdx] : serversState[cIdx]).link,
-    );
-    window.win.create('/share/qrcode', {
-      width: 420,
-      height: 420,
-      show: true,
-    });
-  };
-  const handleLinkItem = (idx: number, cIdx: number) => {
-    window.clipboard.paste(
-      (idx > 0 ? subscriptionList[idx - 1].requestServers[cIdx] : serversState[cIdx]).link,
-    );
-  };
-
-  const handleDeleteItem = (idx: number) => {
-    const newServers = cloneDeep(serversState);
-    newServers.splice(idx, 1);
-    if (cacheSelectedId.includes(serversState[idx].id)) {
-      window.v2rayService.stopService();
-      // dispatch(setCurrentServerId(currentServerId.filter((i) => i !== serversState[idx].id)));
-      setCacheSeletedId(cacheSelectedId);
-    }
-    dispatch(setServersState(newServers));
-    newServers.length === 0 && window.api.send('v2rayx:service:empty');
-    // to refrsh tray icon menu
-    window.api.send('v2rayx:service:selected');
-  };
 
   const handleAddOpen = () => {
     window.win.create(
@@ -390,106 +173,11 @@ const Index = (): JSX.Element => {
     );
     localStorage.setItem('serverAddOrEdit', 'add');
   };
-  const handleEditItem = (server: Server) => {
-    localStorage.setItem('editObj', JSON.stringify(server));
-    localStorage.setItem('editIdx', server.id);
-    localStorage.setItem('serverAddOrEdit', 'edit');
-    window.win.create(
-      `/servers/edit/${server.id}`,
-      {
-        title: 'Server Configuration',
-        width: 800,
-        height: 600,
-        show: true,
-      },
-      { parentName: 'mainWindow', modalStatus: true },
-    );
-  };
-
-  useEffect(() => {
-    window.api.receive('v2ray:status', (status: boolean) => {
-      setRunning(status);
-    });
-    window.api.receive('v2rayx:server:add/edit:fromMain', (server: Server) => {
-      const newServersState = cloneDeep(serversState);
-      const newServersList = cloneDeep(subscriptionList);
-      const idxOfItem = { id: localStorage.getItem('editIdx') ?? '' };
-      const serversGroup = [
-        {
-          remark: 'Local Servers',
-          link: '',
-          speedTestType: 'icmp',
-          requestServers: newServersState ?? [],
-        },
-        ...newServersList,
-      ];
-      const serverAddOrEdit = localStorage.getItem('serverAddOrEdit');
-      if (serverAddOrEdit === 'edit' && idxOfItem.id !== '') {
-        // stop previous proxy service if it's running
-        // findIndex(newServers, { id: currentServerId }) > -1 &&
-        window.v2rayService.stopService();
-        // newServers.splice(idxOfItem, 1, serverItem);
-        // dispatch(setServersState(uniqBy(newServersState, 'id')));
-        const editWhichGroup = -1;
-        serversGroup.forEach((i, idx) => {
-          const checkIndex = findIndex(i.requestServers, idxOfItem);
-          if (checkIndex > -1) {
-            if (idx === 0) {
-              newServersState.splice(checkIndex, 1, server);
-              dispatch(setServersState(uniqBy(newServersState, 'id')));
-            } else {
-              newServersList[idx - 1].requestServers.splice(checkIndex, 1, server);
-              dispatch(setSubscriptionList(newServersList as []));
-            }
-            console.log(idx, 'group');
-          }
-        });
-      } else {
-        newServersState.push(server);
-        dispatch(setServersState(uniqBy(newServersState, 'id')));
-      }
-
-      // to refrsh tray icon menu
-      window.api.send('v2rayx:service:selected');
-    });
-
-    window.api.receive('v2rayx:server:subscription:update:fromMain', async () => {
-      const subscriptionList: Subscription[] = await window.db.read('subscriptionList');
-      const serversGroups: ServersGroup[] = await window.db.read('serversGroups');
-      dispatch(
-        readSubscriptionListAndServersGroupsFromDB({
-          subscriptionList,
-          serversGroups,
-        }),
-      );
-    });
-
-    // FIXME: type error
-    // @ts-ignore
-    window.v2rayService.checkService().then((res) => setRunning(res));
-    setRunning(serviceRunningState);
-    setCacheSeletedId(currentServerId);
-  }, []);
-
-  useEffect(() => {
-    setRunning(serviceRunningState);
-  }, [serviceRunningState]);
-
-  useEffect(
-    debounce(() => {
-      if (cacheSelectedId.length > 0) {
-        dispatch(setCurrentServerId(cacheSelectedId));
-        // to refrsh tray icon menu
-        window.api.send('v2rayx:service:selected');
-      }
-    }, 500),
-    [cacheSelectedId],
-  );
 
   return (
     <section
       className={
-        'scroll-bar-none flex h-4/5 flex-1 flex-col items-center justify-center overflow-y-scroll'
+        'scroll-bar-none mt-[-12px] flex h-4/5 flex-1 flex-col items-center justify-center overflow-y-scroll'
       }
     >
       <div className="mb-12 flex w-max flex-row gap-8">
@@ -499,19 +187,10 @@ const Index = (): JSX.Element => {
         */}
       </div>
       <Stack className="scroll-bar-none h-full w-full overflow-y-scroll">
-        <LocalServersAndSubscriptionsServers
-          localServers={serversState}
-          subscriptions={subscriptionList}
-          selectedId={cacheSelectedId}
-          running={running}
-          handleQRItem={handleQRItem}
-          handleLinkItem={handleLinkItem}
-          handleDeleteItem={handleDeleteItem}
-          handleEditItem={handleEditItem}
-          handleSelectServer={handleSelectServer}
-          handleCheckDeleteDialog={(v, idx) => {
+        <FoldList
+          handleCheckDeleteDialog={(v, groudId) => {
             setCheckDeleteDialog(v);
-            setDeleteItemIdx(idx);
+            deleteItemGroupId = groudId;
           }}
         />
 
@@ -576,10 +255,9 @@ const Index = (): JSX.Element => {
           </Button>
           <Button
             onClick={() => {
-              const list = [...subscriptionList];
-              list.splice(deleteItemIdx, 1);
-              console.log(list, 'list');
-              dispatch(setSubscriptionList(list));
+              const newServersGroup = [...serversGroups];
+              newServersGroup.splice(findIndex(newServersGroup, { groupId: deleteItemGroupId }), 1);
+              dispatch(setServersGroups(newServersGroup));
               setCheckDeleteDialog(false);
             }}
             autoFocus

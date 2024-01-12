@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import {
   Container,
-  Box,
   Paper,
   Switch,
   Stack,
@@ -9,7 +8,6 @@ import {
   Button,
   ButtonGroup,
   Tooltip,
-  Chip,
   Typography,
 } from '@mui/material';
 import Grid from '@mui/material/Unstable_Grid2';
@@ -17,6 +15,7 @@ import TipsAndUpdatesIcon from '@mui/icons-material/TipsAndUpdates';
 import { useAppSelector, useAppDispatch } from '@store/hooks';
 import { setSettingsPageState } from '@renderer/store/settingsPageSlice';
 import { set } from 'lodash';
+import { TitleWithTooltipType } from '@renderer/constant/types';
 
 import Editor from '@monaco-editor/react';
 
@@ -70,7 +69,7 @@ export const AppTheme = () => {
           <Typography variant="h6">Application Theme</Typography>
           {appearance.customStyle ? (
             <Grid container spacing={2} sx={{ width: '100%' }}>
-              <TitleWithTooltip title="Enable Custom Theme" />
+              <TitleWithTooltip title="Enable Custom Theme (JSON)" />
               <Grid xs={4}>
                 <Switch
                   checked={appearance.customStyle}
@@ -143,7 +142,7 @@ export const AppTheme = () => {
                     </Button>
                   </ButtonGroup>
                 </Grid>
-                <TitleWithTooltip title="Enable Custom Theme" />
+                <TitleWithTooltip title="Enable Custom Theme (JSON)" />
                 <Grid xs={4}>
                   <Switch
                     checked={appearance.customStyle}
@@ -192,7 +191,6 @@ export const FollowSystemTheme = () => {
             <TitleWithTooltip title="Follow System Theme" />
             <Grid xs={4}>
               <Switch
-                disabled
                 checked={appearance.followSystemTheme}
                 onChange={(event) =>
                   dispatch(
@@ -326,7 +324,6 @@ export const EnhancedTrayIcon = () => {
           <Typography variant="body1">
             Now you can replace tray icon (recommend that image size is 16x16)
           </Typography>
-
           <Grid container spacing={2} sx={{ width: '100%' }} columns={16}>
             <TextField
               label="Icon (Base64)"

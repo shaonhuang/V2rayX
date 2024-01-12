@@ -8,51 +8,44 @@ import ProxyService from '@main/services/core/proxy';
 import { existsSync } from 'node:fs';
 import Window from '@main/services/browser';
 import { app } from 'electron';
-import { find, flatMapDeep, flattenDeep } from 'lodash';
+import { find, flattenDeep } from 'lodash';
+import { Mode } from '@main/lib/constant/types';
 import { isWindows } from '@main/lib/constant';
 
 const tasks: Array<(electronApp: ElectronApp) => void> = [];
 
-// const syncAppVersion = () => {
-//   db.read().then(() => {
-//     db.data = db.chain.set('appVersion', app.getVersion()).value();
-//     console.log('appVersion', app.getVersion(), db.data);
-//   });
-//   db.write().then(() => {
-//     console.log(db.data);
-//   });
-// };
-
 const autoStartProxy = (electronApp: ElectronApp) => {
   electronApp.registryHooksSync('ready', 'autoStartProxy', () => {
     console.log('hooks: >> autoStartProxy');
-    // TODO: auto start proxy
     db.read().then(() => {
       if (!db.chain.get('management.generalSettings.autoStartProxy').value()) return;
       const service = new Service(process.platform);
+      const v2rayLogsFolder = db.chain.get('management.generalSettings.v2rayLogsFolder').value();
+      const currentServerId = db.chain.get('currentServerId').value()?.[0];
       try {
-        const currentServerId = db.chain.get('currentServerId').value()?.[0] ?? '';
-        const v2rayLogsFolder = db.chain.get('management.generalSettings.v2rayLogsFolder').value();
-        const outbounds = flatMapDeep([
-          db.chain.get('servers').value(),
+        const outbounds = flattenDeep(
           db.chain
-            .get('subscriptionList')
+            .get('serversGroups')
             .value()
-            .map((i) => i.requestServers),
-        ]);
+            .map((group) => {
+              return group.subServers;
+            }),
+        );
         const outbound = find(outbounds, { id: currentServerId ?? '' })?.outbound;
         const template = db.chain.get('serverTemplate').value();
+        const dns = JSON.parse(db.chain.get('management.v2rayConfigure.dns').value());
         template.log = {
           error: v2rayLogsFolder.concat('error.log'),
           loglevel: 'info',
           access: v2rayLogsFolder.concat('access.log'),
         };
+        template.dns = dns;
         if (!outbound) throw new Error('choose id not point,outbound find empty');
         template.outbounds = [outbound];
         if (currentServerId !== '') {
           if (existsSync(v2rayLogsFolder.concat('access.log'))) {
             service.start(template);
-            emitter.emit('tray-v2ray:update', true);
+            emitter.emit('tray-v2ray:update', {});
             db.data = db.chain.set('serviceRunningState', true).value();
           } else {
             logger.error('service init failed. accessing log file not found');
@@ -70,6 +63,7 @@ const autoStartProxy = (electronApp: ElectronApp) => {
             db.data = db.chain.set('serviceRunningState', false).value();
           }
         }
+        db.write();
       } catch (err) {
         logger.error('service init', err);
       }
@@ -78,23 +72,19 @@ const autoStartProxy = (electronApp: ElectronApp) => {
 };
 
 const autoStartSysProxy = (electronApp: ElectronApp) => {
-  electronApp.registryHooksSync('beforeReady', 'setupProxy', () => {
+  electronApp.registryHooksSync('ready', 'setupProxy', () => {
     console.log('hooks: >> setupProxy');
+
     db.read().then(() => {
-      // @ts-ignore
-      const config = db.chain
-        .get('servers')
-        ?.find({ id: db.chain.get('currentServerId').value() })
-        .value()?.config;
       // [0] is socks proxy port
-      const socksPort = config?.inbounds[0].port ?? 10801;
+      const socksPort = db.data.management.v2rayConfigure.inbounds[0].port ?? 10801;
 
       // [1] is http proxy port
-      const httpPort = config?.inbounds[1].port ?? 10871;
+      const httpPort = db.data.management.v2rayConfigure.inbounds[1].port ?? 10871;
 
       const randomPort = Math.floor(Math.random() * (65535 - 1024 + 1)) + 1024;
       let pacPort = randomPort;
-      const mode = db.chain.get('settings.proxyMode').value() as Mode;
+      const mode = db.chain.get('management.systemProxy.proxyMode').value() as Mode;
       promiseRetry(
         () =>
           checkPortAvailability(randomPort)

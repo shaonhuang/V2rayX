@@ -7,7 +7,6 @@ import {
   Chip,
   Box,
   Stack,
-  Paper,
   Typography,
 } from '@mui/material';
 import ScreenShareIcon from '@mui/icons-material/ScreenShare';
@@ -19,6 +18,8 @@ import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import StopIcon from '@mui/icons-material/Stop';
 import Button from '@mui/material/Button';
 import { throttle } from 'lodash';
+import { useAppDispatch } from '@renderer/store/hooks';
+import { setServiceRunningState } from '@renderer/store/serversPageSlice';
 
 const theme = createTheme({
   palette: {
@@ -38,14 +39,23 @@ const theme = createTheme({
 // );
 
 const Index = (props: any) => {
+  const dispatch = useAppDispatch();
   const protocol = props.data.protocol.toUpperCase();
   const handleSelectServerStop = throttle((e: any) => {
     e.stopPropagation();
-    window.v2rayService.stopService();
+    window.v2rayService.stopService().then(() => {
+      window.v2rayService.checkService().then((res) => {
+        dispatch(setServiceRunningState(res));
+      });
+    });
   }, 1000);
   const handleSelectServerStart = throttle((e: any) => {
     e.stopPropagation();
-    window.v2rayService.startService();
+    window.v2rayService.startService().then(() => {
+      window.v2rayService.checkService().then((res) => {
+        dispatch(setServiceRunningState(res));
+      });
+    });
   }, 1000);
 
   return (
@@ -143,7 +153,7 @@ const Index = (props: any) => {
               <ListItem disablePadding>
                 <ListItemButton
                   onClick={() => {
-                    props.handleEdit(props.server);
+                    props.handleEdit(props.index, props.cIndex);
                   }}
                 >
                   <ListItemIcon>
@@ -155,7 +165,7 @@ const Index = (props: any) => {
               <ListItem disablePadding>
                 <ListItemButton
                   onClick={() => {
-                    props.handleDelete(props.index);
+                    props.handleDelete(props.index, props.cIndex);
                   }}
                 >
                   <ListItemIcon>

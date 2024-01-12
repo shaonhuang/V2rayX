@@ -1,9 +1,7 @@
-import { useState, useEffect } from 'react';
-import { Button, IconButton, Stack, Container, Paper, Box, Skeleton } from '@mui/material';
+import { useState } from 'react';
+import { Button, IconButton, Stack, Container, Paper, Box } from '@mui/material';
 import FileOpenIcon from '@mui/icons-material/FileOpen';
 import { useAppSelector } from '@renderer/store/hooks';
-import { find, isEmpty } from 'lodash';
-import { VmessObjConfiguration, EmptyObject } from '@renderer/constant/types';
 
 import { type MRT_ColumnDef } from 'material-react-table';
 import DataTable from '@renderer/components/InfiniteTable';
@@ -71,27 +69,10 @@ const columnsError: MRT_ColumnDef<ErorLog>[] = [
 ];
 
 const Index = (): JSX.Element => {
-  const serverState = useAppSelector((state) => state.serversPage.servers);
-  const [server, setServer] = useState<VmessObjConfiguration | EmptyObject>({});
-  const currentServerId = useAppSelector((state) => state.serversPage.currentServerId);
-  const serverTemplate = useAppSelector((state) => state.serversPage.serverTemplate);
   const v2rayLogsFolder = useAppSelector(
     (state) => state.settingsPage.generalSettings.v2rayLogsFolder,
   );
   const [logType, setLogType] = useState<string>('access');
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-
-  useEffect(() => {
-    console.log(serverTemplate, 'serverTemplate', v2rayLogsFolder);
-    // if (currentServerId.length > 0) {
-    //   setServer(find(serverState, { id: currentServerId[0] })?.config);
-    //   setIsLoading(false);
-    // }
-  }, []);
-
-  useEffect(() => {
-    // window.location.reload();
-  }, [logType]);
 
   const queryFn = async ({ start, size, filters, globalFilter, sorting }) => {
     window.electron.electronAPI.ipcRenderer.send('logs:getAll', {
@@ -137,8 +118,9 @@ const Index = (): JSX.Element => {
               Log level: {server.log.loglevel.toUpperCase()}
             </Paper>*/}
           <Paper elevation={0} className="px-4">
-            Log File Path:
-            {v2rayLogsFolder.concat(logType === 'access' ? 'access.log' : 'error.log')}
+            {`Log File Path:   ${v2rayLogsFolder.concat(
+              logType === 'access' ? 'access.log' : 'error.log',
+            )}`}
             <IconButton
               color="primary"
               className=""

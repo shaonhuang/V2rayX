@@ -1,20 +1,15 @@
-import { app, ipcMain } from 'electron';
+import { ipcMain } from 'electron';
 import fs from 'node:fs';
-import { join } from 'node:path';
 import { filter, find, escapeRegExp } from 'lodash';
 
 const listeners = () => {
-  ipcMain.handle('get-logs-path', () => {
-    return app.getPath('logs');
-  });
-
-  ipcMain.on('logs:get', (event, logName = 'access.log') => {
-    const logPath = join(app.getPath('logs'), logName);
-    const logs = fs.existsSync(logPath)
-      ? fs.readFileSync(logPath, 'utf-8').split('\n').slice(-11, -1)
-      : [];
-    event.reply('logs:get', logs);
-  });
+  // ipcMain.on('logs:get', (event, logName = 'access.log') => {
+  //   const logPath = join(app.getPath('logs'), logName);
+  //   const logs = fs.existsSync(logPath)
+  //     ? fs.readFileSync(logPath, 'utf-8').split('\n').slice(-11, -1)
+  //     : [];
+  //   event.reply('logs:get', logs);
+  // });
 
   ipcMain.on('logs:getAllError', (event, { path, start, size, filters, globalFilter, sorting }) => {
     if (!start) return;

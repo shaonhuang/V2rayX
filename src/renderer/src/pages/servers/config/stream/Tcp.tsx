@@ -20,6 +20,15 @@ const Index = (props: any) => {
   });
 
   useEffect(() => {
+    const { header } = props.data.streamSettings.tcpSettings;
+    setFormData({
+      type: header?.type ?? 'none',
+      request: '',
+      response: '',
+    });
+  }, [props.data]);
+
+  useEffect(() => {
     const { type, request, response } = formData;
     props.data.streamSettings.tcpSettings = {
       header: {

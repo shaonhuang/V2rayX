@@ -36,13 +36,16 @@ type formDataType = {
 
 const Index = forwardRef((props: any, ref) => {
   const internalRef = useRef(null);
+  const { settings } = props.data;
+  const { servers } = settings;
+  const { address, port, level, password, flow } = servers[0] ?? {};
 
   const [formData, setFormData] = useState<formDataType>({
-    address: '',
-    port: 0,
-    level: 0,
-    password: '',
-    flow: '',
+    address,
+    port,
+    level,
+    password,
+    flow,
   });
   const [formError, setFormError] = useState<boolean>(false);
 
@@ -82,8 +85,6 @@ const Index = forwardRef((props: any, ref) => {
         address,
       },
     ];
-
-    console.log(formData, 'formdata');
   }, [formData]);
   useImperativeHandle(ref, () => ({
     current: internalRef.current,

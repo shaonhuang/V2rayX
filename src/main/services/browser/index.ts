@@ -73,10 +73,13 @@ export default class Window {
         hash: suffix,
       });
     }
-    db.data.management.generalSettings.dashboardPopWhenStart &&
-      window.once('ready-to-show', () => {
-        window.show();
-      });
+    db.read().then(() => {
+      db.data.management.generalSettings.dashboardPopWhenStart &&
+        window.once('ready-to-show', () => {
+          window.show();
+        });
+    });
+
     return window;
   }
 }

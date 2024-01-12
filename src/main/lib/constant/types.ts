@@ -336,14 +336,6 @@ export type VmessObjConfiguration = {
   other: Record<string, any>;
 };
 
-export type Server = {
-  id: string;
-  ps: string;
-  link: string;
-  // TODO: should be plurals
-  outbound: Outbound;
-};
-
 export type Servers = Server[];
 
 type V2RayCore = {
@@ -352,6 +344,8 @@ type V2RayCore = {
 };
 
 type GeneralSettings = {
+  appVersion: string;
+  autoLaunch: boolean;
   allowSystemNotification: boolean;
   autoStartProxy: boolean;
   dashboardPopWhenStart: boolean;
@@ -375,6 +369,7 @@ type Appearance = {
 };
 
 type SystemProxy = {
+  proxyMode: Mode;
   bypassDomains: string;
   pacSetting: {
     banListUrl: string;
@@ -531,22 +526,24 @@ export type SettingsPageType = {
   v2rayConfigure: V2rayConfigure;
 };
 
-export type Serverx = {
+export type Server = {
   id: string;
   link: string;
   ps: string;
+  latency: string;
   speedTestType: string;
   group: string;
   groupId: string;
-  latency: string;
+  outbound: Record<string, any>;
 };
 
 export type ServersGroup = {
   groupId: string;
   group: string;
+  remark: string;
   link: string;
   speedTestType: string;
-  subServers: Serverx[];
+  subServers: Server[];
 };
 
 export type Subscription = {
