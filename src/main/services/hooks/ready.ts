@@ -41,7 +41,7 @@ const autoStartProxy = (electronApp: ElectronApp) => {
         };
         template.dns = dns;
         if (!outbound) throw new Error('choose id not point,outbound find empty');
-        template.outbounds = [outbound];
+        template.outbounds = [outbound, ...template.outbounds];
         if (currentServerId !== '') {
           if (existsSync(v2rayLogsFolder.concat('access.log'))) {
             service.start(template);

@@ -32,7 +32,7 @@ const listeners = () => {
       access: v2rayLogsFolder.concat('access.log'),
     };
     template.dns = dns;
-    template.outbounds = [outbound];
+    template.outbounds = [outbound, ...template.outbounds];
     service.start(template);
 
     const socksPort = template.inbounds[0].port;
@@ -85,7 +85,7 @@ const listeners = () => {
       access: v2rayLogsFolder.concat('access.log'),
     };
     template.dns = dns;
-    template.outbounds = [outbound];
+    template.outbounds = [outbound, ...template.outbounds];
     service.start(template);
 
     const socksPort = template?.inbounds[0].port;

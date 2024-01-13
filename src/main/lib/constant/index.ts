@@ -185,45 +185,7 @@ export const emptyV2Template = () => {
       },
     },
   ];
-  const outbounds: any = {
-    mux: {
-      enabled: false,
-      concurrency: 8,
-    },
-    protocol: 'vmess',
-    streamSettings: {
-      wsSettings: {
-        path: '',
-        headers: {
-          host: '',
-        },
-      },
-      tlsSettings: {
-        serverName: '',
-        allowInsecure: false,
-      },
-      security: 'none',
-      network: '',
-    },
-    tag: 'proxy',
-    settings: {
-      vnext: [
-        {
-          address: '',
-          users: [
-            {
-              id: '',
-              alterId: 0,
-              level: 0,
-              security: '',
-            },
-          ],
-          port: 0,
-        },
-      ],
-    },
-  };
-  config.outbounds = [outbounds, ...outboundsInjection];
+  config.outbounds = [...outboundsInjection];
   return config;
 };
 

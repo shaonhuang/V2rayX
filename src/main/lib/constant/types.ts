@@ -116,7 +116,6 @@ export interface DesktopService extends Service {
   createTransparentWindow: (params: RectPoint[]) => Promise<ServiceResult>;
   reloadMainWindow: (params: any) => Promise<ServiceResult>;
   setStartupOnBoot: (on: boolean) => Promise<ServiceResult>;
-  openLogDir: (params: Config) => Promise<ServiceResult>;
 }
 
 export interface ThemeService extends Service {

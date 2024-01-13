@@ -57,14 +57,15 @@ linux:
     - target: snap
       arch:
         - x64
+        - arm64
     - target: deb
       arch:
         - x64
         - arm64
-    # - target: pacman
-    #   arch:
-    #     - x64
-    #     - arm64
+    - target: pacman
+      arch:
+        - x64
+        - arm64
   maintainer: shaonhuang.github.io
   category: Utility
 appImage:

@@ -78,7 +78,7 @@ export class Trojan extends Protocol {
       servers: [
         {
           password: password,
-          port: port,
+          port: Number(port) || 443,
           email: '',
           level: 0,
           flow: flow,
@@ -109,8 +109,11 @@ export class Trojan extends Protocol {
     switch (security || 'tls') {
       case 'tls':
         this.streamSettings.tlsSettings = {
-          fingerprint: fp,
+          allowInsecure: true,
+          serverName: sni ?? host ?? '',
+          fingerprint: fp ?? 'chrome',
         };
+
         break;
       case 'xtls':
         this.streamSettings.xtlsSettings = {
@@ -146,7 +149,7 @@ export class Trojan extends Protocol {
   }
   initTemplate() {
     const streamType = 'tcp';
-    this.protocol = 'vless';
+    this.protocol = 'trojan';
     this.settings = {
       servers: [
         {
@@ -159,6 +162,7 @@ export class Trojan extends Protocol {
         },
       ],
     };
+    this.streamSettings.security = 'none';
     this.streamSettings.network = streamType;
     this.streamSettings.tcpSettings = this.streamSettingsTemplate.tcpSettings!;
     this.updateOutbound();
