@@ -16,7 +16,7 @@ import {
 } from '@mui/material';
 import { uniqBy, findIndex, cloneDeep } from 'lodash';
 import { useAppSelector, useAppDispatch } from '@store/hooks';
-import { setServersGroups, setSubscriptionList } from '@store/serversPageSlice';
+import { setServersGroups } from '@store/serversPageSlice';
 import { Subscription } from '@renderer/constant/types';
 import QrCodeScannerIcon from '@mui/icons-material/QrCodeScanner';
 import AddLinkIcon from '@mui/icons-material/AddLink';

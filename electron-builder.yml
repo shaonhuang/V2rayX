@@ -57,6 +57,7 @@ linux:
     - target: snap
       arch:
         - x64
+        # - arm64
     - target: deb
       arch:
         - x64

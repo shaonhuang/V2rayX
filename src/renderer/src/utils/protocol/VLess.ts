@@ -132,14 +132,15 @@ export class VLess extends Protocol {
               flow: flow ?? '',
             },
           ],
-          port: port ?? 443,
+          port: Number(port) || 443,
         },
       ],
     };
 
     this.streamSettings.tlsSettings = {
-      serverName: sni ?? '',
-      fingerprint: fp ?? '',
+      allowInsecure: true,
+      serverName: sni ?? host ?? '',
+      fingerprint: fp ?? 'chrome',
     };
     // type:伪装类型（none\http\srtp\utp\wechat-video）
     switch (type) {
@@ -289,6 +290,7 @@ export class VLess extends Protocol {
         },
       ],
     };
+    this.streamSettings.security = 'none';
     this.streamSettings.network = streamType;
     this.streamSettings.tcpSettings = this.streamSettingsTemplate.tcpSettings!;
     this.updateOutbound();

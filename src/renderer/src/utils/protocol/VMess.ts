@@ -1,6 +1,5 @@
 import { decode, encode } from 'js-base64';
 import { Protocol } from './Protocol';
-import { Outbound } from '@renderer/constant/types';
 
 // reference https://github.com/kyuuseiryuu/v2ray-tools.git
 // https://github.com/v2ray/v2ray-core/issues/1139
@@ -180,8 +179,9 @@ export class VMess extends Protocol {
     if (/^vmess:\/\//i.test(link) && (this.isVMessLinkV1(link) || this.isVMessLinkV2(link))) {
       if (this.isVMessLinkV1(link)) {
         this.shareLinkParseData = this.parseV1Link(link);
+      } else {
+        this.shareLinkParseData = this.parseV2Link(link);
       }
-      this.shareLinkParseData = this.parseV2Link(link);
       this.setProtocol('vmess');
       this.genOutboundFromLink();
       this.genPs();
@@ -276,18 +276,19 @@ export class VMess extends Protocol {
           users: [
             {
               id: id ?? '',
-              alterId: aid ?? 0,
+              alterId: Number(aid) || 0,
               level: 0,
-              security: scy ?? 'none',
+              security: scy ?? 'auto',
             },
           ],
-          port: port ?? 443,
+          port: Number(port) || 443,
         },
       ],
     };
     this.streamSettings.tlsSettings = {
-      serverName: sni ?? '',
-      fingerprint: fp ?? '',
+      allowInsecure: true,
+      serverName: sni ?? host ?? '',
+      fingerprint: fp ?? 'chrome',
     };
     // type:伪装类型（none\http\srtp\utp\wechat-video）
     switch (net) {
@@ -320,7 +321,7 @@ export class VMess extends Protocol {
     this.updateOutbound();
   }
   genShareLink() {
-    const { settings, streamSettings } =  this.outbound;
+    const { settings, streamSettings } = this.outbound;
     const add = settings?.vnext?.[0].address,
       port = settings?.vnext?.[0].port,
       tls = streamSettings?.security,
@@ -373,13 +374,14 @@ export class VMess extends Protocol {
               id: '',
               alterId: 0,
               level: 0,
-              security: 'none',
+              security: 'auto',
             },
           ],
           port: 443,
         },
       ],
     };
+    this.streamSettings.security = 'none';
     this.streamSettings.network = streamType;
     this.streamSettings.tcpSettings = this.streamSettingsTemplate.tcpSettings!;
     this.updateOutbound();

@@ -1,7 +1,6 @@
 import path from 'node:path';
 import { app } from 'electron';
 import winston, { format } from 'winston';
-import open from 'open';
 import DailyRotateFile from 'winston-daily-rotate-file';
 import chalk from 'chalk';
 import fs, { existsSync } from 'node:fs';
@@ -21,10 +20,6 @@ export const logDir = (() => {
   }
   return app.getPath('logs');
 })();
-
-export const openLogDir = async () => {
-  await open(logDir);
-};
 
 export const cleanLogs = () => {
   console.log('clean logs');
