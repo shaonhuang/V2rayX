@@ -49,12 +49,22 @@ export const AppTheme = () => {
   const dispatch = useAppDispatch();
 
   const handleEditorChange = (v) => {
-    dispatch(
-      setSettingsPageState({
-        key: 'appearance.styleInJson',
-        value: v,
-      }),
-    );
+    try {
+      JSON.parse(v);
+      dispatch(
+        setSettingsPageState({
+          key: 'appearance.styleInJson',
+          value: v,
+        }),
+      );
+    } catch (error) {
+      window.notification.send({
+        title: 'Change Theme Error',
+        body: `${v}
+is not JSON format. Please check it`,
+        silent: true,
+      });
+    }
   };
   return (
     <Container sx={{ height: '100%' }}>

@@ -4,13 +4,14 @@ import { useMemo, useState, useLayoutEffect } from 'react';
 import './assets/index.css';
 import App from './App';
 import { Provider } from 'react-redux';
+import { Paper } from '@mui/material';
 import '@renderer/assets/index.css';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { ThemeOptions } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import { from } from 'rxjs';
 import { debounceTime, map } from 'rxjs/operators';
-import { set } from 'lodash';
+import { debounce, set, throttle } from 'lodash';
 import { nightMode } from './components/Theme';
 
 import store from '@store/index';
@@ -31,6 +32,24 @@ window.localStorage.setItem = function (key, value) {
 
 const Page = () => {
   const [mode, setMode] = useState<'light' | 'dark'>('light');
+  const defaultTheme = {
+    palette: {
+      mode,
+      primary: {
+        main: '#1976d2',
+        contrastText: '#ffffff',
+      },
+      secondary: {
+        main: '#9c27b0',
+      },
+      success: {
+        main: '#2e7d32',
+      },
+    },
+    typography: {
+      fontFamily: '',
+    },
+  };
   const [styleInJson, setStyleInJson] = useState({
     palette: {
       mode,
@@ -49,6 +68,7 @@ const Page = () => {
       fontFamily: '',
     },
   });
+
   const state$ = from(store);
   const localStorageSetHandler = (e) => {
     if (e.key === 'theme') {
@@ -93,9 +113,40 @@ const Page = () => {
     };
   }, []);
 
-  const theme: ThemeOptions = useMemo(() => {
-    return createTheme(styleInJson);
-  }, [mode, styleInJson]);
+  const TestWithTheme = (theme) => (
+    <ThemeProvider theme={theme}>
+      <Paper></Paper>
+    </ThemeProvider>
+  );
+
+  const theme: ThemeOptions = useMemo(
+    throttle(() => {
+      // FIXME: ugly code for now.
+      try {
+        (function () {
+          const originalerror = console.error;
+
+          console.error = function (txt) {
+            if (txt.includes('MUI: ')) {
+              throw new Error();
+            }
+            originalerror(txt);
+          };
+        })();
+        TestWithTheme(createTheme(styleInJson));
+        return createTheme(styleInJson);
+      } catch (error) {
+        window.notification.send({
+          title: 'Change Style Error',
+          body: `${JSON.stringify(styleInJson)}
+            is not configured properly. Please check it`,
+          silent: true,
+        });
+        return createTheme(defaultTheme);
+      }
+    }, 2000),
+    [mode, styleInJson],
+  );
   return (
     <React.StrictMode>
       <div className="fixed h-8 w-screen" style={{ WebkitAppRegion: 'drag' }}></div>
