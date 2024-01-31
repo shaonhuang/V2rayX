@@ -1,45 +1,8 @@
-import {
-  Container,
-  Paper,
-  Switch,
-  Stack,
-  TextField,
-  Typography,
-  Button,
-  Tooltip,
-} from '@mui/material';
+import { Container, Paper, Switch, Stack, TextField, Typography, Button } from '@mui/material';
 import Grid from '@mui/material/Unstable_Grid2';
-import TipsAndUpdatesIcon from '@mui/icons-material/TipsAndUpdates';
 import { useAppSelector, useAppDispatch } from '@store/hooks';
 import { setSettingsPageState } from '@renderer/store/settingsPageSlice';
-
-type TitleWithTooltipType = {
-  title: string;
-  tooltip?: string;
-};
-const TitleWithTooltip = (props: TitleWithTooltipType) => {
-  return (
-    <Grid
-      xs={8}
-      sx={{
-        display: 'flex',
-        flexDirection: 'row',
-        justifyContent: 'center',
-        alignItems: 'center',
-        gap: '8px',
-      }}
-    >
-      <Typography variant="body1">{props.title}</Typography>
-      {props?.tooltip ? (
-        <Tooltip placement="right" title={props.tooltip}>
-          <TipsAndUpdatesIcon />
-        </Tooltip>
-      ) : (
-        <></>
-      )}
-    </Grid>
-  );
-};
+import { TitleWithTooltip } from './index';
 
 export const NotificationType = () => {
   const generalSettings = useAppSelector((state) => state.settingsPage.generalSettings);

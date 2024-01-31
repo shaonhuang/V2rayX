@@ -117,7 +117,7 @@ export class TrayService {
       click: async () => {
         db.data = db.chain.set('management.systemProxy.proxyMode', 'PAC').value();
         await db.write();
-        const mainWindow = new Window().mainWin;
+        const mainWindow = new Window('/index/home', {}, { whenReadyShow: false }).mainWin;
         mainWindow?.webContents.send('proxyMode:change', 'PAC');
         emitter.emit('proxyMode:change', 'PAC');
       },
@@ -130,7 +130,7 @@ export class TrayService {
       click: async () => {
         db.data = db.chain.set('management.systemProxy.proxyMode', 'Global').value();
         await db.write();
-        const mainWindow = new Window().mainWin;
+        const mainWindow = new Window('/index/home', {}, { whenReadyShow: false }).mainWin;
         mainWindow?.webContents?.send('proxyMode:change', 'Global');
         emitter.emit('proxyMode:change', 'Global');
       },
@@ -143,7 +143,7 @@ export class TrayService {
       click: async () => {
         db.data = db.chain.set('management.systemProxy.proxyMode', 'Manual').value();
         await db.write();
-        const mainWindow = new Window().mainWin;
+        const mainWindow = new Window('/index/home', {}, { whenReadyShow: false }).mainWin;
         mainWindow?.webContents?.send('proxyMode:change', 'Manual');
         emitter.emit('proxyMode:change', 'Manual');
       },

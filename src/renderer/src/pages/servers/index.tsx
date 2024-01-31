@@ -38,9 +38,6 @@ const Index = (): JSX.Element => {
   let deleteItemGroupId = '';
   const dispatch = useAppDispatch();
   const theme = useTheme();
-  const subscriptionList: Subscription[] = useAppSelector(
-    (state) => state.serversPage.subscriptionList,
-  );
   const serversGroups = useAppSelector((state) => state.serversPage.serversGroups);
   const fullScreen = useMediaQuery(theme.breakpoints.down('md'));
   const [checkDeleteDialog, setCheckDeleteDialog] = useState(false);

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Stack, Box, ListItemButton, ListItemText } from '@mui/material';
+import { Stack, Box, ListItemButton, ListItemText, Typography, Tooltip } from '@mui/material';
 import Grid from '@mui/material/Unstable_Grid2';
 import KeyboardArrowDown from '@mui/icons-material/KeyboardArrowDown';
 import { V2rayCoreUpdate } from './Security';
@@ -16,6 +16,8 @@ import { BypassDomainIPNet } from './SystemProxy';
 import { LatencyTest } from './Proxies';
 import { DefaultInBounds } from './inbounds';
 import DNS from './DNS';
+import { TitleWithTooltipType } from '@renderer/constant/types';
+import TipsAndUpdatesIcon from '@mui/icons-material/TipsAndUpdates';
 
 import { flatten } from 'lodash';
 
@@ -26,6 +28,32 @@ type SettingsProps = {
   children?: React.ReactNode;
   element?: React.ReactNode;
   subRows?: SettingsProps[];
+};
+
+export const TitleWithTooltip = (props: TitleWithTooltipType) => {
+  return (
+    <Grid
+      xs={8}
+      sx={{
+        display: 'flex',
+        flexDirection: 'row',
+        justifyContent: 'center',
+        alignItems: 'center',
+        gap: '8px',
+      }}
+    >
+      <Typography variant="body1">{props.title}</Typography>
+
+      {props?.tooltip ? (
+        <Tooltip placement="right" title={props.tooltip}>
+          <TipsAndUpdatesIcon />
+        </Tooltip>
+      ) : (
+        <></>
+      )}
+      {props.children}
+    </Grid>
+  );
 };
 
 //nested data is ok, see accessorKeys in ColumnDef below
@@ -191,11 +219,10 @@ const data: SettingsProps[] = [
 
 const Index = () => {
   const pages = flatten(
-    data.map(
-      (item) =>
-        item?.subRows?.map((subItem) => {
-          return { label: subItem.label, element: subItem.element };
-        }),
+    data.map((item) =>
+      item?.subRows?.map((subItem) => {
+        return { label: subItem.label, element: subItem.element };
+      }),
     ),
   );
   const [detailLabel, setDetailLabel] = useState(pages[0]?.label ?? '');

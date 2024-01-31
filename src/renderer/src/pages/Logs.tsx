@@ -4,7 +4,7 @@ import FileOpenIcon from '@mui/icons-material/FileOpen';
 import { useAppSelector } from '@renderer/store/hooks';
 
 import { type MRT_ColumnDef } from 'material-react-table';
-import DataTable from '@renderer/components/InfiniteTable';
+import DataTable from '@renderer/components/InfiniteLogTable';
 
 type Log = {
   date: string;
@@ -112,60 +112,62 @@ const Index = (): JSX.Element => {
 
   return (
     <Container>
-      <Box className="flex w-full flex-col items-center gap-4 py-4">
-        <Box>
-          {/*<Paper elevation={0} className="mb-2">
+      <Paper>
+        <Box className="mt-2 flex w-full flex-col items-center gap-4 p-4">
+          <Box>
+            {/*<Paper elevation={0} className="mb-2">
               Log level: {server.log.loglevel.toUpperCase()}
             </Paper>*/}
-          <Paper elevation={0} className="px-4">
-            {`Log File Path:   ${v2rayLogsFolder.concat(
-              logType === 'access' ? 'access.log' : 'error.log',
-            )}`}
-            <IconButton
-              color="primary"
-              className=""
-              onClick={() => {
-                window.electron.electronAPI.shell
-                  .openPath(
-                    v2rayLogsFolder.concat(logType === 'access' ? 'access.log' : 'error.log'),
-                  )
-                  .then(() => {
-                    // File opened successfully
-                    console.log('File opened');
-                  })
-                  .catch((error) => {
-                    // Error occurred while opening the file
-                    console.error(error);
-                  });
-              }}
-              size="small"
+            <Box className="px-4">
+              {`Log File Path:   ${v2rayLogsFolder.concat(
+                logType === 'access' ? 'access.log' : 'error.log',
+              )}`}
+              <IconButton
+                color="primary"
+                className=""
+                onClick={() => {
+                  window.electron.electronAPI.shell
+                    .openPath(
+                      v2rayLogsFolder.concat(logType === 'access' ? 'access.log' : 'error.log'),
+                    )
+                    .then(() => {
+                      // File opened successfully
+                      console.log('File opened');
+                    })
+                    .catch((error) => {
+                      // Error occurred while opening the file
+                      console.error(error);
+                    });
+                }}
+                size="small"
+              >
+                <FileOpenIcon className="" fontSize="medium" />
+              </IconButton>
+            </Box>
+          </Box>
+          <Box className="flex items-center justify-center gap-6">
+            <Button
+              variant={logType === 'access' ? 'contained' : 'outlined'}
+              onClick={() => setLogType('access')}
             >
-              <FileOpenIcon className="" fontSize="medium" />
-            </IconButton>
-          </Paper>
+              access log
+            </Button>
+            <Button
+              variant={logType === 'error' ? 'contained' : 'outlined'}
+              onClick={() => setLogType('error')}
+            >
+              error log
+            </Button>
+          </Box>
+          <Stack sx={{ maxWidth: '100%' }}>
+            {logType === 'access' ? (
+              <DataGrid columns={columns} queryFn={queryFn} />
+            ) : (
+              <DataGrid columns={columnsError} queryFn={queryFnError} />
+            )}
+          </Stack>
         </Box>
-        <Box className="flex items-center justify-center gap-6">
-          <Button
-            variant={logType === 'access' ? 'contained' : 'outlined'}
-            onClick={() => setLogType('access')}
-          >
-            access log
-          </Button>
-          <Button
-            variant={logType === 'error' ? 'contained' : 'outlined'}
-            onClick={() => setLogType('error')}
-          >
-            error log
-          </Button>
-        </Box>
-        <Stack sx={{ maxWidth: '100%' }}>
-          {logType === 'access' ? (
-            <DataGrid columns={columns} queryFn={queryFn} />
-          ) : (
-            <DataGrid columns={columnsError} queryFn={queryFnError} />
-          )}
-        </Stack>
-      </Box>
+      </Paper>
     </Container>
   );
 };

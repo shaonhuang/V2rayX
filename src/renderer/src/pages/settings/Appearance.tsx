@@ -9,63 +9,59 @@ import {
   ButtonGroup,
   Tooltip,
   Typography,
+  IconButton,
 } from '@mui/material';
 import Grid from '@mui/material/Unstable_Grid2';
-import TipsAndUpdatesIcon from '@mui/icons-material/TipsAndUpdates';
 import { useAppSelector, useAppDispatch } from '@store/hooks';
 import { setSettingsPageState } from '@renderer/store/settingsPageSlice';
-import { set } from 'lodash';
-import { TitleWithTooltipType } from '@renderer/constant/types';
-
+import { set, throttle } from 'lodash';
+import { TitleWithTooltip } from './index';
+import PsychologyAltIcon from '@mui/icons-material/PsychologyAlt';
 import Editor from '@monaco-editor/react';
 
-const TitleWithTooltip = (props: TitleWithTooltipType) => {
-  return (
-    <Grid
-      xs={8}
-      sx={{
-        display: 'flex',
-        flexDirection: 'row',
-        justifyContent: 'center',
-        alignItems: 'center',
-        gap: '8px',
-      }}
-    >
-      <Typography variant="body1">{props.title}</Typography>
-      {props?.tooltip ? (
-        <Tooltip placement="right" title={props.tooltip}>
-          <TipsAndUpdatesIcon />
-        </Tooltip>
-      ) : (
-        <></>
-      )}
-    </Grid>
-  );
-};
-
 export const AppTheme = () => {
-  const [customStyle, setCustomStyle] = useState(false);
   const appearance = useAppSelector((state) => state.settingsPage.appearance);
   const dispatch = useAppDispatch();
+  const defaultStyle = JSON.stringify(
+    {
+      palette: {
+        mode: 'light',
+        primary: {
+          main: '#1976d2',
+          contrastText: '#ffffff',
+        },
+        secondary: {
+          main: '#9c27b0',
+        },
+        success: {
+          main: '#2e7d32',
+        },
+      },
+      typography: {
+        fontFamily: 'Source Sans Pro, sans-serif',
+      },
+    },
+    null,
+    2,
+  );
 
-  const handleEditorChange = (v) => {
+  const [tmpCustomStyle, setTmpCustomStyle] = useState(defaultStyle);
+
+  const handleEditorChange = throttle((v) => {
+    // FIXME: ugly code for now.
     try {
       JSON.parse(v);
-      dispatch(
-        setSettingsPageState({
-          key: 'appearance.styleInJson',
-          value: v,
-        }),
-      );
+      setTmpCustomStyle(v);
     } catch (error) {
       window.notification.send({
-        title: 'Change Theme Error',
-        body: `${v}
-is not JSON format. Please check it`,
+        title: 'Change Style Error',
+        body: `${error}
+            Please check it`,
         silent: true,
       });
+      setTmpCustomStyle(v);
     }
-  };
+  }, 3000);
   return (
     <Container sx={{ height: '100%' }}>
       <Paper>
@@ -79,10 +75,21 @@ is not JSON format. Please check it`,
           <Typography variant="h6">Application Theme</Typography>
           {appearance.customStyle ? (
             <Grid container spacing={2} sx={{ width: '100%' }}>
-              <TitleWithTooltip title="Enable Custom Theme (JSON)" />
+              <TitleWithTooltip title="Enable Custom Theme">
+                <IconButton
+                  onClick={() => {
+                    window.electron.electronAPI.shell.openExternal(
+                      'https://zenoo.github.io/mui-theme-creator/',
+                    );
+                  }}
+                >
+                  <PsychologyAltIcon />
+                </IconButton>
+              </TitleWithTooltip>
               <Grid xs={4}>
                 <Switch
                   checked={appearance.customStyle}
+                  disabled
                   onChange={(event) =>
                     dispatch(
                       setSettingsPageState({
@@ -109,7 +116,7 @@ is not JSON format. Please check it`,
                     className="ml-[-102px]"
                   >
                     <Button
-                      disabled={appearance.customStyleu}
+                      disabled={appearance.customStyle}
                       variant="outlined"
                       onClick={() =>
                         dispatch(
@@ -152,30 +159,73 @@ is not JSON format. Please check it`,
                     </Button>
                   </ButtonGroup>
                 </Grid>
-                <TitleWithTooltip title="Enable Custom Theme (JSON)" />
+                <TitleWithTooltip title="Enable Custom Theme" />
                 <Grid xs={4}>
-                  <Switch
-                    checked={appearance.customStyle}
-                    onChange={(event) =>
-                      dispatch(
-                        setSettingsPageState({
-                          key: 'appearance.customStyle',
-                          value: event.target.checked,
-                        }),
-                      )
-                    }
-                  />
+                  <Tooltip
+                    title="This is a configuration of MUI theme,!!! it's auto-save, make sure it is fully
+                completed and corrected before you paste your json here. Or it will cause webview
+                crush. you can restore it maunally edit database of management.appearance.styleInJson
+                (aka it's a json string)"
+                  >
+                    <Switch
+                      checked={appearance.customStyle}
+                      onChange={(event) =>
+                        dispatch(
+                          setSettingsPageState({
+                            key: 'appearance.customStyle',
+                            value: event.target.checked,
+                          }),
+                        )
+                      }
+                    />
+                  </Tooltip>
                 </Grid>
               </Grid>
             </>
           )}
           {appearance.customStyle ? (
-            <Editor
-              height="40vh"
-              defaultLanguage="json"
-              defaultValue={appearance.styleInJson}
-              onChange={handleEditorChange}
-            />
+            <>
+              <Typography variant="body1">
+                Enable Follow Allow you to control dark or light mode.
+              </Typography>
+              <Editor
+                height="26vh"
+                defaultLanguage="json"
+                value={tmpCustomStyle}
+                onChange={handleEditorChange}
+              />
+              <Grid container xs={12}>
+                <Grid xs={6}>
+                  <Button
+                    onClick={() => {
+                      setTmpCustomStyle(defaultStyle);
+                      dispatch(
+                        setSettingsPageState({
+                          key: 'appearance.styleInJson',
+                          value: defaultStyle,
+                        }),
+                      );
+                    }}
+                  >
+                    Restore
+                  </Button>
+                </Grid>
+                <Grid xs={6}>
+                  <Button
+                    onClick={() => {
+                      dispatch(
+                        setSettingsPageState({
+                          key: 'appearance.styleInJson',
+                          value: tmpCustomStyle,
+                        }),
+                      );
+                    }}
+                  >
+                    Save
+                  </Button>
+                </Grid>
+              </Grid>
+            </>
           ) : (
             <></>
           )}

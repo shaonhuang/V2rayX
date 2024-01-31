@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { is } from '@electron-toolkit/utils';
 import icon from '@resources/icon.png?asset';
 import db from '@main/lib/lowdb';
+import { WindowCustomConfig } from '@lib/constant/types';
 
 const preloadPath = join(__dirname, '../preload/index.mjs');
 
@@ -13,7 +14,11 @@ const areWindowsEqual = (win1: BrowserWindow, win2?: BrowserWindow) => win1.id =
 export default class Window {
   private static instance: Window;
   mainWin?: BrowserWindow;
-  constructor(suffix: string = '/index/home', options?: any, customConfig?: any) {
+  constructor(
+    suffix: string = '/index/home',
+    options?: BrowserWindowConstructorOptions,
+    customConfig?: WindwoCustomConfig,
+  ) {
     if (!Window.instance) {
       logger.info(`${'Main'} Window is null, create one`);
       this.mainWin = Window.createWindow(suffix, options, customConfig);
@@ -37,7 +42,7 @@ export default class Window {
   static createWindow(
     suffix: string = '/index/home',
     options?: BrowserWindowConstructorOptions,
-    customConfig?: any,
+    customConfig?: WindowCustomConfig,
   ): BrowserWindow {
     const parentName = customConfig?.parentName;
     const modalStatus = customConfig?.modalStatus;
@@ -73,12 +78,14 @@ export default class Window {
         hash: suffix,
       });
     }
-    db.read().then(() => {
-      db.data.management.generalSettings.dashboardPopWhenStart &&
-        window.once('ready-to-show', () => {
-          window.show();
-        });
-    });
+    // when deinited customConfig.whenReadyShow gernerally false state or just go as default startup settings required.
+    (customConfig?.whenReadyShow ?? true) &&
+      db.read().then(() => {
+        db.data.management.generalSettings.dashboardPopWhenStart &&
+          window.once('ready-to-show', () => {
+            window.show();
+          });
+      });
 
     return window;
   }

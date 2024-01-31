@@ -206,10 +206,7 @@ export HTTP_PROXY=http://127.0.0.1:<port>
 $: git clone https://github.com/shaonhuang/V2rayX.git
 $: cd v2rayx
 
-# for China developers
-$: npm config set electron_mirror http://npm.taobao.org/mirrors/electron/
-
-# [02]npm install yarn(v3)   
+# [02]npm install yarn(v4)   
 $: npm i -g yarn
 $: yarn set version stable
 

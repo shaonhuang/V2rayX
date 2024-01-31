@@ -10,6 +10,8 @@ import {
 import { Typography } from '@mui/material';
 import { QueryClient, QueryClientProvider, useInfiniteQuery } from '@tanstack/react-query'; //Note: this is TanStack React Query V5
 
+import { Stack } from '@mui/material';
+
 //Your API response shape will probably be different. Knowing a total row count is important though.
 type UserApiResponse = {
   data: Array<User>;
@@ -171,7 +173,12 @@ const Example = (props) => {
     }),
   });
 
-  return <MaterialReactTable table={table} />;
+  // return <MaterialReactTable table={table} />;
+  return (
+    <Stack>
+      <MaterialReactTable table={table} />
+    </Stack>
+  );
 };
 
 const queryClient = new QueryClient();

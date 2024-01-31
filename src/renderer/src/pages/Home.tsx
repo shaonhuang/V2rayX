@@ -257,7 +257,7 @@ const GernalSettings = (): JSX.Element => {
                 Dark
               </AppearanceButton>
               <AppearanceButton
-              disabled
+                disabled
                 variant={appearance.followSystemTheme ? 'contained' : 'outlined'}
                 onClick={() => {
                   window.db.read('settings').then((res) => {

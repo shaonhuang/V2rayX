@@ -13,6 +13,7 @@ export type { VMessV2, TrojanType, VLessType };
 export type TitleWithTooltipType = {
   title: string;
   tooltip?: string;
+  children?: React.ReactNode;
 };
 
 type Log = {

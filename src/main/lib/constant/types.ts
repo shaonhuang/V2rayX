@@ -549,3 +549,9 @@ export type Subscription = {
   remark: string;
   link: string;
 };
+
+export type WindowCustomConfig = Partial<{
+  parentName: string;
+  modalStatus: boolean;
+  whenReadyShow: boolean;
+}>;
