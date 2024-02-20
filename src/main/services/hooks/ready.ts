@@ -8,7 +8,7 @@ import ProxyService from '@main/services/core/proxy';
 import { existsSync } from 'node:fs';
 import Window from '@main/services/browser';
 import { app } from 'electron';
-import { find, flattenDeep } from 'lodash';
+import { find, flattenDeep, cloneDeep } from 'lodash';
 import { Mode } from '@main/lib/constant/types';
 import { isWindows } from '@main/lib/constant';
 
@@ -32,7 +32,7 @@ const autoStartProxy = (electronApp: ElectronApp) => {
             }),
         );
         const outbound = find(outbounds, { id: currentServerId ?? '' })?.outbound;
-        const template = db.chain.get('serverTemplate').value();
+        const template = cloneDeep(db.chain.get('serverTemplate').value());
         const dns = JSON.parse(db.chain.get('management.v2rayConfigure.dns').value());
         template.log = {
           error: v2rayLogsFolder.concat('error.log'),

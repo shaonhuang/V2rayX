@@ -5,7 +5,7 @@ import GernalSettings from '@renderer/pages/Home';
 import Servers from '@renderer/pages/servers';
 import About from '@renderer/pages/About';
 import Logs from '@renderer/pages/Logs';
-import Settings from '@renderer/pages/settings/';
+import Settings from '@renderer/pages/settings';
 import QRcode from '@renderer/pages/qrcode';
 import Subscriptions from '@renderer/pages/subscriptions';
 import PACSettings from '@renderer/pages/pac';

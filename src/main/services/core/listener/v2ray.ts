@@ -2,7 +2,7 @@ import logger from '@lib/logs';
 import db from '@lib/lowdb';
 import { ipcMain } from 'electron';
 import emitter from '@lib/event-emitter';
-import { find, flattenDeep, uniqBy } from 'lodash';
+import { find, flattenDeep, uniqBy, cloneDeep } from 'lodash';
 
 import ProxyService from '@main/services/core/proxy';
 import V2rayService from '@main/services/core/v2ray';
@@ -19,7 +19,7 @@ const listeners = () => {
         .map((i) => i.subServers),
     ]);
     const outbound = find(outbounds, { id: currentServerId ?? '' })?.outbound;
-    const template = db.chain.get('serverTemplate').value();
+    const template = cloneDeep(db.chain.get('serverTemplate').value());
     template.inbounds = uniqBy(
       [...template.inbounds, ...db.chain.get('management.v2rayConfigure.inbounds').value()],
       'tag',
@@ -76,7 +76,7 @@ const listeners = () => {
         .map((i) => i.subServers),
     ]);
     const outbound = find(outbounds, { id: currentServerId ?? '' })?.outbound;
-    const template = db.chain.get('serverTemplate').value();
+    const template = cloneDeep(db.chain.get('serverTemplate').value());
     const v2rayLogsFolder = db.chain.get('management.generalSettings.v2rayLogsFolder').value();
     const dns = JSON.parse(db.chain.get('management.v2rayConfigure.dns').value());
     template.log = {
