@@ -29,15 +29,15 @@ jobs:
         with:
           node-version: 18
 
-      - name: Install latest Yarn
-        run: npm install -g yarn@berry
+      - name: Install latest pnpm
+        run: npm install -g pnpm
 
       - name: Install dependencies
-        run: yarn install --immutable
+        run: pnpm install
 
       - name: Build
         run: |
-          yarn electron-vite build
+          pnpm electron-vite build
 
       - name: Fix Clean Up issue
         run: |
@@ -56,7 +56,7 @@ jobs:
           timeout_minutes: 15
           max_attempts: 3
           retry_on: error
-          command: yarn electron-builder -m -p always
+          command: pnpm electron-builder -m -p always
 
   win-publish:
     # To enable auto publishing to github, update your electron publisher
@@ -78,15 +78,15 @@ jobs:
         with:
           node-version: 18
 
-      - name: Install latest Yarn
-        run: npm install -g yarn@berry
+      - name: Install latest pnpm
+        run: npm install -g pnpm
 
       - name: Install dependencies
-        run: yarn install --immutable
+        run: pnpm install
 
       - name: Build
         run: |
-          yarn electron-vite build
+          pnpm electron-vite build
 
       - name: Pack for Windows and release
         env:
@@ -96,7 +96,7 @@ jobs:
           timeout_minutes: 15
           max_attempts: 3
           retry_on: error
-          command: yarn electron-builder -w -p always
+          command: pnpm electron-builder -w -p always
 
   linux-publish:
     # To enable auto publishing to github, update your electron publisher
@@ -124,15 +124,15 @@ jobs:
       - name: Install Snapcraft
         uses: samuelmeuli/action-snapcraft@v2
 
-      - name: Install latest Yarn
-        run: npm install -g yarn@berry
+      - name: Install latest pnpm
+        run: npm install -g pnpm
 
       - name: Install dependencies
-        run: yarn install --immutable
+        run: pnpm install
 
       - name: Build
         run: |
-          yarn electron-vite build
+          pnpm electron-vite build
 
       - name: Pack for Linux and release
         env:
@@ -142,4 +142,4 @@ jobs:
           timeout_minutes: 15
           max_attempts: 3
           retry_on: error
-          command: yarn electron-builder -l -p always
+          command: pnpm electron-builder -l -p always

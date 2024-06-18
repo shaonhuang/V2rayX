@@ -85,7 +85,7 @@ const Index = forwardRef((props: any, ref) => {
           security: algorithm,
         },
       ],
-      port: parseInt(port),
+      port: parseInt(port) as number,
     };
   }, [formData]);
 

@@ -61,7 +61,7 @@ const defaultSocksInboundObject = {
 
 const initialState: SettingsPageType = {
   v2rayCore: {
-    version: '5.12.1',
+    version: '5.16.1',
     isReinstallV2rayPackage: false,
   },
   generalSettings: {

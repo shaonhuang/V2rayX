@@ -40,7 +40,7 @@ export const V2rayCoreUpdate = (): JSX.Element => {
             </Tooltip>
           </Box>
 
-          {compareVersions(newV2rayCoreVersion.slice(1), '5.12.1') && false ? (
+          {compareVersions(newV2rayCoreVersion.slice(1), '5.16.1') && false ? (
             <>
               <Typography variant="body1" sx={{ alignSelf: 'center' }}>
                 There is new v2ray core: {newV2rayCoreVersion}

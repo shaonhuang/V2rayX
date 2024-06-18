@@ -17,7 +17,7 @@ export default class Window {
   constructor(
     suffix: string = '/index/home',
     options?: BrowserWindowConstructorOptions,
-    customConfig?: WindwoCustomConfig,
+    customConfig?: WindowCustomConfig,
   ) {
     if (!Window.instance) {
       logger.info(`${'Main'} Window is null, create one`);
