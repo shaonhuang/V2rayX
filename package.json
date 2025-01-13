@@ -113,7 +113,7 @@
     "tailwindcss": "^3.4.4",
     "ts-node": "^10.9.2",
     "typescript": "^5.4.5",
-    "vite": "^5.3.1",
+    "vite": "^5.3.6",
     "wdio-electron-service": "^6.6.1",
     "webdriverio": "^8.39.0"
   },
