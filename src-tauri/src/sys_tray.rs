@@ -20,6 +20,7 @@ use tauri::{
 };
 use tauri_plugin_clipboard_manager::ClipboardExt;
 use tauri_plugin_opener::OpenerExt;
+use tauri_plugin_os;
 
 use crate::proxy;
 use crate::proxy::unset_global_proxy;
@@ -424,7 +425,21 @@ impl SystemTrayManager {
                                 .iter()
                                 .map(|v| v.as_str().expect("Array element is not a string").to_string())
                                 .collect();
-							let content = format!("export http_proxy=http://{}:{}; export https_proxy=http://{}:{}; export all_proxy=socks5://{}:{}; export no_proxy='{}'", http_listen, http_port, http_listen, http_port, socks_listen, socks_port, bypass_domains.join(",").to_string());
+							let platform = tauri_plugin_os::platform();
+							let content = if platform == "windows" {
+									format!(
+										"set HTTP_PROXY=http://{}:{} \n\
+										set HTTPS_PROXY=http://{}:{} \n\
+										set ALL_PROXY=socks5://{}:{} \n\
+										set NO_PROXY='{}'",
+										http_listen, http_port, http_listen, http_port, socks_listen, socks_port, bypass_domains.join(",")
+									)
+								} else {
+									format!(
+										"export http_proxy=http://{}:{}; export https_proxy=http://{}:{}; export all_proxy=socks5://{}:{}; export no_proxy='{}';",
+										http_listen, http_port, http_listen, http_port, socks_listen, socks_port, bypass_domains.join(",")
+									)
+								};
 							app.clipboard().write_text(content.clone()).unwrap();
 					        main_window
 					            .app_handle()

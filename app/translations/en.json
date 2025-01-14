@@ -137,5 +137,6 @@
     "latestVersion": "You are on the latest version. Stay awesome!",
     "noUpdateTitle": "No Update Available"
   },
-  "Auto Check Update": "Auto Check Update"
+  "Auto Check Update": "Auto Check Update",
+  "Save success and auto configured pac service": "Save success and auto configured pac service"
 }

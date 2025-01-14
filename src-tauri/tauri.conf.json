@@ -1,7 +1,7 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "v2rayx-tauri",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "identifier": "v2rayx.shaonhuang",
   "build": {
     "frontendDist": "../build/client",

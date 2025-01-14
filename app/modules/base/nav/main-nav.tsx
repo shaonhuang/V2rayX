@@ -22,7 +22,7 @@ import {
   updateGeneralSettings,
   updateProxyMode,
 } from '~/api';
-import { useNavigate, Link, json, useLoaderData } from '@remix-run/react';
+import { useNavigate, Link, json, useLoaderData, useLocation } from '@remix-run/react';
 import { User } from '~/api/types';
 import { invoke } from '@tauri-apps/api/core';
 import toast from 'react-hot-toast';
@@ -65,11 +65,14 @@ const menuData: Array<MenuItemType> = [
 ];
 
 const MenuItem = ({ label, path, icon, isFolded }: MenuItemType) => {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
+  const location = useLocation();
 
   return (
     <Link className="flex h-8 max-w-[610px] flex-row items-center justify-center gap-2" to={path}>
-      <span className={icon}></span>
+      <span
+        className={icon + ` ${location.pathname === path ? 'bg-gray-200 dark:bg-gray-700' : ''}`}
+      ></span>
 
       {isFolded || (
         <motion.div
@@ -77,7 +80,11 @@ const MenuItem = ({ label, path, icon, isFolded }: MenuItemType) => {
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0 }}
         >
-          <p className="text-sm">{t(label)}</p>
+          <p
+            className={`text-sm ${location.pathname === path ? 'text-gray-200 dark:text-gray-700' : ''}`}
+          >
+            {t(label)}
+          </p>
         </motion.div>
       )}
     </Link>

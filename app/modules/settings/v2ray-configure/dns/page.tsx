@@ -31,9 +31,10 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import toast, { Toaster } from 'react-hot-toast';
 import { useEffect, useState } from 'react';
-import { queryDNS, updateDNS, Types } from '~/api';
+import { queryDNS, updateDNS, Types, queryAppStatus } from '~/api';
 import Editor from '~/modules/MonacoEditorComponent';
 import * as _ from 'lodash';
+import { invoke } from '@tauri-apps/api/core';
 
 export const loader = async () => {
   const res = await queryDNS({ userID: localStorage.getItem('userID')! });
@@ -45,24 +46,32 @@ export function Page() {
   const revalidator = useRevalidator();
   const userID = localStorage.getItem('userID')!;
   const { Value: DNSValue } = data.V2rayConfigure.DNS as Types.DNS;
-  const navigate = useNavigate();
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const { t, i18n } = useTranslation();
 
-  const [content, setContent] = useState<string>(DNSValue);
+  const [content, setContent] = useState<string>(JSON.stringify(JSON.parse(DNSValue), null, 2));
 
-  const handleEditorChange = _.debounce((v: string, onClose: () => void) => {
+  const handleEditorChange = async (v: string, onClose: () => void) => {
     try {
       JSON.parse(v);
-      updateDNS({ userID, dns: v });
-      toast.success(t('Save success'));
+      await updateDNS({ userID, dns: v });
+      const status = (await queryAppStatus({ userID: userID }))[0];
+      if (status.ServiceRunningState === 1) {
+        await invoke('stop_daemon');
+        const success = await invoke('start_daemon');
+        success
+          ? toast.success(t('Save sucess and auto inject to running service'))
+          : toast.error(t('Save sucess but unable to start proxy service'));
+      } else {
+        toast.success(t('Save success'));
+      }
       revalidator.revalidate();
       onClose();
     } catch (e) {
       toast.error(t('Invalid JSON format'));
     }
     return;
-  }, 1000);
+  };
 
   return (
     <>
@@ -90,7 +99,7 @@ export function Page() {
                     <Editor
                       className="h-48 w-[32rem]"
                       defaultLanguage="json"
-                      defaultValue={JSON.stringify(JSON.parse(content), null, 2)}
+                      defaultValue={content}
                       onChange={(v, event) => setContent(v)}
                     />
                   </CardBody>

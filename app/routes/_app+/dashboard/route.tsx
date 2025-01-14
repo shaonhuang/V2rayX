@@ -22,6 +22,7 @@ import { event, window, path } from '@tauri-apps/api';
 import NumberFlow, { NumberFlowGroup } from '@number-flow/react';
 import { listen } from '@tauri-apps/api/event';
 import { checkForAppUpdates } from '~/utils/utils';
+import { platform } from '@tauri-apps/plugin-os';
 
 // Format Uptime Function
 function formatUptime(totalSeconds: number) {
@@ -51,6 +52,7 @@ const Page = () => {
   const data = useLoaderData<typeof clientLoader>();
   const { t } = useTranslation();
   const revalidator = useRevalidator();
+  const currentPlatform = platform();
 
   // State to manage uptime in seconds
   const [uptimeSeconds, setUptimeSeconds] = useState<number>(data.timeSeconds);
@@ -143,7 +145,13 @@ const Page = () => {
                       endContent={<span className="i-feather-copy" />}
                       className="text-base"
                       onPress={async () => {
-                        const command = `export http_proxy=socks5://${inbound.listen}:${inbound.port};export https_proxy=socks5://${inbound.listen}:${inbound.port};`;
+                        const command =
+                          currentPlatform === 'windows'
+                            ? `
+                            set HTTP_PROXY=socks5://${inbound.listen}:${inbound.port}
+                            set HTTPS_PROXY=socks5://${inbound.listen}:${inbound.port}
+                            `
+                            : `export http_proxy=socks5://${inbound.listen}:${inbound.port};export https_proxy=socks5://${inbound.listen}:${inbound.port};`;
                         await writeText(command);
                         toast.success(`${command} ${t('Command has been pasted to clipboard')}`);
                       }}
@@ -167,7 +175,11 @@ const Page = () => {
                       endContent={<span className="i-feather-copy" />}
                       className="text-base"
                       onPress={async () => {
-                        const command = `export http_proxy=http://${inbound.listen}:${inbound.port};export https_proxy=http://${inbound.listen}:${inbound.port};`;
+                        const command =
+                          currentPlatform === 'windows'
+                            ? `set HTTP_PROXY=http://${inbound.listen}:${inbound.port}
+                               set HTTPS_PROXY=http://${inbound.listen}:${inbound.port}`
+                            : `export http_proxy=http://${inbound.listen}:${inbound.port};export https_proxy=http://${inbound.listen}:${inbound.port};`;
                         await writeText(command);
                         toast.success(`${command} ${t('Command has been pasted to clipboard')}`);
                       }}

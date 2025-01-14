@@ -274,7 +274,7 @@ export const updateProxyMode = async (props: { userID: string; proxyMode: string
   ]);
 };
 
-export const queryAppStatus = async (props: { userID: string }) => {
+export const queryAppStatus = async (props: { userID: string }): Promise<Types.AppStatus[]> => {
   const db = await initDb();
   return await db.select<Types.AppStatus[]>('SELECT * FROM AppStatus WHERE UserID = ?', [
     props.userID,

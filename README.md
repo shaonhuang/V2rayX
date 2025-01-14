@@ -104,54 +104,42 @@ V2ray GUI client with cross-platform desktop support powered by Tauri, made espe
 #### Home Page
 
 ![home.png](./assets/home-mac.png)
+![home.dark.png](./assets/home-mac.dark.png)
 
 #### Server Page
 
 ![server.png](./assets/endpoints-mac.png)
 
+
 #### Server Add
 
-![addServer.png](./assets/import-mac.png)
-![addServer.png](./assets/manual-mac.png)
+![add-server.png](./assets/import-mac.png)
+![add-server.png](./assets/manual-mac.png)
 
 #### Settings Page
 
-![Settings.png](./assets/setting-mac.png)
+##### Windows 11
+
+![settings-windows.png](./assets/setting-windows.png)
+![settings-mac.png](./assets/setting-mac.png)
 
 #### Logs Page
 
-![logs.png](./assets/logs-mac.png)
+![logs.png](./assets/logs-linux.png)
 
 #### About Page
 
-![about.png](./assets/about-mac.png)
-
-### For Windows10/11 and Linux
-
-#### Home Page
-
-![home.png](./assets/home-win.png)
-
-#### Server Page
-
-![server.png](./assets/servers-win.png)
+![about.png](./assets/about-linux.png)
 
 #### Server Add
 
-![addServer.png](./assets/manual-win.png)
+![addServer.png](./assets/add-endpoint.png)
 
-#### Logs Page
-
-![logs.png](./assets/logs-win.png)
-![logs.png](./assets/logs-screen-linux.png)
-
-#### About Page
-
-![about.png](./assets/about-win.png)
 
 #### Tray Tool Bar
 
-![trayBar.png](./assets/tray-bar.png)
+![trayBar.png](./assets/tray-linux.png)
+![misc.png](./assets/misc.png)
 
 ## VI. Downloads
 
@@ -204,7 +192,7 @@ export HTTP_PROXY=http://127.0.0.1:<port>
 ```bash {"id":"01HJTETYFF2MZB43GCHC2T3BMR"}
 # [01]clone
 $: git clone https://github.com/shaonhuang/V2rayX.git
-$: cd v2rayx
+$: cd V2rayX
 
 # [02]npm install pnpm
 $: npm i -g pnpm
@@ -212,7 +200,10 @@ $: npm i -g pnpm
 # [03]pnpm install
 $: pnpm install
 
-# [04]dev
+# [04]touch .env; The content of variables they are not matter but have to have it to run dev.
+$:printf "VITE_V2RAY_CORE_VERSION=5.24.0\nVITE_APP_VERSION=0.5.0\nSENTRY_DSN=\n" > .env
+
+# [05]dev
 $: pnpm tauri:dev
 ```
 

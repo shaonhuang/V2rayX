@@ -48,6 +48,7 @@ tauri-plugin-process = "2.2.0"
 tauri-plugin-dialog = "2.0.0-beta"
 warp = "0.3.7"
 portpicker = "0.1.1"
+tauri-plugin-os = "2.2.0"
 
 [target.'cfg(windows)'.dependencies]
 winreg = "0.52.0"

@@ -31,11 +31,12 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import toast, { Toaster } from 'react-hot-toast';
 import { useEffect, useState } from 'react';
-import { queryBypass, updateBypass, Types } from '~/api';
+import { queryBypass, updateBypass, Types, queryDashboard } from '~/api';
 import EditorComponent from '~/modules/MonacoEditorComponent';
 
 import * as _ from 'lodash';
 import * as yaml from 'js-yaml';
+import { invoke } from '@tauri-apps/api/core';
 
 export const loader = async () => {
   const res = await queryBypass({ userID: localStorage.getItem('userID')! });
@@ -49,20 +50,32 @@ export function Page() {
   const { BypassDomains } = data.SystemProxy.Bypass as Types.BypassDomains;
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const { t, i18n } = useTranslation();
-  const [content, setContent] = useState<string>(BypassDomains);
+  const [content, setContent] = useState<string>(yaml.dump(JSON.parse(BypassDomains)));
 
-  const handleEditorChange = _.debounce((v: string, onClose: () => void) => {
+  const handleEditorChange = async (v: string, onClose: () => void) => {
     try {
-      const bypass = yaml.load(v);
-      updateBypass({ userID, bypass: JSON.stringify(bypass) });
-      toast.success(t('Save success'));
+      const bypassObj = yaml.load(v);
+      await updateBypass({ userID, bypass: JSON.stringify(bypassObj) });
+      const dashboardResData = await queryDashboard({ userID });
+      if (dashboardResData.proxyMode === 'global') {
+        await invoke('unset_global_proxy');
+        await invoke('setup_global_proxy', {
+          host: dashboardResData.http[0].listen,
+          httpPort: dashboardResData.http[0].port,
+          socksPort: dashboardResData.socks[0].port,
+          bypassDomains: bypassObj.bypass,
+        });
+        toast.success(t('Save success and auto configured bypass rules'));
+      } else {
+        toast.success(t('Save success'));
+      }
       revalidator.revalidate();
       onClose();
     } catch (e) {
       toast.error(t('Invalid Yaml format'));
     }
     return;
-  }, 1000);
+  };
 
   return (
     <>
@@ -88,7 +101,7 @@ export function Page() {
                     <EditorComponent
                       className="h-48 w-[32rem]"
                       defaultLanguage="yaml"
-                      defaultValue={yaml.dump(JSON.parse(content))}
+                      defaultValue={content}
                       onChange={(v, event) => setContent(v)}
                     />
                   </CardBody>

@@ -31,36 +31,49 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import toast, { Toaster } from 'react-hot-toast';
 import { useEffect, useState } from 'react';
-import { queryPAC, updatePAC, Types } from '~/api';
+import { queryPAC, updatePAC, Types, queryDashboard } from '~/api';
 import EditorComponent from '~/modules/MonacoEditorComponent';
 import * as _ from 'lodash';
+import { invoke } from '@tauri-apps/api/core';
 
 export const loader = async () => {
-  const res = await queryPAC({ userID: localStorage.getItem('userID')! });
-  return res;
+  const userID = localStorage.getItem('userID')!;
+  const pac = await queryPAC({ userID });
+  return pac;
 };
 
 export function Page() {
   const data = useLoaderData();
   const revalidator = useRevalidator();
   const userID = localStorage.getItem('userID')!;
-  const { PAC } = data.SystemProxy.PAC as Types.PAC;
-  const navigate = useNavigate();
+  const { PAC } = data.SystemProxy.PAC;
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const { t, i18n } = useTranslation();
-  const [content, setContent] = useState<string>(PAC);
+  const [content, setContent] = useState<string>(PAC.replace(/\\n/g, '\n'));
 
-  const handleEditorChange = _.debounce((v: string, onClose: () => void) => {
+  const handleEditorChange = async (v: string, onClose: () => void) => {
     try {
-      updatePAC({ userID, pac: v.replace(/\n/g, '\\n') });
-      toast.success(t('Save success'));
+      await updatePAC({ userID, pac: v.replace(/\n/g, '\\n') });
+      const dashboardResData = await queryDashboard({ userID });
+      if (dashboardResData.proxyMode === 'pac') {
+        await invoke('unset_pac_proxy');
+        await invoke('setup_pac_proxy', {
+          customRules: content,
+          httpPort: dashboardResData.http[0].port,
+          socksPort: dashboardResData.socks[0].port,
+        });
+        toast.success(t('Save success and auto configured pac rules'));
+      } else {
+        toast.success(t('Save success'));
+      }
+
       revalidator.revalidate();
       onClose();
     } catch (e) {
       toast.error(t('Invalid text format'));
     }
     return;
-  }, 1000);
+  };
 
   return (
     <>
@@ -89,7 +102,7 @@ export function Page() {
                     <EditorComponent
                       className="h-48"
                       defaultLanguage="text"
-                      defaultValue={content.replace(/\\n/g, '\n')}
+                      defaultValue={content}
                       onChange={(v, event) => {
                         setContent(v);
                       }}
@@ -103,8 +116,8 @@ export function Page() {
                 </Button>
                 <Button
                   color="primary"
-                  onPress={() => {
-                    handleEditorChange(content, onClose);
+                  onPress={async () => {
+                    await handleEditorChange(content, onClose);
                   }}
                 >
                   {t('Save')}
