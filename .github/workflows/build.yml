@@ -177,6 +177,10 @@ jobs:
           # Conditionally set targetTriple
           if [[ "${{ matrix.os }}" == "macos-latest" && "${{ matrix.architecture }}" == "x64" ]]; then
             targetTriple="x86_64-apple-darwin"
+          elif [[ "${{ matrix.os }}" == "windows-latest" && "${{ matrix.architecture }}" == "arm64" ]]; then
+          	targetTriple="aarch64-pc-windows-msvc"
+          elif [[ "${{ matrix.os }}" == "ubuntu-22.04" && "${{ matrix.architecture }}" == "arm64" ]]; then
+          	targetTriple="aarch64-unknown-linux-gnu"
           else
             # Extract the Rust target triple
             targetTriple=$(rustc -vV | grep host | awk '{print $2}')
@@ -257,8 +261,12 @@ jobs:
         with:
           workspaces: './src-tauri -> target'
 
+      - name: Setup Debug Session
+        uses: csexton/debugger-action@master
+
       - name: Install Rust tool chain and Cross-Compilation Tools to build other arch
         shell: bash
+        if: matrix.os == 'ubuntu-22.04' || matrix.os == 'windows-latest'
         run: |
           if [[ "${{ matrix.os }}" == "windows-latest" && "${{ matrix.architecture }}" == "arm64" ]]; then
             rustup target add aarch64-pc-windows-msvc
