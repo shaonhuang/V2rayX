@@ -4,10 +4,14 @@
   "sideEffects": false,
   "type": "module",
   "scripts": {
-    "dev": "remix vite:dev",
+    "dev": "cross-env RUST_BACKTRACE=1 tauri dev",
+    "build": "cross-env NODE_OPTIONS='--max-old-space-size=4096' tauri build",
+    "tauri": "tauri",
     "tauri:dev": "tauri dev",
-    "build": "remix vite:build",
     "tauri:build": "tauri build",
+    "web:dev": "remix vite:dev",
+    "web:build": "remix vite:build",
+    "check": "node scripts/check.mjs",
     "rls": "dotenv-load tauri build",
     "lint": "eslint --ignore-path .gitignore --cache --cache-location ./node_modules/.cache/eslint .",
     "typecheck": "tsc"
@@ -36,6 +40,7 @@
     "@tauri-apps/plugin-shell": "^2.2.0",
     "@tauri-apps/plugin-sql": "^2.2.0",
     "@tauri-apps/plugin-updater": "^2.3.1",
+    "cli-color": "^2.0.4",
     "framer-motion": "^11.17.0",
     "i18next": "^24.2.1",
     "i18next-browser-languagedetector": "^8.0.2",
@@ -67,6 +72,7 @@
     "@types/uuid": "^10.0.0",
     "@typescript-eslint/eslint-plugin": "^6.7.4",
     "@typescript-eslint/parser": "^6.7.4",
+    "adm-zip": "^0.5.16",
     "autoprefixer": "^10.4.20",
     "dotenv-load": "^3.0.0",
     "eslint": "^8.38.0",
@@ -75,16 +81,26 @@
     "eslint-plugin-jsx-a11y": "^6.10.2",
     "eslint-plugin-react": "^7.37.4",
     "eslint-plugin-react-hooks": "^4.6.0",
+    "https-proxy-agent": "^7.0.6",
+    "node-fetch": "^3.3.2",
     "postcss": "^8.5.0",
     "prettier": "^3.4.2",
     "prettier-plugin-tailwindcss": "^0.6.9",
     "remix-flat-routes": "^0.6.5",
     "tailwindcss": "^3.4.17",
+    "tar": "^7.4.3",
     "typescript": "^5.7.3",
     "vite": "^5.1.0",
     "vite-tsconfig-paths": "^4.3.2"
   },
   "engines": {
     "node": ">=20.0.0"
-  }
+  },
+  "prettier": {
+    "tabWidth": 2,
+    "semi": true,
+    "singleQuote": true,
+    "endOfLine": "lf"
+  },
+  "packageManager": "pnpm@9.13.2"
 }

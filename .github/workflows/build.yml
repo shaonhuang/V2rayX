@@ -1,359 +1,356 @@
-name: Publish Release
-on:
-  push:
-    tags:
-      - 'v*'
-    branches: ['main']
-  workflow_dispatch:
+# name: Publish Release
+# on:
+#   push:
+#     tags:
+#       - 'v*'
+#     branches: ['main']
+#   workflow_dispatch:
 
-env:
-  APP_NAME: 'V2rayX-tauri'
+# env:
+#   APP_NAME: 'V2rayX-tauri'
 
-jobs:
-  changelog:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+# jobs:
+#   changelog:
+#     runs-on: ubuntu-latest
+#     steps:
+#       - name: Checkout repository
+#         uses: actions/checkout@v4
 
-      - name: Build changelog
-        id: build_changelog
-        run: |
-          # NOTE: if commits subjects are standardized, you can filter the git log based on feat: and fix:
-          # and then replace "feat:" with "New: " and "fix:" with "Fixed "
-          # when AI gets good, we can also summarized commits into a bullet point list
-          PREV_TAG=$(git tag --list v* | tail -n2 | head -n1)
-          echo "changelog=$(git log $PREV_TAG...${{ github.ref_name }} --pretty=format:"- %s")" >> $GITHUB_OUTPUT
-    outputs:
-      changelog: ${{ steps.build_changelog.outputs.changelog }}
-  release:
-    runs-on: ${{ matrix.os }}
-    permissions:
-      contents: write
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - os: 'macos-latest' # for Arm based macs (M1 and above).
-            args: '--target aarch64-apple-darwin'
-            architecture: arm64
-          - os: 'macos-latest' # for Intel based macs.
-            args: '--target x86_64-apple-darwin'
-            architecture: x64
-          - os: 'ubuntu-22.04'
-            args: ''
-            architecture: x64
-          - os: 'ubuntu-22.04'
-            args: '--target aarch64-unknown-linux-gnu'
-            architecture: arm64
-          - os: 'windows-latest'
-            args: ''
-            architecture: x64
-          - os: 'windows-latest'
-            args: '--target aarch64-pc-windows-msvc'
-            architecture: arm64
+#       - name: Build changelog
+#         id: build_changelog
+#         run: |
+#           # NOTE: if commits subjects are standardized, you can filter the git log based on feat: and fix:
+#           # and then replace "feat:" with "New: " and "fix:" with "Fixed "
+#           # when AI gets good, we can also summarized commits into a bullet point list
+#           PREV_TAG=$(git tag --list v* | tail -n2 | head -n1)
+#           echo "changelog=$(git log $PREV_TAG...${{ github.ref_name }} --pretty=format:"- %s")" >> $GITHUB_OUTPUT
+#     outputs:
+#       changelog: ${{ steps.build_changelog.outputs.changelog }}
+#   release:
+#     runs-on: ${{ matrix.os }}
+#     permissions:
+#       contents: write
+#     strategy:
+#       fail-fast: false
+#       matrix:
+#         include:
+#           - os: 'macos-latest' # for Arm based macs (M1 and above).
+#             args: '--target aarch64-apple-darwin'
+#             architecture: arm64
+#           - os: 'macos-latest' # for Intel based macs.
+#             args: '--target x86_64-apple-darwin'
+#             architecture: x64
+#           - os: 'ubuntu-22.04'
+#             args: ''
+#             architecture: x64
+#           - os: 'ubuntu-22.04'
+#             args: '--target aarch64-unknown-linux-gnu'
+#             architecture: arm64
+#           - os: 'windows-latest'
+#             args: ''
+#             architecture: x64
+#           - os: 'windows-latest'
+#             args: '--target aarch64-pc-windows-msvc'
+#             architecture: arm64
 
-    needs: [changelog]
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+#     needs: [changelog]
+#     steps:
+#       - name: Checkout repository
+#         uses: actions/checkout@v4
 
-      - name: Install jq on Windows
-        if: runner.os == 'Windows'
-        run: choco install jq -y
-        shell: powershell
+#       - name: Install jq on Windows
+#         if: runner.os == 'Windows'
+#         run: choco install jq -y
+#         shell: powershell
 
-      - name: Get Latest v2ray-core Version
-        id: get_version
-        run: |
-          # Fetch the latest tags from GitHub API
-          RESPONSE=$(curl --silent -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" "https://api.github.com/repos/v2fly/v2ray-core/tags")
+#       - name: Get Latest v2ray-core Version
+#         id: get_version
+#         run: |
+#           # Fetch the latest tags from GitHub API
+#           RESPONSE=$(curl --silent -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" "https://api.github.com/repos/v2fly/v2ray-core/tags")
 
-          # Extract the first tag_name using jq
-          TAG_NAME=$(echo "$RESPONSE" | jq -r '.[0].name')
+#           # Extract the first tag_name using jq
+#           TAG_NAME=$(echo "$RESPONSE" | jq -r '.[0].name')
 
-          # Debug: Print the extracted tag name
-          echo "Extracted TAG_NAME: $TAG_NAME"
+#           # Debug: Print the extracted tag name
+#           echo "Extracted TAG_NAME: $TAG_NAME"
 
-          # Check if TAG_NAME was successfully extracted
-          if [ -z "$TAG_NAME" ] || [ "$TAG_NAME" == "null" ]; then
-            echo "Failed to fetch the latest v2ray-core version."
-            exit 1
-          fi
+#           # Check if TAG_NAME was successfully extracted
+#           if [ -z "$TAG_NAME" ] || [ "$TAG_NAME" == "null" ]; then
+#             echo "Failed to fetch the latest v2ray-core version."
+#             exit 1
+#           fi
 
-          echo "Latest v2ray-core version: ${TAG_NAME#v}"
+#           echo "Latest v2ray-core version: ${TAG_NAME#v}"
 
-          # Export the version to be used in subsequent steps
-          echo "V2RAY_VERSION=${TAG_NAME#v}" >> $GITHUB_ENV
-        shell: bash
+#           # Export the version to be used in subsequent steps
+#           echo "V2RAY_VERSION=${TAG_NAME#v}" >> $GITHUB_ENV
+#         shell: bash
 
-      - name: Download v2ray Release
-        run: |
-          # Determine the download URL based on OS and architecture
-          case "${{ matrix.os }}" in
-            ubuntu-22.04)
-              if [ "${{ matrix.architecture }}" == "x64" ]; then
-                DOWNLOAD_URL="https://github.com/v2fly/v2ray-core/releases/download/v${{ env.V2RAY_VERSION }}/v2ray-linux-64.zip"
-                BINARY_NAME="v2ray"
-              elif [ "${{ matrix.architecture }}" == "arm64" ]; then
-                DOWNLOAD_URL="https://github.com/v2fly/v2ray-core/releases/download/v${{ env.V2RAY_VERSION }}/v2ray-linux-arm64-v8a.zip"
-                BINARY_NAME="v2ray"
-              else
-                echo "Unsupported architecture for Ubuntu: ${{ matrix.architecture }}"
-                exit 1
-              fi
-              ;;
-            windows-latest)
-              if [ "${{ matrix.architecture }}" == "x64" ]; then
-                DOWNLOAD_URL="https://github.com/v2fly/v2ray-core/releases/download/v${{ env.V2RAY_VERSION }}/v2ray-windows-64.zip"
-                BINARY_NAME="v2ray.exe"
-              elif [ "${{ matrix.architecture }}" == "arm64" ]; then
-                DOWNLOAD_URL="https://github.com/v2fly/v2ray-core/releases/download/v${{ env.V2RAY_VERSION }}/v2ray-windows-arm64-v8a.zip"
-                BINARY_NAME="v2ray.exe"
-              else
-                echo "Unsupported architecture for Windows: ${{ matrix.architecture }}"
-                exit 1
-              fi
-              ;;
-            macos-latest)
-              if [ "${{ matrix.architecture }}" == "x64" ]; then
-                DOWNLOAD_URL="https://github.com/v2fly/v2ray-core/releases/download/v${{ env.V2RAY_VERSION }}/v2ray-macos-64.zip"
-                BINARY_NAME="v2ray"
-              elif [ "${{ matrix.architecture }}" == "arm64" ]; then
-                DOWNLOAD_URL="https://github.com/v2fly/v2ray-core/releases/download/v${{ env.V2RAY_VERSION }}/v2ray-macos-arm64-v8a.zip"
-                BINARY_NAME="v2ray"
-              else
-                echo "Unsupported architecture for macOS: ${{ matrix.architecture }}"
-                exit 1
-              fi
-              ;;
-            *)
-              echo "Unsupported OS: ${{ matrix.os }}"
-              exit 1
-              ;;
-          esac
+#       - name: Download v2ray Release
+#         run: |
+#           # Determine the download URL based on OS and architecture
+#           case "${{ matrix.os }}" in
+#             ubuntu-22.04)
+#               if [ "${{ matrix.architecture }}" == "x64" ]; then
+#                 DOWNLOAD_URL="https://github.com/v2fly/v2ray-core/releases/download/v${{ env.V2RAY_VERSION }}/v2ray-linux-64.zip"
+#                 BINARY_NAME="v2ray"
+#               elif [ "${{ matrix.architecture }}" == "arm64" ]; then
+#                 DOWNLOAD_URL="https://github.com/v2fly/v2ray-core/releases/download/v${{ env.V2RAY_VERSION }}/v2ray-linux-arm64-v8a.zip"
+#                 BINARY_NAME="v2ray"
+#               else
+#                 echo "Unsupported architecture for Ubuntu: ${{ matrix.architecture }}"
+#                 exit 1
+#               fi
+#               ;;
+#             windows-latest)
+#               if [ "${{ matrix.architecture }}" == "x64" ]; then
+#                 DOWNLOAD_URL="https://github.com/v2fly/v2ray-core/releases/download/v${{ env.V2RAY_VERSION }}/v2ray-windows-64.zip"
+#                 BINARY_NAME="v2ray.exe"
+#               elif [ "${{ matrix.architecture }}" == "arm64" ]; then
+#                 DOWNLOAD_URL="https://github.com/v2fly/v2ray-core/releases/download/v${{ env.V2RAY_VERSION }}/v2ray-windows-arm64-v8a.zip"
+#                 BINARY_NAME="v2ray.exe"
+#               else
+#                 echo "Unsupported architecture for Windows: ${{ matrix.architecture }}"
+#                 exit 1
+#               fi
+#               ;;
+#             macos-latest)
+#               if [ "${{ matrix.architecture }}" == "x64" ]; then
+#                 DOWNLOAD_URL="https://github.com/v2fly/v2ray-core/releases/download/v${{ env.V2RAY_VERSION }}/v2ray-macos-64.zip"
+#                 BINARY_NAME="v2ray"
+#               elif [ "${{ matrix.architecture }}" == "arm64" ]; then
+#                 DOWNLOAD_URL="https://github.com/v2fly/v2ray-core/releases/download/v${{ env.V2RAY_VERSION }}/v2ray-macos-arm64-v8a.zip"
+#                 BINARY_NAME="v2ray"
+#               else
+#                 echo "Unsupported architecture for macOS: ${{ matrix.architecture }}"
+#                 exit 1
+#               fi
+#               ;;
+#             *)
+#               echo "Unsupported OS: ${{ matrix.os }}"
+#               exit 1
+#               ;;
+#           esac
 
-          echo "Downloading v2ray from $DOWNLOAD_URL"
-          curl -L -o v2ray.zip "$DOWNLOAD_URL"
-        shell: bash
+#           echo "Downloading v2ray from $DOWNLOAD_URL"
+#           curl -L -o v2ray.zip "$DOWNLOAD_URL"
+#         shell: bash
 
-      - name: Unzip v2ray
-        run: |
-          mkdir -p tmp
-          unzip -o v2ray.zip -d tmp
-        shell: bash
+#       - name: Unzip v2ray
+#         run: |
+#           mkdir -p tmp
+#           unzip -o v2ray.zip -d tmp
+#         shell: bash
 
-      - name: Make directory
-        run: |
-          mkdir -p src-tauri/binaries
-        shell: bash
+#       - name: Make directory
+#         run: |
+#           mkdir -p src-tauri/binaries
+#         shell: bash
 
-      - name: Move v2ray Binary
-        run: |
-          case "${{ matrix.os }}" in
-            ubuntu-22.04|macos-latest)
-              mv tmp/v2ray src-tauri/binaries/v2ray
-              ;;
-            windows-latest)
-              mv tmp/v2ray.exe src-tauri/binaries/v2ray.exe
-              ;;
-          esac
-        shell: bash
+#       - name: Move v2ray Binary
+#         run: |
+#           case "${{ matrix.os }}" in
+#             ubuntu-22.04|macos-latest)
+#               mv tmp/v2ray src-tauri/binaries/v2ray
+#               ;;
+#             windows-latest)
+#               mv tmp/v2ray.exe src-tauri/binaries/v2ray.exe
+#               ;;
+#           esac
+#         shell: bash
 
-      - name: Make v2ray Executable
-        if: matrix.os != 'windows-latest'
-        run: sudo chmod +x src-tauri/binaries/v2ray
-        shell: bash
+#       - name: Make v2ray Executable
+#         if: matrix.os != 'windows-latest'
+#         run: sudo chmod +x src-tauri/binaries/v2ray
+#         shell: bash
 
-      - name: Rename v2ray Binary
-        run: |
-          # Determine the file extension based on the platform
-          if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
-            extension=".exe"
-          else
-            extension=""
-          fi
+#       - name: Rename v2ray Binary
+#         run: |
+#           # Determine the file extension based on the platform
+#           if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
+#             extension=".exe"
+#           else
+#             extension=""
+#           fi
 
-          # Conditionally set targetTriple
-          if [[ "${{ matrix.os }}" == "macos-latest" && "${{ matrix.architecture }}" == "x64" ]]; then
-            targetTriple="x86_64-apple-darwin"
-          elif [[ "${{ matrix.os }}" == "windows-latest" && "${{ matrix.architecture }}" == "arm64" ]]; then
-          	targetTriple="aarch64-pc-windows-msvc"
-          elif [[ "${{ matrix.os }}" == "ubuntu-22.04" && "${{ matrix.architecture }}" == "arm64" ]]; then
-          	targetTriple="aarch64-unknown-linux-gnu"
-          else
-            # Extract the Rust target triple
-            targetTriple=$(rustc -vV | grep host | awk '{print $2}')
+#           # Conditionally set targetTriple
+#           if [[ "${{ matrix.os }}" == "macos-latest" && "${{ matrix.architecture }}" == "x64" ]]; then
+#             targetTriple="x86_64-apple-darwin"
+#           elif [[ "${{ matrix.os }}" == "windows-latest" && "${{ matrix.architecture }}" == "arm64" ]]; then
+#           	targetTriple="aarch64-pc-windows-msvc"
+#           elif [[ "${{ matrix.os }}" == "ubuntu-22.04" && "${{ matrix.architecture }}" == "arm64" ]]; then
+#           	targetTriple="aarch64-unknown-linux-gnu"
+#           else
+#             # Extract the Rust target triple
+#             targetTriple=$(rustc -vV | grep host | awk '{print $2}')
 
-            if [[ -z "$targetTriple" ]]; then
-              echo "Failed to determine platform target triple"
-              exit 1
-            fi
-          fi
+#             if [[ -z "$targetTriple" ]]; then
+#               echo "Failed to determine platform target triple"
+#               exit 1
+#             fi
+#           fi
 
-          echo "Target Triple: $targetTriple"
-          # Rename the binary
-          mv "src-tauri/binaries/v2ray${extension}" "src-tauri/binaries/v2ray-${targetTriple}${extension}"
-          ls -ail src-tauri/binaries
-        shell: bash
+#           echo "Target Triple: $targetTriple"
+#           # Rename the binary
+#           mv "src-tauri/binaries/v2ray${extension}" "src-tauri/binaries/v2ray-${targetTriple}${extension}"
+#           ls -ail src-tauri/binaries
+#         shell: bash
 
-      - name: Update .env with v2ray version
-        run: |
-          # Check if .env file exists
-          if [ ! -f .env ]; then
-            echo ".env file not found. Creating a new one."
-            touch .env
-          fi
+#       - name: Update .env with v2ray version
+#         run: |
+#           # Check if .env file exists
+#           if [ ! -f .env ]; then
+#             echo ".env file not found. Creating a new one."
+#             touch .env
+#           fi
 
-          # Remove existing VITE_V2RAY_CORE_VERSION if present
-          if grep -q "^VITE_V2RAY_CORE_VERSION=" .env; then
-            sed -i 's/^VITE_V2RAY_CORE_VERSION=.*/VITE_V2RAY_CORE_VERSION=${{ env.V2RAY_VERSION }}/' .env
-          else
-            echo "VITE_V2RAY_CORE_VERSION=${{ env.V2RAY_VERSION }}" >> .env
-          fi
-        shell: bash
+#           # Remove existing VITE_V2RAY_CORE_VERSION if present
+#           if grep -q "^VITE_V2RAY_CORE_VERSION=" .env; then
+#             sed -i 's/^VITE_V2RAY_CORE_VERSION=.*/VITE_V2RAY_CORE_VERSION=${{ env.V2RAY_VERSION }}/' .env
+#           else
+#             echo "VITE_V2RAY_CORE_VERSION=${{ env.V2RAY_VERSION }}" >> .env
+#           fi
+#         shell: bash
 
-      - name: Extract Version from tauri.conf.json
-        id: extract_version
-        run: |
-          # Extract the version directly from the root of the JSON
-          VERSION=$(jq -r '.version' src-tauri/tauri.conf.json)
+#       - name: Extract Version from tauri.conf.json
+#         id: extract_version
+#         run: |
+#           # Extract the version directly from the root of the JSON
+#           VERSION=$(jq -r '.version' src-tauri/tauri.conf.json)
 
-          if [ "$VERSION" == "null" ] || [ -z "$VERSION" ]; then
-            echo "Failed to extract version from tauri.conf.json"
-            exit 1
-          fi
+#           if [ "$VERSION" == "null" ] || [ -z "$VERSION" ]; then
+#             echo "Failed to extract version from tauri.conf.json"
+#             exit 1
+#           fi
 
-          # Export VITE_APP_VERSION to GitHub environment
-          echo "VITE_APP_VERSION=${VERSION}" >> $GITHUB_ENV
-        shell: bash
+#           # Export VITE_APP_VERSION to GitHub environment
+#           echo "VITE_APP_VERSION=${VERSION}" >> $GITHUB_ENV
+#         shell: bash
 
-      - name: Add SENTRY_DSN to .env
-        run: |
-          echo "SENTRY_DSN=${{ secrets.SENTRY_DSN }}" >> .env
-        shell: bash
+#       - name: Add SENTRY_DSN to .env
+#         run: |
+#           echo "SENTRY_DSN=${{ secrets.SENTRY_DSN }}" >> .env
+#         shell: bash
 
-      - name: Add App version to .env
-        run: |
-          echo "VITE_APP_VERSION=${{ env.VITE_APP_VERSION }}" >> .env
-        shell: bash
+#       - name: Add App version to .env
+#         run: |
+#           echo "VITE_APP_VERSION=${{ env.VITE_APP_VERSION }}" >> .env
+#         shell: bash
 
-      - name: Install pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9
+#       - name: Install pnpm
+#         uses: pnpm/action-setup@v4
+#         with:
+#           version: 9
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 'lts/*'
-          cache: pnpm
-          # node-version-file: '.nvmrc'
+#       - name: Setup Node.js
+#         uses: actions/setup-node@v4
+#         with:
+#           node-version: 'lts/*'
+#           cache: pnpm
+#           # node-version-file: '.nvmrc'
 
-      - name: Install Rust stable
-        uses: dtolnay/rust-toolchain@stable # Set this to dtolnay/rust-toolchain@nightly
-        with:
-          # Those targets are only used on macos runners so it's in an `if` to slightly speed up windows and linux builds.
-          targets: ${{ matrix.os == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+#       - name: Install Rust stable
+#         uses: dtolnay/rust-toolchain@stable # Set this to dtolnay/rust-toolchain@nightly
+#         with:
+#           # Those targets are only used on macos runners so it's in an `if` to slightly speed up windows and linux builds.
+#           targets: ${{ matrix.os == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
 
-      - name: Rust cache
-        uses: swatinem/rust-cache@v2
-        with:
-          workspaces: './src-tauri -> target'
+#       - name: Rust cache
+#         uses: swatinem/rust-cache@v2
+#         with:
+#           workspaces: './src-tauri -> target'
 
-      - name: Setup Debug Session
-        uses: csexton/debugger-action@master
+#       # - name: Setup Debug Session
+#       #   uses: csexton/debugger-action@master
 
-      - name: Install Rust tool chain and Cross-Compilation Tools to build other arch
-        shell: bash
-        if: matrix.os == 'ubuntu-22.04' || matrix.os == 'windows-latest'
-        run: |
-          if [[ "${{ matrix.os }}" == "windows-latest" && "${{ matrix.architecture }}" == "arm64" ]]; then
-            rustup target add aarch64-pc-windows-msvc
-          elif [[ "${{ matrix.os }}" == "ubuntu-22.04" && "${{ matrix.architecture }}" == "arm64" ]]; then
-            sudo dpkg --add-architecture arm64
-            sudo apt-get update
-            sudo apt-get install -y gcc-aarch64-linux-gnu
-            sudo apt-get install -y libglib2.0-dev:arm64
-            echo "export PKG_CONFIG_ALLOW_CROSS=1" >> $GITHUB_ENV
-            echo "export PKG_CONFIG_SYSROOT_DIR=/usr/aarch64-linux-gnu" >> $GITHUB_ENV
-            echo "export PKG_CONFIG_LIBDIR=/usr/aarch64-linux-gnu/lib/pkgconfig:/usr/aarch64-linux-gnu/share/pkgconfig" >> $GITHUB_ENV
-            rustup target add aarch64-unknown-linux-gnu
-          fi
+#       - name: Install Rust tool chain and Cross-Compilation Tools to build other arch
+#         shell: bash
+#         if: matrix.os == 'ubuntu-22.04' || matrix.os == 'windows-latest'
+#         run: |
+#           if [[ "${{ matrix.os }}" == "windows-latest" && "${{ matrix.architecture }}" == "arm64" ]]; then
+#             rustup target add aarch64-pc-windows-msvc
+#           elif [[ "${{ matrix.os }}" == "ubuntu-22.04" && "${{ matrix.architecture }}" == "arm64" ]]; then
+#             sudo dpkg --add-architecture arm64
+#             sudo apt-get update
+#             sudo apt-get install -y gcc-aarch64-linux-gnu
+#             sudo apt-get install -y libglib2.0-dev:arm64
+#             echo "export PKG_CONFIG_ALLOW_CROSS=1" >> $GITHUB_ENV
+#             echo "export PKG_CONFIG_SYSROOT_DIR=/usr/aarch64-linux-gnu" >> $GITHUB_ENV
+#             echo "export PKG_CONFIG_LIBDIR=/usr/aarch64-linux-gnu/lib/pkgconfig:/usr/aarch64-linux-gnu/share/pkgconfig" >> $GITHUB_ENV
+#             rustup target add aarch64-unknown-linux-gnu
+#           fi
 
-      - name: Install Ubuntu dependencies
-        if: matrix.os == 'ubuntu-22.04'
-        run: |
-          sudo apt update
-          xargs sudo apt install -y < environment/apt_packages.txt
+#       - name: Install Ubuntu dependencies
+#         if: matrix.os == 'ubuntu-22.04'
+#         run: |
+#           sudo apt update
+#           xargs sudo apt install -y < environment/apt_packages.txt
 
-      - name: Install frontend dependencies
-        run: |
-          pnpm install
+#       - name: Install frontend dependencies
+#         run: |
+#           pnpm install
 
-      - name: CI Build
-        if: ${{ github.ref_type == 'branch' }}
-        run: |
-          pnpm tauri:build ${{ matrix.args }}
-        env:
-          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
-          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
-          PKG_CONFIG_ALLOW_CROSS: ${{ env.PKG_CONFIG_ALLOW_CROSS }}
-          PKG_CONFIG_SYSROOT_DIR: ${{ env.PKG_CONFIG_SYSROOT_DIR }}
-          PKG_CONFIG_LIBDIR: ${{ env.PKG_CONFIG_LIBDIR }}
+#       - name: CI Build
+#         if: ${{ github.ref_type == 'branch' }}
+#         run: |
+#           pnpm tauri:build ${{ matrix.args }}
+#         env:
+#           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+#           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
 
-      - name: CI upload Windows
-        if: ${{ github.ref_type == 'branch' && matrix.os == 'windows-latest' }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: 'Windows Installers'
-          path: |
-            src-tauri/release/bundle/msi/*.msi
-            src-tauri/target/release/bundle/nsis/*.exe
+#       - name: CI upload Windows
+#         if: ${{ github.ref_type == 'branch' && matrix.os == 'windows-latest' }}
+#         uses: actions/upload-artifact@v4
+#         with:
+#           name: 'Windows Installers'
+#           path: |
+#             src-tauri/release/bundle/msi/*.msi
+#             src-tauri/target/release/bundle/nsis/*.exe
 
-      - name: CI upload macOS x64
-        if: ${{ github.ref_type == 'branch' && matrix.os == 'macos-latest' && matrix.architecture == 'x64' }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: 'macOS x64 Installer'
-          path: |
-            src-tauri/target/x86_64-apple-darwin/release/bundle/dmg/*.dmg
+#       - name: CI upload macOS x64
+#         if: ${{ github.ref_type == 'branch' && matrix.os == 'macos-latest' && matrix.architecture == 'x64' }}
+#         uses: actions/upload-artifact@v4
+#         with:
+#           name: 'macOS x64 Installer'
+#           path: |
+#             src-tauri/target/x86_64-apple-darwin/release/bundle/dmg/*.dmg
 
-      - name: CI upload macOS arm64
-        if: ${{ github.ref_type == 'branch' && matrix.os == 'macos-latest' && matrix.architecture == 'arm64' }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: 'macOS arm64 Installer'
-          path: |
-            src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/*.dmg
+#       - name: CI upload macOS arm64
+#         if: ${{ github.ref_type == 'branch' && matrix.os == 'macos-latest' && matrix.architecture == 'arm64' }}
+#         uses: actions/upload-artifact@v4
+#         with:
+#           name: 'macOS arm64 Installer'
+#           path: |
+#             src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/*.dmg
 
-      - name: CI upload Linux
-        if: ${{ github.ref_type == 'branch' && matrix.os == 'ubuntu-22.04' }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: 'Linux Distributions'
-          path: |
-            src-tauri/target/release/bundle/deb/*.deb
-            src-tauri/target/release/bundle/AppImage/*.AppImage
+#       - name: CI upload Linux
+#         if: ${{ github.ref_type == 'branch' && matrix.os == 'ubuntu-22.04' }}
+#         uses: actions/upload-artifact@v4
+#         with:
+#           name: 'Linux Distributions'
+#           path: |
+#             src-tauri/target/release/bundle/deb/*.deb
+#             src-tauri/target/release/bundle/AppImage/*.AppImage
 
-      # TODO: https://tauri.app/v1/guides/building/linux#cross-compiling-tauri-applications-for-arm-based-devices
-      - name: Build Tauri app
-        uses: tauri-apps/tauri-action@v0
-        if: ${{ github.ref_type == 'tag' }}
-        # if u get Error: Resource not accessible by integration
-        # go to repository Settings => Action => General => Workflow permissions => Switch to Read and Write permisions
-        env:
-          CI: true
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
-          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
-        with:
-          # tauri-action replaces \_\_VERSION\_\_ with the app version
-          tagName: '${{ github.ref_name }}'
-          releaseName: '${{ env.APP_NAME }} v__VERSION__ CORE v${{ env.V2RAY_VERSION }}'
-          releaseBody: |
-            ${{needs.changelog.outputs.changelog}}
-            See the assets to download this version and install.
-          releaseDraft: true
-          prerelease: false
-          args: ${{ matrix.args }}
+#       # TODO: https://tauri.app/v1/guides/building/linux#cross-compiling-tauri-applications-for-arm-based-devices
+#       - name: Build Tauri app
+#         uses: tauri-apps/tauri-action@v0
+#         if: ${{ github.ref_type == 'tag' }}
+#         # if u get Error: Resource not accessible by integration
+#         # go to repository Settings => Action => General => Workflow permissions => Switch to Read and Write permisions
+#         env:
+#           CI: true
+#           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+#           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+#         with:
+#           # tauri-action replaces \_\_VERSION\_\_ with the app version
+#           tagName: '${{ github.ref_name }}'
+#           releaseName: '${{ env.APP_NAME }} v__VERSION__ CORE v${{ env.V2RAY_VERSION }}'
+#           releaseBody: |
+#             ${{needs.changelog.outputs.changelog}}
+#             See the assets to download this version and install.
+#           releaseDraft: true
+#           prerelease: false
+#           args: ${{ matrix.args }}

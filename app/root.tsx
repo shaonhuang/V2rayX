@@ -1,5 +1,12 @@
 import { useEffect } from 'react';
-import { Links, LiveReload, Meta, Outlet, Scripts, ScrollRestoration } from '@remix-run/react';
+import {
+  Links,
+  LiveReload,
+  Meta,
+  Outlet,
+  Scripts,
+  ScrollRestoration,
+} from '@remix-run/react';
 import type { LinksFunction } from '@remix-run/node';
 import { invoke } from '@tauri-apps/api/core';
 import { NextUIProvider } from '@nextui-org/react';
@@ -7,6 +14,7 @@ import NiceModal from '@ebay/nice-modal-react';
 import './tailwind.css';
 import toast, { Toaster } from 'react-hot-toast';
 import { I18nextProvider } from 'react-i18next';
+import { getCurrentWindow } from '@tauri-apps/api/window';
 
 import i18n from './translations/i18n';
 
@@ -41,6 +49,15 @@ export function Layout({ children }: { children: React.ReactNode }) {
           console.error('Failed to close splash screen:', error);
         });
     }
+    const appWindow = getCurrentWindow();
+    document.getElementById('titlebar')?.addEventListener('mousedown', (e) => {
+      if (e.buttons === 1) {
+        // Primary (left) button
+        e.detail === 2
+          ? appWindow.toggleMaximize() // Maximize on double click
+          : appWindow.startDragging(); // Else start dragging
+      }
+    });
   }, []);
 
   return (
@@ -63,6 +80,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             />
             <NiceModal.Provider>
               <div id="font-wrapper">
+                <div id="titlebar" className="titlebar"></div>
                 <Outlet />
               </div>
             </NiceModal.Provider>
