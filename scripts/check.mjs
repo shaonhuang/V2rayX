@@ -278,7 +278,7 @@ const resolveAppVersionAndCoreVersionToEnv= () => {
             const fd = fs.openSync('.env', 'w'); // 'w' means write mode
 
                // Write VITE_APP_VERSION to the file
-               const content = `VITE_APP_VERSION=${META_V2RAY_CORE_VERSION}\nVITE_APP_VERSION=${version}\n`;
+               const content = `VITE_APP_VERSION=${META_V2RAY_CORE_VERSION}\nVITE_V2RAY_CORE_VERSION=${version}\n`;
                // Write content to the file synchronously
                fs.writeSync(fd, content);
                // Close the file after writing
