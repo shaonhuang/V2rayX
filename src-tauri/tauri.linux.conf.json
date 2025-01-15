@@ -1,0 +1,30 @@
+{
+  "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
+  "identifier": "io.github.v2rayx.shaonhuang",
+  "bundle": {
+    "targets": ["deb", "rpm"],
+    "linux": {
+      "deb": {
+        "desktopTemplate": "./packages/linux/v2rayx.desktop",
+        "provides": ["v2rayx-tauri"],
+        "conflicts": ["v2rayx-tauri"],
+        "replaces": ["v2rayx-tauri"],
+        "postInstallScript": "./packages/linux/post-install.sh",
+        "preRemoveScript": "./packages/linux/pre-remove.sh"
+      },
+      "rpm": {
+        "desktopTemplate": "./packages/linux/v2rayx.desktop",
+        "provides": ["v2rayx-tauri"],
+        "conflicts": ["v2rayx-tauri"],
+        "obsoletes": ["v2rayx-tauri"],
+        "postInstallScript": "./packages/linux/post-install.sh",
+        "preRemoveScript": "./packages/linux/pre-remove.sh"
+      }
+    }
+  },
+  "app": {
+    "trayIcon": {
+      "iconPath": "icons/icon.ico"
+    }
+  }
+}
