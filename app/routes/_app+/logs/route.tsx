@@ -1,12 +1,21 @@
 import { useEffect, useState } from 'react';
 import { LazyLog } from '@melloware/react-logviewer';
-import { readTextFile, BaseDirectory, watchImmediate } from '@tauri-apps/plugin-fs';
+import {
+  readTextFile,
+  BaseDirectory,
+  watchImmediate,
+} from '@tauri-apps/plugin-fs';
 import { queryLog } from '~/api';
 import { json, useLoaderData } from '@remix-run/react';
-import { Spinner } from '@nextui-org/react';
-import { Card, CardBody, CardHeader } from '@nextui-org/react';
+import {
+  Card,
+  CardBody,
+  CardHeader,
+  Breadcrumbs,
+  BreadcrumbItem,
+  Spinner,
+} from '@nextui-org/react';
 import * as _ from 'lodash';
-import { Breadcrumbs, BreadcrumbItem } from '@nextui-org/react';
 import { useTheme } from '@nextui-org/use-theme';
 import { useTranslation } from 'react-i18next';
 
@@ -25,9 +34,12 @@ const Page = () => {
   useEffect(() => {
     const loadLog = async (type) => {
       try {
-        const content = await readTextFile(type === 'access' ? 'access.log' : 'error.log', {
-          baseDir: BaseDirectory.AppLog,
-        });
+        const content = await readTextFile(
+          type === 'access' ? 'access.log' : 'error.log',
+          {
+            baseDir: BaseDirectory.AppLog,
+          },
+        );
         setLogContent(content.split('\n').slice(-1000).join('\n'));
       } catch (error) {
         console.error('Failed to read log file:', error);
@@ -82,7 +94,9 @@ const Page = () => {
   return (
     <Card className="h-[80vh]">
       <CardHeader className="absolute top-1 z-10 flex w-1/2 flex-row !items-start justify-start gap-4 py-4">
-        <p className="pl-4 text-large font-medium text-white">{t('Live Log Viewer')}</p>
+        <p className="pl-4 text-large font-medium text-white">
+          {t('Live Log Viewer')}
+        </p>
         <Breadcrumbs
           variant="light"
           hideSeparator

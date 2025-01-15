@@ -1,5 +1,12 @@
-import { Accordion, AccordionItem, Avatar, Button, Chip } from '@nextui-org/react';
-import { Select, SelectItem } from '@nextui-org/react';
+import {
+  Accordion,
+  AccordionItem,
+  Avatar,
+  Button,
+  Chip,
+  Select,
+  SelectItem,
+} from '@nextui-org/react';
 import { Card, CardHeader, CardBody, CardFooter } from '@nextui-org/card';
 import * as Endpoint from './components/endpoint-item/page';
 import * as Edit from './components/endpoint-edit/page';
@@ -11,7 +18,13 @@ import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import { useTranslation } from 'react-i18next';
 
-import { useLoaderData, useNavigate, useRevalidator, useFetcher, json } from '@remix-run/react';
+import {
+  useLoaderData,
+  useNavigate,
+  useRevalidator,
+  useFetcher,
+  json,
+} from '@remix-run/react';
 import {
   queryEndpoints,
   queryEndpointsGroups,
@@ -108,7 +121,9 @@ export const Page = () => {
         >
           <Card className="w-fit">
             <CardBody>
-              <p>Empty groups. Create one or import one with left side buttons.</p>
+              <p>
+                Empty groups. Create one or import one with left side buttons.
+              </p>
             </CardBody>
           </Card>
         </motion.div>
@@ -167,7 +182,9 @@ export const Page = () => {
                         }}
                       >
                         {speedTestTypeSets.map((speedTestType) => (
-                          <SelectItem key={speedTestType.toLowerCase()}>{speedTestType}</SelectItem>
+                          <SelectItem key={speedTestType.toLowerCase()}>
+                            {speedTestType}
+                          </SelectItem>
                         ))}
                       </Select>
                       <Button
@@ -179,7 +196,10 @@ export const Page = () => {
                       >
                         <span className="i-feather-refresh-cw" />
                       </Button>
-                      <DeleteGroupButton groupID={group.GroupID} groupName={group.GroupName} />
+                      <DeleteGroupButton
+                        groupID={group.GroupID}
+                        groupName={group.GroupName}
+                      />
                     </div>
                   </div>
                 }
@@ -217,7 +237,9 @@ export const Page = () => {
                       if (endpoint) {
                         if (endpoint.Active !== 1) {
                           await invoke('stop_daemon');
-                          await handleSelectEndpoint({ endpointID: endpoint.EndpointID });
+                          await handleSelectEndpoint({
+                            endpointID: endpoint.EndpointID,
+                          });
                           await updateAppStatus({
                             userID: data.userID,
                             data: { ServiceRunningState: 0 },
@@ -236,12 +258,17 @@ export const Page = () => {
                           revalidator.revalidate();
                         }
                       } else {
-                        toast.error('Failed to inject config for v2ray to start');
+                        toast.error(
+                          'Failed to inject config for v2ray to start',
+                        );
                       }
                     }}
                   >
                     <Endpoint.Page
-                      state={endpoint.Active === 1 && data.appStatus.ServiceRunningState === 1}
+                      state={
+                        endpoint.Active === 1 &&
+                        data.appStatus.ServiceRunningState === 1
+                      }
                       isSelected={endpoint.Active === 1}
                       endpoint={endpoint}
                       handleReload={handleReload}

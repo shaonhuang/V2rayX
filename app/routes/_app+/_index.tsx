@@ -7,7 +7,10 @@ import { queryAppearance } from '~/api';
 import SystemThemeManager from '~/utils/theme.util';
 
 export const meta: MetaFunction = () => {
-  return [{ title: 'New Remix App' }, { name: 'description', content: 'Welcome to Remix!' }];
+  return [
+    { title: 'New Remix App' },
+    { name: 'description', content: 'Welcome to Remix!' },
+  ];
 };
 
 export const clientLoader = async () => {
@@ -15,12 +18,13 @@ export const clientLoader = async () => {
     return redirect('/login');
   }
   try {
-    const appearance = await queryAppearance({ userID: localStorage.getItem('userID')! });
+    const appearance = await queryAppearance({
+      userID: localStorage.getItem('userID')!,
+    });
     return json({ appearance });
   } catch (e) {
     console.error(e);
   }
-  localStorage.removeItem('userID');
   return redirect('/login');
 };
 
@@ -41,7 +45,9 @@ export default function Index() {
         });
       }
       document.body.style.fontFamily =
-        font === 'sans-serif' ? 'NotoSansSC, sans-serif' : `${font}, NotoSansSC, sans-serif`;
+        font === 'sans-serif'
+          ? 'NotoSansSC, sans-serif'
+          : `${font}, NotoSansSC, sans-serif`;
       window.remixNavigate = navigate;
       navigate('/dashboard');
     }
