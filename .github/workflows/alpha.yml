@@ -69,6 +69,8 @@ jobs:
         run: |
           pnpm i
           pnpm check ${{ matrix.target }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Add SENTRY_DSN to .env
         run: |
