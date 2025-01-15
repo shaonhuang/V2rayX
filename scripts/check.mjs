@@ -5,7 +5,7 @@ import { extract } from "tar";
 import path from "path";
 import AdmZip from "adm-zip";
 import fetch from "node-fetch";
-import proxyAgent from "https-proxy-agent";
+import { HttpsProxyAgent } from 'https-proxy-agent';
 import { execFile, execSync } from "child_process";
 import { log_info, log_debug, log_error, log_success } from "./utils.mjs";
 // import { glob } from "glob";
@@ -13,7 +13,6 @@ import { log_info, log_debug, log_error, log_success } from "./utils.mjs";
 const cwd = process.cwd();
 const TEMP_DIR = path.join(cwd, "node_modules/.v2ray-core");
 const FORCE = process.argv.includes("--force");
-
 
 const PLATFORM_MAP = {
   "x86_64-pc-windows-msvc": "win32",
@@ -75,7 +74,6 @@ const META_ARCH_MAP = {
   "linux-loong64": "v2ray-linux-loong64",
 };
 
-
 // Fetch the latest alpha release version from the response
 async function getLatestV2rayCoreVersion() {
   const options = {};
@@ -88,7 +86,7 @@ async function getLatestV2rayCoreVersion() {
     process.env.https_proxy;
 
   if (httpProxy) {
-    options.agent = proxyAgent(httpProxy);
+    options.agent = new HttpsProxyAgent(httpProxy);
   }
 
   try {
@@ -140,14 +138,7 @@ async function getLatestV2rayCoreVersion() {
     log_info(`Latest v2ray-core version: ${version}`);
 
     // Export the version to be used in subsequent steps
-    // If you're using this in a GitHub Actions workflow, you can set it like this:
-    // Note: This assumes you're running this script in a GitHub Actions environment.
     console.log(`V2RAY_VERSION=${version}`);
-    // Alternatively, you can write to the GITHUB_ENV file to set the environment variable
-    // const fs = require('fs');
-    // fs.appendFileSync(process.env.GITHUB_ENV, `V2RAY_VERSION=${version}\n`);
-
-    // If not using GitHub Actions, you might set it in process.env or return it
     process.env.V2RAY_VERSION = version;
     META_V2RAY_CORE_VERSION = version;
     // FIXME: don't forget write this version to .env
@@ -182,7 +173,8 @@ function v2rayMeta() {
 
 /**
  * download file and save to `path`
- */ async function downloadFile(url, path) {
+ */
+async function downloadFile(url, path) {
   const options = {};
 
   const httpProxy =
@@ -192,7 +184,7 @@ function v2rayMeta() {
     process.env.https_proxy;
 
   if (httpProxy) {
-    options.agent = proxyAgent(httpProxy);
+    options.agent = new HttpsProxyAgent(httpProxy);
   }
 
   const response = await fetch(url, {
@@ -200,10 +192,15 @@ function v2rayMeta() {
     method: "GET",
     headers: { "Content-Type": "application/octet-stream" },
   });
-  const buffer = await response.arrayBuffer();
-  await fsp.writeFile(path, new Uint8Array(buffer));
 
-  log_success(`download finished: ${url}`);
+  if (!response.ok) {
+    throw new Error(`Failed to download file from ${url}: ${response.status} ${response.statusText}`);
+  }
+
+  const buffer = await response.arrayBuffer();
+  await fsp.writeFile(path, Buffer.from(buffer));
+
+  log_success(`Download finished: ${url}`);
 }
 
 /**
@@ -235,69 +232,67 @@ async function resolveSidecar(binInfo) {
     });
     zip.extractAllTo(tempDir, true);
     await fsp.rename(tempExe, sidecarPath);
-    log_success(`unzip finished: "${name}"`);
+    log_success(`Unzip finished: "${name}"`);
   } catch (err) {
     await fsp.rm(sidecarPath, { recursive: true, force: true });
     throw err;
   } finally {
-    // delete temp dir
+    // Delete temp dir
     await fsp.rm(tempDir, { recursive: true, force: true });
   }
 }
 
-
-
 const resolveV2rayExecutable = (binInfo) => {
-    const { name, targetFile } = binInfo;
-    if (platform === 'linux' || platform === 'darwin') {
-      const sidecarDir = path.join(cwd, "src-tauri", "binaries");
-      const sidecarPath = path.join(sidecarDir, targetFile);
-      execSync(`chmod +x ${sidecarPath}`);
-      log_success(`chmod binary finished: "${targetFile}"`);
-    }
+  const { name, targetFile } = binInfo;
+  if (platform === 'linux' || platform === 'darwin') {
+    const sidecarDir = path.join(cwd, "src-tauri", "binaries");
+    const sidecarPath = path.join(sidecarDir, targetFile);
+    execSync(`chmod +x ${sidecarPath}`);
+    log_success(`chmod binary finished: "${targetFile}"`);
+  }
 };
 
 const resolveAppVersionAndCoreVersionToEnv= () => {
-    const filePath = path.join(cwd, "src-tauri", 'tauri.conf.json');
+  const filePath = path.join(cwd, "src-tauri", 'tauri.conf.json');
 
-    try {
-        // Read the JSON file
-        const data = fs.readFileSync(filePath, 'utf8');
-        const jsonData = JSON.parse(data);
+  try {
+    // Read the JSON file
+    const data = fs.readFileSync(filePath, 'utf8');
+    const jsonData = JSON.parse(data);
 
-        // Extract the version
-        const version = jsonData.version;
+    // Extract the version
+    const version = jsonData.version;
 
-        if (!version) {
-            log_error('Failed to extract version from tauri.conf.json');
-            process.exit(1);
-        }
-        if (!fs.existsSync('.env')) {
-          try {
-               // Open the .env file for writing, create it if it doesn't exist (mode 'w')
-            const fd = fs.openSync('.env', 'w'); // 'w' means write mode
-
-               // Write VITE_APP_VERSION to the file
-               const content = `VITE_APP_VERSION=${META_V2RAY_CORE_VERSION}\nVITE_V2RAY_CORE_VERSION=${version}\n`;
-               // Write content to the file synchronously
-               fs.writeSync(fd, content);
-               // Close the file after writing
-               fs.closeSync(fd);
-
-           } catch (err) {
-               console.error('Error writing to .env file:', err.message);
-           }
-        }
-
-        // Export VITE_APP_VERSION to GitHub environment (just simulating here)
-        log_info(`VITE_APP_VERSION=${version}`);
-
-        // In a GitHub Actions environment, you would write to the environment file like this:
-        // fs.appendFileSync(process.env.GITHUB_ENV, `VITE_APP_VERSION=${version}\n`);
-    } catch (err) {
-        log_error('Error reading or parsing tauri.conf.json:', err.message);
-        process.exit(1);
+    if (!version) {
+      log_error('Failed to extract version from tauri.conf.json');
+      process.exit(1);
     }
+    if (!fs.existsSync('.env')) {
+      try {
+        // Open the .env file for writing, create it if it doesn't exist (mode 'w')
+        const fd = fs.openSync('.env', 'w'); // 'w' means write mode
+
+        // Write VITE_APP_VERSION and VITE_V2RAY_CORE_VERSION to the file
+        const content = `VITE_APP_VERSION=${version}\nVITE_V2RAY_CORE_VERSION=${META_V2RAY_CORE_VERSION}\n`;
+        // Write content to the file synchronously
+        fs.writeSync(fd, content);
+        // Close the file after writing
+        fs.closeSync(fd);
+
+      } catch (err) {
+        console.error('Error writing to .env file:', err.message);
+      }
+    }
+
+    // Export VITE_APP_VERSION to GitHub environment (just simulating here)
+    log_info(`VITE_APP_VERSION=${version}`);
+
+    // In a GitHub Actions environment, you would write to the environment file like this:
+    // fs.appendFileSync(process.env.GITHUB_ENV, `VITE_APP_VERSION=${version}\n`);
+  } catch (err) {
+    log_error('Error reading or parsing tauri.conf.json:', err.message);
+    process.exit(1);
+  }
 };
 
 const tasks = [
@@ -335,7 +330,7 @@ async function runTask() {
       await task.func();
       break;
     } catch (err) {
-      log_error(`task::${task.name} try ${i} ==`, err.message);
+      log_error(`task::${task.name} try ${i + 1} ==`, err.message);
       if (i === task.retry - 1) throw err;
     }
   }
