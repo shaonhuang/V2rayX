@@ -1,4 +1,3 @@
-use log::{error, info};
 use std::path::PathBuf;
 use tauri::path::BaseDirectory;
 use tauri::AppHandle;

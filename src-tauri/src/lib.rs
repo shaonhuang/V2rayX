@@ -14,27 +14,16 @@ mod sys_tray;
 mod utils;
 mod v2ray_core;
 
-use chrono::Local;
 use dotenvy::dotenv;
-use log::{error, info};
 use serde::Serialize;
-use std::any::Any;
 use std::env;
-use std::fs;
-use std::path::PathBuf;
-use std::sync::{Arc, Mutex, RwLock};
-use tauri::path::BaseDirectory;
+use std::sync::{Arc, Mutex};
 use tauri::{
     // state is used in Linux
     self,
-    command,
     Manager,
-    State,
 };
-use tauri::{AppHandle, WindowEvent};
 use tauri_plugin_autostart::MacosLauncher;
-use tauri_plugin_log::{Target, TargetKind};
-use v2ray_core::DaemonState;
 
 const SENTRY_DSN: &str = dotenvy_macro::dotenv!("SENTRY_DSN");
 #[derive(Clone, Serialize)]

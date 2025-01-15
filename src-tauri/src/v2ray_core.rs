@@ -1,20 +1,14 @@
-use anyhow::{Context, Result}; // You can still use anyhow for internal error handling
-use directories::ProjectDirs;
+use anyhow::Result; // You can still use anyhow for internal error handling
 use lazy_static::lazy_static;
 use log::{error, info};
-use serde_json::Value;
 use std::fs::File;
 use std::io::Write;
-use std::process::{Child, Command, Stdio};
 use std::sync::{Arc, Mutex};
 use tauri::State;
 use tauri::WebviewWindow;
 use tauri::{path, Manager};
 use tauri_plugin_notification::NotificationExt;
-use tokio::io::{AsyncBufReadExt, BufReader};
 
-use sqlx::sqlite::SqlitePoolOptions;
-use tauri::async_runtime::Receiver;
 use tauri::AppHandle;
 use tauri_plugin_shell::process::{CommandChild, CommandEvent};
 use tauri_plugin_shell::ShellExt;

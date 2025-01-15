@@ -1,14 +1,8 @@
-use crate::utils;
-use directories::ProjectDirs;
-use log::kv::ToKey;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use sqlx::sqlite::SqlitePoolOptions;
-use sqlx::sqlite::SqliteRow;
 use sqlx::Row;
 use std::collections::HashMap;
-use tauri::command;
-use uuid::Uuid;
 
 // Define your configuration structures based on the provided JSON structure.
 

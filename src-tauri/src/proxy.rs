@@ -3,13 +3,9 @@
     windows_subsystem = "windows"
 )]
 
-use directories::ProjectDirs;
 use log::{error, info};
-use portpicker::pick_unused_port;
 use std::fs;
 use std::io;
-use std::net::SocketAddr;
-use std::path::Path;
 use std::sync::Arc;
 use std::sync::Mutex;
 use tauri::AppHandle;
@@ -18,7 +14,6 @@ use tauri::{
     self,
     command,
     Manager,
-    State,
 };
 use tokio::sync::oneshot;
 use tokio::sync::Notify;

@@ -4,21 +4,16 @@ use crate::utils;
 use crate::v2ray_core;
 use crate::v2ray_core::DaemonState;
 use chrono::Local;
-use directories::ProjectDirs;
 use log::{error, info};
-use serde::Serialize;
 use sqlx::sqlite::SqlitePoolOptions;
 use sqlx::sqlite::SqliteRow;
-use sqlx::FromRow;
 use sqlx::Row;
-use std::io::{self, Write};
 use std::path::Path;
 use std::process::Command;
 use std::sync::{Arc, Mutex, RwLock};
 use tauri::{
     // state is used in Linux
     self,
-    command,
     AppHandle,
     Manager,
     State,
