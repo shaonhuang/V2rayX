@@ -94,6 +94,40 @@ jobs:
           tauriScript: pnpm
           args: --target ${{ matrix.target }}
 
+      - name: CI upload Windows
+        if: ${{ github.ref_type == 'branch' && matrix.os == 'windows-latest' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: 'Windows Installers'
+          path: |
+            src-tauri/release/bundle/msi/*.msi
+            src-tauri/target/release/bundle/nsis/*.exe
+
+      - name: CI upload macOS x64
+        if: ${{ github.ref_type == 'branch' && matrix.os == 'macos-latest' && matrix.architecture == 'x64' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: 'macOS x64 Installer'
+          path: |
+            src-tauri/target/x86_64-apple-darwin/release/bundle/dmg/*.dmg
+
+      - name: CI upload macOS arm64
+        if: ${{ github.ref_type == 'branch' && matrix.os == 'macos-latest' && matrix.architecture == 'arm64' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: 'macOS arm64 Installer'
+          path: |
+            src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/*.dmg
+
+      - name: CI upload Linux
+        if: ${{ github.ref_type == 'branch' && matrix.os == 'ubuntu-22.04' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: 'Linux Distributions'
+          path: |
+            src-tauri/target/release/bundle/deb/*.deb
+            src-tauri/target/release/bundle/AppImage/*.AppImage
+
   alpha-for-linux-arm:
     strategy:
       fail-fast: false
@@ -200,6 +234,15 @@ jobs:
           NODE_OPTIONS: '--max_old_space_size=4096'
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+
+      - name: CI upload Linux
+        if: ${{ github.ref_type == 'branch' && matrix.os == 'ubuntu-22.04' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: 'Linux Distributions'
+          path: |
+            src-tauri/target/${{ matrix.target }}/release/bundle/deb/*.deb
+            src-tauri/target/${{ matrix.target }}/release/bundle/rpm/*.rpm
 
       - name: Upload Release
         uses: softprops/action-gh-release@v2
