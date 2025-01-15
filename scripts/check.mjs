@@ -74,7 +74,7 @@ const META_ARCH_MAP = {
   "linux-loong64": "v2ray-linux-loong64",
 };
 
-// Fetch the latest alpha release version from the response
+/// Fetch the latest alpha release version from the response
 async function getLatestV2rayCoreVersion() {
   const options = {};
 
@@ -89,14 +89,27 @@ async function getLatestV2rayCoreVersion() {
     options.agent = new HttpsProxyAgent(httpProxy);
   }
 
+  // Prepare headers
+  const headers = {
+    "Accept": "application/vnd.github.v3+json",
+    "User-Agent": "v2ray-core-fetch-script", // It's good practice to set a User-Agent
+  };
+
+  // Include Authorization header if GITHUB_TOKEN is present
+  const githubToken = process.env.GITHUB_TOKEN;
+  if (githubToken) {
+    headers["Authorization"] = `token ${githubToken}`;
+    log_info("GITHUB_TOKEN detected. Using authenticated requests.");
+  } else {
+    log_info("GITHUB_TOKEN not found. Using unauthenticated requests.");
+  }
+
   try {
-    // Fetch the latest tags from GitHub API without authentication
+    // Fetch the latest tags from GitHub API
     const response = await fetch(META_V2RAY_CORE_VERSION_URL, {
       ...options,
       method: "GET",
-      headers: {
-        "Accept": "application/vnd.github.v3+json"
-      },
+      headers: headers,
     });
 
     // Check if the response is OK
@@ -150,7 +163,6 @@ async function getLatestV2rayCoreVersion() {
     process.exit(1);
   }
 }
-
 
 /**
  * core info
@@ -244,12 +256,10 @@ async function resolveSidecar(binInfo) {
 
 const resolveV2rayExecutable = (binInfo) => {
   const { name, targetFile } = binInfo;
-  if (platform === 'linux' || platform === 'darwin') {
     const sidecarDir = path.join(cwd, "src-tauri", "binaries");
     const sidecarPath = path.join(sidecarDir, targetFile);
     execSync(`chmod +x ${sidecarPath}`);
     log_success(`chmod binary finished: "${targetFile}"`);
-  }
 };
 
 const resolveAppVersionAndCoreVersionToEnv= () => {
@@ -306,13 +316,13 @@ const tasks = [
     name: "add +x to v2ray",
     func: () => resolveV2rayExecutable(v2rayMeta()),
     retry: 5,
-    macosOnly: true,
+    unixOnly: true
   },
   {
     name: "get app version and core version to .env",
     func: () => resolveAppVersionAndCoreVersionToEnv(v2rayMeta()),
     retry: 5,
-    macosOnly: true,
+    unixOnly: true
   },
 ];
 
