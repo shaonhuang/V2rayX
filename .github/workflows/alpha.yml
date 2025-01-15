@@ -248,7 +248,7 @@ jobs:
         if: ${{ github.ref_type == 'branch' && matrix.os == 'ubuntu-22.04' }}
         uses: actions/upload-artifact@v4
         with:
-          name: 'Linux Distributions arm64'
+          name: 'Linux Distributions ${{ matrix.target }}'
           path: |
             src-tauri/target/${{ matrix.target }}/release/bundle/deb/*.deb
             src-tauri/target/${{ matrix.target }}/release/bundle/rpm/*.rpm
