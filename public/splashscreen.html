@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Loading</title>
+    <style>
+      html {
+        font-size: 16px;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        border-radius: 16px;
+      }
+      @media (prefers-color-scheme: dark) {
+        body {
+          background-color: #2e2e2e; /* Dark background color */
+          color: #ffffff; /* Light text color */
+        }
+      }
+
+      @media (prefers-color-scheme: light) {
+        body {
+          background-color: #ffffff; /* Light background color */
+          color: #000000; /* Dark text color */
+        }
+      }
+
+      .loader {
+        position: relative;
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background: linear-gradient(#ee280e, #15a0f7, #6ed15a);
+        animation: animate7712 1.2s linear infinite;
+      }
+
+      .loader {
+        display: block;
+        --height-of-loader: 4px;
+        --loader-color: #0071e2;
+        width: 130px;
+        height: var(--height-of-loader);
+        border-radius: 30px;
+        background-color: rgba(0, 0, 0, 0.2);
+        position: relative;
+      }
+
+      .loader::before {
+        content: '';
+        position: absolute;
+        background: var(--loader-color);
+        top: 0;
+        left: 0;
+        width: 0%;
+        height: 100%;
+        border-radius: 30px;
+        animation: moving 1s ease-in-out infinite;
+      }
+
+      @keyframes moving {
+        50% {
+          width: 100%;
+        }
+
+        100% {
+          width: 0;
+          right: 0;
+          left: unset;
+        }
+      }
+      .container {
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        gap: 0.6rem;
+        margin: auto auto;
+      }
+    </style>
+  </head>
+
+  <body class="container">
+    <img src="128x128@2x.png" style="height: 8rem; width: 8rem; z-index: 100" />
+    <h1>V2rayX</h1>
+    <div class="loader"></div>
+  </body>
+</html>

@@ -1,0 +1,33 @@
+{
+  "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
+  "identifier": "v2rayx.shaonhuang",
+  "bundle": {
+    "targets": ["app", "dmg"],
+    "macOS": {
+      "frameworks": [],
+      "minimumSystemVersion": "10.15",
+      "exceptionDomain": "",
+      "signingIdentity": null,
+      "entitlements": null,
+      "dmg": {
+        "background": "images/background.jpg",
+        "appPosition": {
+          "x": 180,
+          "y": 156
+        },
+        "applicationFolderPosition": {
+          "x": 480,
+          "y": 156
+        },
+        "windowSize": {
+          "height": 400,
+          "width": 660
+        },
+        "windowPosition": {
+          "x": 200,
+          "y": 180
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,80 @@
+name: v2rayx
+base: core22
+version: '0.5.1'
+summary: V2ray client for v2ray services
+description: |
+  An all-platform (macOS, Windows, Linux) V2ray client built with Tauri.
+
+grade: stable
+confinement: strict
+
+architectures:
+  - amd64
+  - arm64
+  - armhf
+
+# Adjusted package-repositories to match Ubuntu Jammy (22.04)
+package-repositories:
+  - type: apt
+    components: [main]
+    suites: [jammy]
+    key-id: 78E1918602959B9C59103100F1831DDAFC42E99D
+    url: http://ppa.launchpad.net/snappy-dev/snapcraft-daily/ubuntu
+
+layout:
+  /usr/lib/$SNAPCRAFT_ARCH_TRIPLET/webkit2gtk-4.1:
+    bind: $SNAP/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/webkit2gtk-4.1
+
+apps:
+  v2rayx:
+    extensions:
+      - gnome
+    command: usr/bin/app
+    desktop: usr/share/applications/v2rayx.desktop
+    plugs:
+      - wayland
+      - x11
+      - desktop
+      - unity7
+      - home
+      - browser-support
+      - network
+      - network-bind
+      - network-status
+      - gsettings
+      - pulseaudio
+      - opengl
+
+parts:
+  build-app:
+    plugin: dump
+    build-snaps:
+      - node/20/stable
+      - rustup/latest/stable
+    build-packages:
+      - libwebkit2gtk-4.1-dev
+      - build-essential
+      - curl
+      - wget
+      - file
+      - libxdo-dev
+      - libssl-dev
+      - libayatana-appindicator3-dev
+      - librsvg2-dev
+      - dpkg
+    stage-packages:
+      - libwebkit2gtk-4.1-0
+      - libayatana-appindicator3-1
+    source: .
+    build-environment:
+      - TARGET: $TARGET
+    override-build: |
+      set -eu
+
+      rustup default stable
+
+      # Extract the .deb package into the snap
+      dpkg -x src-tauri/target/$TARGET/release/bundle/deb/*.deb $SNAPCRAFT_PART_INSTALL/
+
+      # Update the desktop file icon path
+      sed -i -e "s|{{{icon}}}|/usr/share/icons/hicolor/32x32/apps/app.png|g" $SNAPCRAFT_PART_INSTALL/usr/share/applications/v2rayx.desktop

@@ -1,0 +1,16 @@
+{
+  "identifier": "desktop-capability",
+  "platforms": ["macOS", "windows", "linux"],
+  "windows": ["main"],
+  "permissions": [
+    "autostart:default",
+    "sql:default",
+    "sql:allow-execute",
+    "autostart:allow-enable",
+    "autostart:allow-disable",
+    "autostart:allow-is-enabled",
+    "log:default",
+    "fs:default",
+    "fs:allow-applog-read-recursive"
+  ]
+}

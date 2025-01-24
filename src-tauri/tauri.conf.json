@@ -1,0 +1,88 @@
+{
+  "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
+  "productName": "v2rayx",
+  "version": "0.5.1",
+  "identifier": "v2rayx.shaonhuang",
+  "build": {
+    "frontendDist": "../build/client",
+    "devUrl": "http://localhost:5173",
+    "beforeDevCommand": "pnpm web:dev",
+    "beforeBuildCommand": "pnpm web:build"
+  },
+  "app": {
+    "macOSPrivateApi": true,
+    "windows": [
+      {
+        "title": "v2rayx",
+        "label": "main",
+        "minWidth": 1200,
+        "minHeight": 750,
+        "resizable": true,
+        "fullscreen": false,
+        "visible": false,
+        "decorations": true,
+        "hiddenTitle": true,
+        "titleBarStyle": "Overlay"
+      },
+      {
+        "width": 400,
+        "height": 320,
+        "decorations": false,
+        "transparent": true,
+        "resizable": false,
+        "url": "splashscreen.html",
+        "label": "splashscreen"
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "windows": {
+      "certificateThumbprint": null,
+      "digestAlgorithm": "sha256",
+      "timestampUrl": ""
+    },
+    "macOS": {
+      "frameworks": [],
+      "minimumSystemVersion": "",
+      "exceptionDomain": "",
+      "signingIdentity": null,
+      "entitlements": null
+    },
+    "publisher": "shaonhuang Publisher",
+    "copyright": "Copyright 2024",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "resources": ["resources/**/*"],
+    "externalBin": ["binaries/v2ray"],
+    "category": "DeveloperTool",
+    "shortDescription": "",
+    "longDescription": "",
+    "linux": {
+      "deb": {
+        "depends": []
+      }
+    },
+    "createUpdaterArtifacts": true
+  },
+  "plugins": {
+    "sql": {
+      "preload": ["sqlite:database.db"]
+    },
+    "updater": {
+      "endpoints": [
+        "https://github.com/shaonhuang/V2rayX/releases/latest/download/latest.json"
+      ],
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEY0NEQ3QzI1QzQ5OUYyODcKUldTSDhwbkVKWHhOOU01SVR2NnB0WTBpWmRtZ2VnVk4vSkpsTWFMZENRM2E4RThxQTlpeGlraGUK"
+    }
+  }
+}

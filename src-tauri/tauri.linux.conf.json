@@ -1,0 +1,20 @@
+{
+  "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
+  "identifier": "v2rayx.shaonhuang",
+  "bundle": {
+    "targets": ["deb", "rpm"],
+    "linux": {
+      "deb": {
+        "desktopTemplate": "./packages/linux/v2rayx.desktop"
+      },
+      "rpm": {
+        "desktopTemplate": "./packages/linux/v2rayx.desktop"
+      }
+    }
+  },
+  "app": {
+    "trayIcon": {
+      "iconPath": "icons/icon.ico"
+    }
+  }
+}
