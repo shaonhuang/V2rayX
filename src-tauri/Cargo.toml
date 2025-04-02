@@ -34,7 +34,7 @@ lazy_static = "1.5.0"
 directories = "5.0.1"
 sentry = "0.35.0"
 tokio = "1.42.0"
-tauri-plugin-shell = "2.2.0"
+tauri-plugin-shell = "2.2.1"
 tauri-plugin-notification = "2.2.0"
 sqlx = "0.8.2"
 uuid = { version = "1", features = ["serde", "v7"] }
