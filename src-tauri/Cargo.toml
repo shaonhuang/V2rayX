@@ -15,55 +15,55 @@ name = "app_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]
-tauri-build = { version = "2.0.5", features = [] }
+tauri-build = { version = "2.5.3", features = [] }
 
 [dependencies]
 serde_json = "1.0"
 serde = { version = "1.0", features = ["derive"] }
 log = "0.4"
 
-tauri = { version = "2.2.1", features = [
+tauri = { version = "2.9.5", features = [
 	"macos-private-api",
 	"tray-icon",
 	"devtools",
 ] }
 
-tauri-plugin-log = "2.2.0"
+tauri-plugin-log = "2.8.0"
 tauri-plugin-sql = { version = "2", features = ["sqlite"] }
-chrono = "0.4.39"
-anyhow = "1.0.95"
+chrono = "0.4.42"
+anyhow = "1.0.100"
 lazy_static = "1.5.0"
 directories = "5.0.1"
 sentry = "0.35.0"
-tokio = "1.42.0"
-tauri-plugin-shell = "2.2.0"
-tauri-plugin-notification = "2.2.0"
-sqlx = "0.8.2"
+tokio = "1.49.0"
+tauri-plugin-shell = "2.3.4"
+tauri-plugin-notification = "2.3.3"
+sqlx = "0.8.6"
 uuid = { version = "1", features = ["serde", "v7"] }
-tauri-plugin-fs = { version = "2.2.0", features = ["watch"] }
-rust-i18n = "3.1.2"
-tauri-plugin-clipboard-manager = "2.2.0"
+tauri-plugin-fs = { version = "2.4.5", features = ["watch"] }
+rust-i18n = "3.1.5"
+tauri-plugin-clipboard-manager = "2.3.2"
 dotenvy = "0.15.7"
-tauri-plugin-opener = "2.2.3"
+tauri-plugin-opener = "2.5.3"
 dotenvy_macro = "0.15.7"
-tauri-plugin-process = "2.2.0"
+tauri-plugin-process = "2.3.1"
 
-tauri-plugin-dialog = "2.2.0"
+tauri-plugin-dialog = "2.5.0"
 
 warp = "0.3.7"
 portpicker = "0.1.1"
-tauri-plugin-os = "2.2.0"
-screenshots = "0.8.2"
-image = "0.24.7"
-base64 = "0.21.4"
-reqwest = { version = "0.12.0", features = ["json", "socks"] }
+tauri-plugin-os = "2.3.2"
+screenshots = "0.8.10"
+image = "0.24.9"
+base64 = "0.21.7"
+reqwest = { version = "0.12.28", features = ["json", "socks"] }
 
 [target.'cfg(windows)'.dependencies]
 winreg = "0.52.0"
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
-tauri-plugin-autostart = "2.2.0"
+tauri-plugin-autostart = "2.5.1"
 tauri-plugin-single-instance = "2"
 
 [target.'cfg(any(target_os = "macos", windows, target_os = "linux"))'.dependencies]
-tauri-plugin-updater = "2.3.1"
+tauri-plugin-updater = "2.9.0"
