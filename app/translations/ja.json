@@ -116,6 +116,7 @@
   "Invalid text format": "無効なテキスト形式",
   "Invalid JSON format": "無効なJSON形式",
   "Inbounds have been updated successfully": "インバウンドが正常に更新されました",
+  "V2ray service stopped due to port change": "ポート変更によりV2rayサービスが停止しました",
   "Command has been pasted to clipboard": "コマンドがクリップボードにコピーされました",
   "PAC mode has been enabled": "PACモードが有効になりました",
   "Global mode has been enabled": "グローバルモードが有効になりました",

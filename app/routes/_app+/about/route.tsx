@@ -1,14 +1,17 @@
 import { Card, CardBody, Button, Chip } from '@heroui/react';
 import { openUrl } from '@tauri-apps/plugin-opener';
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
 import { checkForAppUpdates } from '~/utils/utils';
 import { APP_VERSION } from '~/api';
+import { useTheme } from '@heroui/use-theme';
+import SystemThemeManager from '~/utils/theme.util';
 
 const Page = () => {
   const { t, i18n } = useTranslation();
-
+  const { theme } = useTheme();
+  const isDark = SystemThemeManager.isDarkMode(theme);
   return (
     <motion.div
       className="w-full"
@@ -19,7 +22,7 @@ const Page = () => {
         scale: { type: 'spring', visualDuration: 0.4, bounce: 0.5 },
       }}
     >
-      <Card className="py-4">
+      <Card className={`py-4 ${isDark ? 'm2' : ''}`}>
         <CardBody className="bg-container overflow-visible py-8">
           <div className="flex flex-col items-center justify-center gap-4">
             <div>

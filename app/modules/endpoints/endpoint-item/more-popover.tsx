@@ -1,12 +1,20 @@
 import { Popover, PopoverTrigger, PopoverContent, Button } from '@heroui/react';
 import * as Edit from '../endpoint-edit/page';
 import { useState } from 'react';
-import { useNavigate, useRevalidator } from '@remix-run/react';
+import { useNavigate, useRevalidator } from 'react-router';
 import { deleteEndpoint } from '~/api';
 import { invoke } from '@tauri-apps/api/core';
 import { useTranslation } from 'react-i18next';
+import toast from 'react-hot-toast';
+import { updateServiceRunningState } from '~/api';
 
-export function MoreButton({ endpointID }: { endpointID: string }) {
+export function MoreButton({
+  endpointID,
+  isSelected,
+}: {
+  endpointID: string;
+  isSelected: boolean;
+}) {
   const [isOpen, setIsOpen] = useState(false);
   const navigate = useNavigate();
   const revalidator = useRevalidator();
@@ -34,7 +42,6 @@ export function MoreButton({ endpointID }: { endpointID: string }) {
               }}
               onClick={async () => {
                 setIsOpen(false);
-                await invoke('stop_daemon');
               }}
             >
               <div className="flex flex-row items-center justify-start gap-2">
@@ -45,12 +52,16 @@ export function MoreButton({ endpointID }: { endpointID: string }) {
             <Button
               onPress={async () => {
                 setIsOpen(false);
-                await invoke('stop_daemon');
-                await deleteEndpoint({ endpointID });
-                await invoke('tray_update', {
-                  userId: localStorage.getItem('userID')!,
-                });
-                revalidator.revalidate();
+                try {
+                  await deleteEndpoint({ endpointID });
+                  if (isSelected) {
+                    await invoke('stop_v2ray_daemon', {
+                      userId: localStorage.getItem('userID')!,
+                    });
+                  }
+                  toast.success(t('V2ray-core proxy service has stopped'));
+                  revalidator.revalidate();
+                } catch (e) {}
               }}
             >
               <div className="flex flex-row items-center justify-start gap-2">

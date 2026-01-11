@@ -9,10 +9,10 @@ import {
 } from '@heroui/react';
 import { useTranslation } from 'react-i18next';
 import { updateAppStatus, updateProxyMode, Types } from '~/api';
-import { useNavigate, Link, useLocation } from '@remix-run/react';
+import { useNavigate, Link, useLocation } from 'react-router';
 import { invoke } from '@tauri-apps/api/core';
 import toast from 'react-hot-toast';
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 
 type MenuItemType = {
   label: string;

@@ -12,7 +12,7 @@ import {
 } from '@heroui/react';
 import { useTranslation } from 'react-i18next';
 
-import { useLoaderData, useRevalidator } from '@remix-run/react';
+import { useLoaderData, useRevalidator } from 'react-router';
 import toast from 'react-hot-toast';
 import { queryPAC, updatePAC, queryDashboard } from '~/api';
 import EditorComponent from '~/modules/MonacoEditorComponent';

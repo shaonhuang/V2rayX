@@ -1,9 +1,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 use log::{error, info};
-use serde::Serialize;
 use sqlx::sqlite::SqlitePoolOptions;
 use sqlx::sqlite::SqliteRow;
-use sqlx::FromRow;
 use sqlx::Row;
 use std::env;
 use std::sync::Mutex;
@@ -38,28 +36,6 @@ use tauri_plugin_notification::NotificationExt;
 rust_i18n::i18n!("locales");
 
 const V2RAY_CORE_VERSION: &str = dotenvy_macro::dotenv!("VITE_V2RAY_CORE_VERSION");
-
-#[derive(Debug, FromRow)]
-struct AppStatus {
-    ServiceRunningState: i32,
-    V2rayCoreVersion: String,
-    AppVersion: String,
-    UserID: String,
-    LoginState: i32,
-}
-
-#[derive(Clone, Serialize)]
-pub struct SystemTrayPayload {
-    message: String,
-}
-
-impl SystemTrayPayload {
-    pub fn new(message: &str) -> Self {
-        Self {
-            message: message.to_string(),
-        }
-    }
-}
 
 pub enum TrayState {
     Paused,
@@ -96,7 +72,7 @@ impl SystemTrayManager {
         #[cfg(target_os = "macos")]
         {
             if hide_tray == 0 {
-                app_handle.set_activation_policy(tauri::ActivationPolicy::Accessory);
+                let _ = app_handle.set_activation_policy(tauri::ActivationPolicy::Accessory);
             }
         }
         // Build the tray icon
@@ -243,7 +219,7 @@ impl SystemTrayManager {
 						opener.open_path(config_path, None::<&str>).unwrap();
                     }
                     "view-pac" => {
-						main_window.eval("window.remixNavigate('/settings')").unwrap();
+						main_window.emit("navigate", "/settings").unwrap();
 						if main_window.is_visible().unwrap() {
                             main_window.set_focus().unwrap();
                         } else {
@@ -284,7 +260,7 @@ impl SystemTrayManager {
 								.expect("Failed to fetch proxy settings");
 
                             let pac_server_manage = app.state::<Mutex<proxy::PacServerShutdownHandle>>();
-                            proxy::setup_pac_proxy(app.app_handle().clone(), custom_rules, http_port as u16, socks_port as u16, pac_server_manage).await;
+                            let _ = proxy::setup_pac_proxy(app.app_handle().clone(), custom_rules, http_port as u16, socks_port as u16, pac_server_manage).await;
 							let tray_manager = app.state::<SystemTrayManager>();
 							let new_proxy_mode = "pac";
 							sqlx::query("UPDATE AppSettings SET ProxyMode = ? WHERE UserID = ?;")
@@ -309,7 +285,7 @@ impl SystemTrayManager {
 							if let Err(e) = proxy::unset_pac_proxy(pac_server_manage) {
 	                            error!("Failed to unset_pac_proxy: {}", e);
                             }
-                            let (http_listen, http_port, socks_listen, socks_port, bypass_domains): (String, i32, String, i32, String) = sqlx::query_as(
+                            let (http_listen, http_port, _socks_listen, socks_port, bypass_domains): (String, i32, String, i32, String) = sqlx::query_as(
                                 "SELECT
 							        (SELECT i.Listen FROM Inbounds i WHERE i.UserID = ? AND i.Tag = 'http-inbound') AS http_listen,
 							        (SELECT i.Port FROM Inbounds i WHERE i.UserID = ? AND i.Tag = 'http-inbound') AS http_port,
@@ -383,15 +359,126 @@ impl SystemTrayManager {
 	                    });
 					}
 					"configure-endpoints" => {
-						main_window.eval("window.remixNavigate('/endpoints')").unwrap();
+						main_window.emit("navigate", "/endpoints").unwrap();
                         if main_window.is_visible().unwrap() {
                             main_window.set_focus().unwrap();
                         } else {
                             main_window.show().unwrap();
                         }
 					}
+					"configure-subscriptions" => {
+       					main_window.emit("navigate", "/endpoints?m=subscriptions").unwrap();
+                        if main_window.is_visible().unwrap() {
+                            main_window.set_focus().unwrap();
+                        } else {
+                            main_window.show().unwrap();
+                        }
+						// Trigger subscriptions button click after navigation
+						main_window.eval("setTimeout(()=>(document.querySelector('[data-subscriptions-button=\"true\"]'))?.click(),500);").unwrap();
+					}
 					"configure-pac-settings" => {
+               		    main_window.emit("navigate", "/settings?m=pac").unwrap();
+                        if main_window.is_visible().unwrap() {
+                            main_window.set_focus().unwrap();
+                        } else {
+                            main_window.show().unwrap();
+                        }
+					}
+					"connection-test" => {
+						// Run connection test in a new thread to avoid blocking the UI
+						let app_clone = app.clone();
+						let user_id_clone = user_id.clone();
+						std::thread::spawn(move || {
+							tauri::async_runtime::block_on(async {
+								info!("Starting connection test for all endpoint groups");
+								
+								let database_path = utils::get_database_path(&app_clone)
+									.to_string_lossy()
+									.to_string();
+								let database_url = format!("sqlite://{}", database_path);
+								let pool = SqlitePoolOptions::new()
+									.max_connections(5)
+									.connect(&database_url)
+									.await
+									.map_err(|e| format!("Failed to connect to the database: {}", e))
+									.unwrap();
 
+								// Get all endpoint groups for the user
+								let groups: Vec<String> = sqlx::query_scalar::<_, String>(
+									"SELECT GroupID FROM EndpointsGroups WHERE UserID = ?"
+								)
+								.bind(&user_id_clone)
+								.fetch_all(&pool)
+								.await
+								.map_err(|e| {
+									error!("Failed to fetch endpoint groups: {}", e);
+									format!("Failed to fetch endpoint groups: {}", e)
+								})
+								.unwrap_or_default();
+
+								if groups.is_empty() {
+									info!("No endpoint groups found for connection test");
+									return;
+								}
+
+								info!("Found {} endpoint groups to test", groups.len());
+
+								// Test each group - update_endpoints_latency will automatically
+								// get the SpeedTestType for each group and test accordingly
+								for group_id in groups {
+									info!("Testing endpoints in group {}", group_id);
+									
+									// Call the existing update_endpoints_latency function
+									// This function will:
+									// 1. Get the group's SpeedTestType
+									// 2. Get all endpoints in the group
+									// 3. Test each endpoint based on SpeedTestType
+									// 4. Update latency in the database
+									if let Err(e) = crate::commands::update_endpoints_latency(
+										app_clone.clone(),
+										group_id.clone(),
+										user_id_clone.clone(),
+									).await {
+										error!("Failed to test endpoints in group {}: {}", group_id, e);
+									} else {
+										info!("Successfully tested endpoints in group {}", group_id);
+									}
+								}
+
+								info!("Connection test completed for all groups");
+								
+								// Update the system tray menu to show updated latency information
+								let tray_manager = app_clone.state::<SystemTrayManager>();
+								tray_manager
+									.update_menu(&app_clone, user_id_clone.clone())
+									.await;
+								
+								// Emit refresh event to update the UI
+								if let Err(e) = app_clone.emit("refresh", "endpoints") {
+									error!("Failed to emit refresh event: {}", e);
+								}
+							});
+						});
+					}
+					"import-endpoint" => {
+		                main_window.emit("navigate", "/endpoints?m=link").unwrap();
+                        if main_window.is_visible().unwrap() {
+                            main_window.set_focus().unwrap();
+                        } else {
+                            main_window.show().unwrap();
+                        }
+						// Trigger import link button click after navigation
+						main_window.eval("setTimeout(()=>(document.querySelector('[data-import-link-button=\"true\"]'))?.click(),500);").unwrap();
+					}
+					"scan-qr" => {
+                   	    main_window.emit("navigate", "/endpoints?m=screenshot").unwrap();
+                        if main_window.is_visible().unwrap() {
+                            main_window.set_focus().unwrap();
+                        } else {
+                            main_window.show().unwrap();
+                        }
+						// Trigger import screenshot button click after navigation
+						main_window.eval("setTimeout(()=>(document.querySelector('[data-import-screenshot-buttonn=\"true\"]'))?.click(),500);").unwrap();
 					}
 					"copy-proxy-cmd" => {
 						tauri::async_runtime::block_on(async {
@@ -449,7 +536,7 @@ impl SystemTrayManager {
 						});
 					}
 					"preferences" => {
-						main_window.eval("window.remixNavigate('/settings')").unwrap();
+						main_window.emit("navigate", "/settings").unwrap();
 						if main_window.is_visible().unwrap() {
                             main_window.set_focus().unwrap();
                         } else {
@@ -542,8 +629,8 @@ pub async fn init_tray(app_handle: AppHandle) -> Result<SystemTrayManager> {
                     } else {
                         let pac_server_manage =
                             app_handle.state::<Mutex<proxy::PacServerShutdownHandle>>();
-                        unset_pac_proxy(pac_server_manage);
-                        unset_global_proxy();
+                        let _ = unset_pac_proxy(pac_server_manage);
+                        let _ = unset_global_proxy();
 
                         // Access states using the cloned app_handle
                         let daemon_state = app_handle.state::<Arc<Mutex<DaemonState>>>();
@@ -732,7 +819,7 @@ pub async fn create_tray_menu(app: AppHandle, user_id: &str) -> Menu<Wry> {
             .unwrap();
 
         let endpoint_rows = sqlx::query(
-            "SELECT Endpoints.EndpointID, Endpoints.Remark, Endpoints.Active
+            "SELECT Endpoints.EndpointID, Endpoints.Remark, Endpoints.Active, Endpoints.Latency
              FROM Endpoints
              JOIN EndpointsGroups ON Endpoints.GroupID = EndpointsGroups.GroupID
              WHERE EndpointsGroups.UserID = ?",
@@ -758,11 +845,19 @@ pub async fn create_tray_menu(app: AppHandle, user_id: &str) -> Menu<Wry> {
                 let endpoint_id: String = row.get("EndpointID");
                 let mut remark: String = row.get("Remark");
                 let is_active: i32 = row.get("Active");
+                let latency: Option<String> = row.get("Latency");
                 let is_disabled: bool = is_active != 1;
 
                 if is_active == 1 {
                     // Using Unicode checkmark. You can choose a different symbol if desired.
                     remark = format!("✓ {}", remark);
+                }
+
+                // Append latency to remark if it exists
+                if let Some(latency_str) = latency {
+                    if !latency_str.is_empty() {
+                        remark = format!("{} [{}ms]", remark, latency_str);
+                    }
                 }
 
                 let menu_item = MenuItemBuilder::new(&remark)
@@ -793,31 +888,26 @@ pub async fn create_tray_menu(app: AppHandle, user_id: &str) -> Menu<Wry> {
             .unwrap();
 
         let configure_subscriptions = MenuItemBuilder::new("Subscriptions...".to_string())
-            .enabled(false)
             .id("configure-subscriptions")
             .build(&app)
             .unwrap();
 
         let configure_pac_settings = MenuItemBuilder::new("PAC Settings...".to_string())
-            .enabled(false)
             .id("configure-pac-settings")
             .build(&app)
             .unwrap();
 
         let connection_test = MenuItemBuilder::new("Connection Test...".to_string())
-            .enabled(false)
             .id("connection-test")
             .build(&app)
             .unwrap();
 
         let import_endpoint = MenuItemBuilder::new("Import Server From Pasteboard".to_string())
-            .enabled(false)
             .id("import-endpoint")
             .build(&app)
             .unwrap();
 
         let scan_qr = MenuItemBuilder::new("Scan QR Code From Screen".to_string())
-            .enabled(false)
             .id("scan-qr")
             .build(&app)
             .unwrap();

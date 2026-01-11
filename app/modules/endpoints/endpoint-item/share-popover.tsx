@@ -1,7 +1,7 @@
 import { Popover, PopoverTrigger, PopoverContent, Button } from '@heroui/react';
 import * as Share from '../endpoint-share/page';
 import { useState } from 'react';
-import { useNavigate } from '@remix-run/react';
+import { useNavigate } from 'react-router';
 
 export function ShareButton() {
   const [isOpen, setIsOpen] = useState(false);

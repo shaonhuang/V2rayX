@@ -15,22 +15,16 @@ mod utils;
 mod v2ray_core;
 
 use dotenvy::dotenv;
-use serde::Serialize;
 use std::env;
 use std::sync::{Arc, Mutex};
 use tauri::{
-    // state is used in Linux
     self,
     Manager,
 };
 use tauri_plugin_autostart::MacosLauncher;
 
+#[cfg(not(debug_assertions))]
 const SENTRY_DSN: &str = dotenvy_macro::dotenv!("SENTRY_DSN");
-#[derive(Clone, Serialize)]
-struct SingleInstancePayload {
-    args: Vec<String>,
-    cwd: String,
-}
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -58,7 +52,7 @@ pub fn run() {
                 .add_migrations("sqlite:database.db", migrations)
                 .build(),
         )
-        .plugin(tauri_plugin_single_instance::init(|app, args, cwd| {}))
+        .plugin(tauri_plugin_single_instance::init(|_, _, _| {}))
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_opener::init())
@@ -75,9 +69,15 @@ pub fn run() {
             commands::close_splashscreen,
             commands::get_elapsed_time,
             commands::graceful_restart,
+            commands::take_screenshot,
+            commands::update_endpoints_latency,
+            commands::test_proxy_connection,
+            commands::fetch_subscription_data,
+            commands::send_notification,
             v2ray_core::inject_config,
             v2ray_core::start_daemon,
             v2ray_core::stop_daemon,
+            v2ray_core::stop_v2ray_daemon,
             v2ray_core::check_daemon_status,
             proxy::setup_pac_proxy,
             proxy::unset_pac_proxy,
@@ -95,7 +95,8 @@ pub fn run() {
                 proxy::unset_pac_proxy(pac_server_manage).unwrap();
                 proxy::unset_global_proxy().unwrap();
                 #[cfg(desktop)]
-                app.handle()
+                let _ = app
+                    .handle()
                     .plugin(tauri_plugin_updater::Builder::new().build());
 
                 tauri::async_runtime::block_on(async {

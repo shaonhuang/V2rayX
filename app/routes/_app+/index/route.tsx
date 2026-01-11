@@ -1,7 +1,7 @@
-import type { MetaFunction } from '@remix-run/node';
-import { useLoaderData, json, redirect, useNavigate } from '@remix-run/react';
+import type { MetaFunction } from 'react-router';
+import { useLoaderData, redirect, useNavigate } from 'react-router';
 import { useTheme } from '@heroui/use-theme';
-import { useLayoutEffect, useEffect } from 'react';
+import { useLayoutEffect } from 'react';
 import { Spinner } from '@heroui/react';
 import { queryAppearance } from '~/api';
 import SystemThemeManager from '~/utils/theme.util';
@@ -21,7 +21,7 @@ export const clientLoader = async () => {
     const appearance = await queryAppearance({
       userID: localStorage.getItem('userID')!,
     });
-    return json({ appearance });
+    return { appearance };
   } catch (e) {
     console.error(e);
   }
@@ -48,10 +48,10 @@ export default function Index() {
         font === 'sans-serif'
           ? 'NotoSansSC, sans-serif'
           : `${font}, NotoSansSC, sans-serif`;
-      window.remixNavigate = navigate;
+      (window as any).remixNavigate = navigate;
       navigate('/dashboard');
     }
   }, []);
-  useEffect(() => {}, []);
-  return <Spinner size="lg" />;
+
+  return null;
 }

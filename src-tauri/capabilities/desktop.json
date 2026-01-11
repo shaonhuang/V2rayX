@@ -11,6 +11,7 @@
     "autostart:allow-is-enabled",
     "log:default",
     "fs:default",
-    "fs:allow-applog-read-recursive"
+    "fs:allow-applog-read-recursive",
+    "clipboard-manager:allow-read-text"
   ]
 }

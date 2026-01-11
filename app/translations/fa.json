@@ -116,6 +116,7 @@
   "Invalid text format": "فرمت متن نامعتبر",
   "Invalid JSON format": "فرمت JSON نامعتبر",
   "Inbounds have been updated successfully": "ورودی‌ها با موفقیت به‌روزرسانی شدند",
+  "V2ray service stopped due to port change": "سرویس V2ray به دلیل تغییر پورت متوقف شد",
   "Command has been pasted to clipboard": "دستور به کلیپ‌بورد کپی شد",
   "PAC mode has been enabled": "حالت PAC فعال شد",
   "Global mode has been enabled": "حالت جهانی فعال شد",

@@ -1,7 +1,7 @@
 import { Avatar, Button, Chip } from '@heroui/react';
 import * as Share from './share-popover';
 import * as More from './more-popover';
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 import * as Types from '~/api/types';
 import { updateAppStatus } from '~/api';
 import { invoke } from '@tauri-apps/api/core';
@@ -48,7 +48,7 @@ export const Page = (props: {
               color={props.endpoint.Latency ? 'success' : 'danger'}
               size="sm"
             >
-              {`${props.endpoint.Latency ? `(${props.endpoint.Latency}ms)` : 'Timeout'}`}
+              {`${props.endpoint.Latency ? `${props.endpoint.Latency}ms` : 'Timeout'}`}
             </Chip>
           </div>
         </div>
@@ -105,7 +105,7 @@ export const Page = (props: {
           </Button>
         )}
         <Share.ShareButton />
-        <More.MoreButton endpointID={endpoint.EndpointID} />
+        <More.MoreButton endpointID={endpoint.EndpointID} isSelected />
       </div>
     </div>
   );

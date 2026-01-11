@@ -6,7 +6,7 @@ import {
   ModalFooter,
   Button,
 } from '@heroui/react';
-import { useNavigate } from '@remix-run/react';
+import { useNavigate } from 'react-router';
 import NiceModal, { useModal } from '@ebay/nice-modal-react';
 
 export const clientLoader = async () => {

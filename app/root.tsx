@@ -1,12 +1,6 @@
 import { useEffect } from 'react';
-import {
-  Links,
-  Meta,
-  Outlet,
-  Scripts,
-  ScrollRestoration,
-} from '@remix-run/react';
-import type { LinksFunction } from '@remix-run/node';
+import { Links, Meta, Outlet, Scripts, ScrollRestoration } from 'react-router';
+import type { LinksFunction } from 'react-router';
 import { invoke } from '@tauri-apps/api/core';
 import { HeroUIProvider } from '@heroui/react';
 import NiceModal from '@ebay/nice-modal-react';
@@ -29,14 +23,27 @@ export const links: LinksFunction = () => [
     href: 'https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap',
   },
 ];
-// clientLoader.hydrate = true;
 
 // export function HydrateFallback() {
-//   return <p>Loading user preferences...</p>;
+//   return (
+//     <html lang="en">
+//       <head>
+//         <meta charSet="utf-8" />
+//         <meta name="viewport" content="width=device-width, initial-scale=1" />
+//         <Meta />
+//         <Links />
+//       </head>
+//       <body>
+//         <p>Loading...</p>
+//         <Scripts />
+//       </body>
+//     </html>
+//   );
 // }
 
 export function Layout({ children }: { children: React.ReactNode }) {
   useEffect(() => {
+    // Close splashscreen when main app is ready
     if (typeof window !== 'undefined') {
       invoke('close_splashscreen', {
         userId: localStorage.getItem('userID') ?? '',
@@ -48,15 +55,27 @@ export function Layout({ children }: { children: React.ReactNode }) {
           console.error('Failed to close splash screen:', error);
         });
     }
+
+    // Set up titlebar drag functionality
     const appWindow = getCurrentWindow();
-    document.getElementById('titlebar')?.addEventListener('mousedown', (e) => {
-      if (e.buttons === 1) {
-        // Primary (left) button
-        e.detail === 2
-          ? appWindow.toggleMaximize() // Maximize on double click
-          : appWindow.startDragging(); // Else start dragging
+    const titlebar = document.getElementById('titlebar');
+    if (titlebar) {
+      titlebar.addEventListener('mousedown', (e) => {
+        if (e.buttons === 1) {
+          // Primary (left) button
+          e.detail === 2
+            ? appWindow.toggleMaximize() // Maximize on double click
+            : appWindow.startDragging(); // Else start dragging
+        }
+      });
+    }
+
+    // Cleanup event listener on unmount
+    return () => {
+      if (titlebar) {
+        titlebar.removeEventListener('mousedown', () => {});
       }
-    });
+    };
   }, []);
 
   return (
@@ -80,7 +99,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             <NiceModal.Provider>
               <div id="font-wrapper">
                 <div id="titlebar" className="titlebar"></div>
-                <Outlet />
+                {children}
               </div>
             </NiceModal.Provider>
             <ScrollRestoration />
@@ -93,36 +112,5 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
-  return (
-    <html lang="en">
-      <head>
-        <meta charSet="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <Meta />
-        <Links />
-      </head>
-      <body>
-        <Outlet />
-        <ScrollRestoration />
-        <Scripts />
-      </body>
-    </html>
-  );
-}
-
-export function HydrateFallback() {
-  return (
-    <html lang="en">
-      <head>
-        <meta charSet="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <Meta />
-        <Links />
-      </head>
-      <body>
-        <p>Loading...</p>
-        <Scripts />
-      </body>
-    </html>
-  );
+  return <Outlet />;
 }

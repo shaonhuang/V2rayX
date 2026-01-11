@@ -128,13 +128,14 @@ create table TrojanServers
 
 create table User
 (
-    UserID   TEXT not null
+    UserID   TEXT            not null
         constraint UserId
             primary key,
-    UserName TEXT not null
+    UserName TEXT            not null
         constraint UserName
             unique,
-    Password TEXT not null
+    Password TEXT            not null,
+    Salt     TEXT default '' not null
 );
 
 create table AppSettings
@@ -198,7 +199,6 @@ create table EndpointsGroups
     GroupName     TEXT,
     Remark        TEXT,
     Link          TEXT,
-    SubscriptionID TEXT,
     SpeedTestType TEXT default ping not null,
     UserID        text              not null
         references AppSettings
@@ -245,6 +245,19 @@ create table Stats
         references AppSettings
 );
 
+create table Subscriptions
+(
+    UserID         TEXT not null,
+    Remark         TEXT not null,
+    Url            TEXT not null,
+    SubscriptionID TEXT not null,
+    GroupID        TEXT not null
+        constraint Subscriptions_EndpointsGroups_GroupID_fk
+            references EndpointsGroups,
+    constraint Subscriptions_pk
+        primary key (Remark, SubscriptionID)
+);
+
 create table VmessVnext
 (
     VnextID    TEXT not null
@@ -270,4 +283,24 @@ create table WsSettings
     EndpointID text             not null,
     Host       text             not null,
     Path       text default "/" not null
+);
+
+create table _sqlx_migrations
+(
+    version        BIGINT
+        primary key,
+    description    TEXT                                not null,
+    installed_on   TIMESTAMP default CURRENT_TIMESTAMP not null,
+    success        BOOLEAN                             not null,
+    checksum       BLOB                                not null,
+    execution_time BIGINT                              not null
+);
+
+create table sqlite_master
+(
+    type     TEXT,
+    name     TEXT,
+    tbl_name TEXT,
+    rootpage INT,
+    sql      TEXT
 );

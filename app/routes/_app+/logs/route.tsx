@@ -6,7 +6,7 @@ import {
   watchImmediate,
 } from '@tauri-apps/plugin-fs';
 import { queryLog } from '~/api';
-import { json, useLoaderData } from '@remix-run/react';
+import { useLoaderData } from 'react-router';
 import {
   Card,
   CardBody,
@@ -21,7 +21,7 @@ import { useTranslation } from 'react-i18next';
 
 export const clientLoader = async () => {
   const log = await queryLog({ userID: localStorage.getItem('userID')! });
-  return json({ log });
+  return { log };
 };
 
 const Page = () => {

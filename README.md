@@ -28,22 +28,17 @@ V2ray GUI client with cross-platform desktop support powered by Tauri, made espe
 ### ➣ Supported (TODO List)
 
 - [x] **PAC** Mode
-
   - Auto proxy mode for browsers that use [GFWList](https://raw.githubusercontent.com/gfwlist/gfwlist/master/gfwlist.txt) as default rules.
   - Allow custom rules.
 
 - [x] **Global** Mode
-
   - Global socks5 proxy for browser.
 
 - [x] **Manual** Mode
-
   - Get some tools like SwitchOmega to enable browser proxy on this mode.
 
 - [x] **HTTP(S)** Proxy
-
   - On Windows, commands for terminal proxy(port 1087 as default):
-
     - `$env:HTTPS_PROXY="http://127.0.0.1:10871"` (PowerShell)
     - `$env:HTTP_PROXY="http://127.0.0.1:10871"` (PowerShell)
     - `set http_proxy=http://127.0.0.1:10871` (cmd)
@@ -55,11 +50,10 @@ V2ray GUI client with cross-platform desktop support powered by Tauri, made espe
     - Some tools like `proxychains` are deeply recommended.
 
 - [x] Clipboard
-- [ ] QR-code Import
-- [ ] Subscription Import
+- [x] QR-code Import
+- [x] Subscription Import
 - [x] Language Switching Chinese (zh-CN) / English (en-US) / Russian (ru-RU) / Spanish (es-ES) / French (fr-FR) / German (de-DE) / Japanese (ja-JP) / Korean (ko-KR) / Farsi (fa-IR)
 
-- [ ] Configuration Backup / Recovery
 - [x] Dark / Light Mode
 - [x] Auto Start (Not supported on Linux)
 - [x] Server Share
@@ -68,7 +62,7 @@ V2ray GUI client with cross-platform desktop support powered by Tauri, made espe
 
 ### ➣ In Testing
 
-- [ ] QR-code Import
+- [ ] Configuration Backup / Recovery
 
 ### ➣ Comming Soon
 
@@ -81,7 +75,6 @@ V2ray GUI client with cross-platform desktop support powered by Tauri, made espe
 > More architectures will be supported if necessary, just give me an issue.
 
 - Ubuntu
-
   - deb `x64/arm64`
   - pacman `x64/arm64` (Coming Soon)
   - AppImage `x64/arm64` (arm64 Coming Soon)
@@ -89,7 +82,6 @@ V2ray GUI client with cross-platform desktop support powered by Tauri, made espe
   - snap `x64/arm64/armhf (Easy Intall On SnapStore)` (Not tested. Please give me feedback.Try it on arm64 it's have the problem related to OS.Though it could package on arm64)
 
 - MacOS (M1+, Intel)
-
   - dmg `x64/arm64`
   - zip `x64/arm64`
 
@@ -146,12 +138,10 @@ V2ray GUI client with cross-platform desktop support powered by Tauri, made espe
 ## VI. Downloads
 
 - GitHub Releases
-
   - ![statistics](https://img.shields.io/github/downloads/shaonhuang/V2rayX/total?style=plastic)
   - [↪ releases page](https://github.com/shaonhuang/V2rayX/releases/latest)
 
 - Snapcraft Store (Linux)
-
   - [![Get it from the Snap Store](https://snapcraft.io/static/images/badges/en/snap-store-black.svg)](https://snapcraft.io/v2rayx)
   - [↪ home page](https://snapcraft.io/v2rayx)
 

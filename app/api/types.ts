@@ -271,6 +271,7 @@ export interface User {
   UserID: string;
   UserName: string;
   Password: string;
+  Salt: string;
 }
 
 // 27. VmessUsers Table

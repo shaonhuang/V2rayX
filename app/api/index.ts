@@ -6,6 +6,7 @@ import { appLogDir } from '@tauri-apps/api/path';
 import * as yaml from 'js-yaml';
 import _ from 'lodash';
 import * as path from '@tauri-apps/api/path';
+import CryptoJS from 'crypto-js';
 import {
   enable as autoStartEnable,
   isEnabled as autoStartIsEnabled,
@@ -19,6 +20,24 @@ export const UPDATER_ACTIVE: boolean =
 
 const initDb = async (maxRetries = 5, retryDelay = 1000) => {
   return await Database.load('sqlite:database.db');
+};
+
+// Generate a random 16-byte salt as a hex string
+const generateSalt = (): string => {
+  const randomBytes = CryptoJS.lib.WordArray.random(16);
+  return randomBytes.toString(CryptoJS.enc.Hex);
+};
+
+// Hash a password with a salt using PBKDF2
+const hashPassword = (password: string, salt: string): string => {
+  // Use PBKDF2 with 10000 iterations and SHA-256
+  const key = CryptoJS.PBKDF2(password, salt, {
+    keySize: 256 / 32,
+    iterations: 10000,
+    hasher: CryptoJS.algo.SHA256,
+  });
+
+  return key.toString(CryptoJS.enc.Hex);
 };
 
 export const testApi = async () => {
@@ -46,12 +65,16 @@ bypass:
   const bypassObj = yaml.load(bypassYaml);
   const userID = uuid();
 
-  // Insert user information
+  // Generate a salt and hash the password
+  const salt = generateSalt();
+  const hashedPassword = hashPassword(password, salt);
+
+  // Insert user information with salt and hashed password
   await db.execute(
     `
-      INSERT INTO User (UserID, UserName, Password) VALUES (?, ?, ?)
+      INSERT INTO User (UserID, UserName, Password, Salt) VALUES (?, ?, ?, ?)
     `,
-    [userID, username, encode(password)],
+    [userID, username, hashedPassword, salt],
   );
 
   const appSettingsDefaults = {
@@ -185,12 +208,32 @@ bypass:
 export const login = async (props: { username: string; password: string }) => {
   const { username, password } = props;
   const db = await initDb();
-  return await db.select<Array<Types.User>>(
-    `
-      SELECT * FROM User WHERE UserName = ? AND Password = ?
-    `,
-    [username, encode(password)],
+
+  // First, get the user record to retrieve the salt
+  const userRecords = await db.select<Array<Types.User>>(
+    `SELECT * FROM User WHERE UserName = ?`,
+    [username],
   );
+
+  // If no user found, return empty array (authentication failed)
+  if (userRecords.length === 0) {
+    return [];
+  }
+
+  const userRecord = userRecords[0];
+  const salt = userRecord.Salt;
+
+  // Hash the input password with the stored salt
+  const hashedPassword = hashPassword(password, salt);
+
+  // Check if the hashed password matches the stored one
+  if (hashedPassword === userRecord.Password) {
+    // Return user info without the salt for security
+    return [userRecord];
+  }
+
+  // If password doesn't match, return empty array (authentication failed)
+  return [];
 };
 
 export const updateAppStatus = async (props: {
@@ -431,17 +474,62 @@ export const updateInbounds = async (props: {
   const db = await initDb();
 
   for (const inbound of props.inbounds) {
+    // Validate that ID exists
+    if (!inbound.ID) {
+      console.error(
+        'updateInbounds: ID is required but was not provided',
+        inbound,
+      );
+      throw new Error('ID is required for updating inbounds');
+    }
+
+    // Check if the record exists
+    const existing = (await db.select(
+      'SELECT * FROM Inbounds WHERE UserID = ? AND ID = ?',
+      [props.userID, inbound.ID],
+    )) as Types.Inbound[];
+
+    if (existing.length === 0) {
+      console.error(
+        `updateInbounds: No record found for UserID=${props.userID}, ID=${inbound.ID}`,
+      );
+      throw new Error(
+        `Inbound with ID ${inbound.ID} not found for user ${props.userID}`,
+      );
+    }
+
     // Construct the SQL query dynamically based on provided fields
     const entries = Object.entries(inbound).filter(
       ([key]) => key !== 'UserID' && key !== 'ID',
     );
-    if (entries.length === 0) continue; // Skip if no fields to update
+    if (entries.length === 0) {
+      console.warn(
+        'updateInbounds: No fields to update for inbound',
+        inbound.ID,
+      );
+      continue; // Skip if no fields to update
+    }
 
     const setClause = entries.map(([key]) => `${key} = ?`).join(', ');
     const values = entries.map(([_, value]) => value);
 
-    const query = `UPDATE Inbounds SET ${setClause} WHERE UserID = ? AND ID = ?;`;
-    await db.execute(query, [...values, props.userID, inbound.ID]);
+    const query = `UPDATE Inbounds SET ${setClause} WHERE UserID = ? AND ID = ?`;
+    const params = [...values, props.userID, inbound.ID];
+
+    console.log('updateInbounds: Executing query:', query);
+    console.log('updateInbounds: With params:', params);
+
+    try {
+      await db.execute(query, params);
+      console.log('updateInbounds: Successfully updated inbound', inbound.ID);
+    } catch (error) {
+      console.error(
+        'updateInbounds: Error updating inbound',
+        inbound.ID,
+        error,
+      );
+      throw error;
+    }
   }
 };
 
@@ -514,19 +602,25 @@ export const addEndpointToLocalsBaseInfo = async (props: {
   link?: string;
 }) => {
   const db = await initDb();
-  const localEndpoints = {
-    GroupID: uuid(),
-    UserID: props.userID,
-    GroupName: 'local-endpoints',
-    Remark: 'Local Endpoints',
-    Link: '',
-    SpeedTestType: 'ping',
-  };
+
+  // Look specifically for the local-endpoints group, not any group
   const res = await db.select<Types.EndpointsGroups[]>(
-    'SELECT * FROM EndpointsGroups WHERE UserID = ?',
-    [props.userID],
+    'SELECT * FROM EndpointsGroups WHERE UserID = ? AND GroupName = ?',
+    [props.userID, 'local-endpoints'],
   );
-  if (!res.length) {
+
+  let localGroupID: string;
+  let localGroupName: string;
+
+  if (res.length > 0) {
+    // Use existing local-endpoints group
+    localGroupID = res[0].GroupID;
+    localGroupName = res[0].GroupName;
+  } else {
+    // Create new local-endpoints group
+    localGroupID = uuid();
+    localGroupName = 'local-endpoints';
+
     await db.execute(
       `
       INSERT INTO EndpointsGroups (
@@ -534,7 +628,14 @@ export const addEndpointToLocalsBaseInfo = async (props: {
       )
       VALUES (?, ?, ?, ?, ?, ?)
     `,
-      Object.values(localEndpoints),
+      [
+        localGroupID,
+        props.userID,
+        'local-endpoints',
+        'Local Endpoints',
+        '',
+        'ping',
+      ],
     );
   }
 
@@ -553,8 +654,8 @@ export const addEndpointToLocalsBaseInfo = async (props: {
       props.link,
       props.remark,
       null,
-      res.length ? res[0].GroupID : localEndpoints.GroupID,
-      res.length ? res[0].GroupName : localEndpoints.GroupName,
+      localGroupID,
+      localGroupName,
       props.protocol,
       props.stream,
       props.security,
@@ -1134,7 +1235,7 @@ export const addHysteria2Stream = async (props: {
     Password,
     Type,
     UploadSpeed,
-    DownloadSpeed
+    DownloadSpeed,
     EnableUDP
     ) VALUES (?, ?, ?, ?, ?, ?)`,
     [endpointID, password, type, uploadSpeed, downloadSpeed, enableUDP ? 1 : 0],
@@ -1220,7 +1321,18 @@ export const updateTlsSecurity = async (props: {
 };
 
 export const queryEndpoint = async ({ endpointID }: { endpointID: string }) => {
-  const res = {};
+  const result: {
+    protocol: any;
+    network: any;
+    security: any;
+    endpointID: string;
+  } = {
+    protocol: {},
+    network: {},
+    security: {},
+    endpointID: '',
+  };
+
   const db = await initDb();
   const endpoint = (
     await db.select<
@@ -1240,7 +1352,7 @@ export const queryEndpoint = async ({ endpointID }: { endpointID: string }) => {
       ]
     >(
       `
-		SELECT Outbounds.*, Outbounds.Protocol, StreamSettings.Network, StreamSettings.Security
+		SELECT Endpoints.*, Outbounds.Protocol, StreamSettings.Network, StreamSettings.Security
 		FROM Endpoints LEFT JOIN Outbounds ON Endpoints.EndpointID = Outbounds.EndpointID
 		LEFT JOIN StreamSettings ON Endpoints.EndpointID = StreamSettings.EndpointID
 		WHERE Endpoints.EndpointID = ?;
@@ -1299,7 +1411,7 @@ export const queryEndpoint = async ({ endpointID }: { endpointID: string }) => {
       )[0],
     };
   }
-  res.protocol = protocolRes;
+  result.protocol = protocolRes;
 
   let networkTableName = '';
   switch (endpoint.Network) {
@@ -1335,13 +1447,13 @@ export const queryEndpoint = async ({ endpointID }: { endpointID: string }) => {
       [endpointID],
     )
   )[0];
-  res.network = {
+  result.network = {
     type: endpoint.Network,
     ...streamRes,
   };
   switch (endpoint.Security) {
     case 'none':
-      res.security = { type: 'none' };
+      result.security = { type: 'none' };
       break;
     case 'tls':
       const tls = (
@@ -1354,15 +1466,15 @@ export const queryEndpoint = async ({ endpointID }: { endpointID: string }) => {
           [endpointID],
         )
       )[0];
-      res.security = {
+      result.security = {
         type: 'tls',
         AllowInsecure: tls.AllowInsecure ? 1 : 0,
         ServerName: tls.ServerName,
       };
       break;
   }
-  res.endpointID = endpointID;
-  return res;
+  result.endpointID = endpointID;
+  return result;
 };
 
 export const queryEndpointsGroups = async (props: { userID: string }) => {
@@ -1398,16 +1510,44 @@ export const updateEndpointsGroups = async (props: {
   await db.execute(sqlQuery, [...sqlValues, groupID]);
 };
 
-export const queryEndpoints = async (props: { groupID: string }) => {
+export const queryEndpoints = async (
+  props: Partial<{
+    groupID: string;
+    userID: string;
+  }>,
+) => {
   const db = await initDb();
+
+  // Construct the WHERE clause dynamically
+  let whereClause = '';
+  const params: (string | undefined)[] = [];
+
+  if (props.userID) {
+    whereClause += 'EndpointsGroups.UserID = ?';
+    params.push(props.userID);
+  }
+
+  if (props.groupID) {
+    if (whereClause) whereClause += ' AND '; // Add 'AND' if another condition exists
+    whereClause += 'EndpointsGroups.GroupID = ?';
+    params.push(props.groupID);
+  }
+
+  // Ensure the WHERE clause isn't empty before using it in the query
+  if (whereClause) {
+    whereClause = 'WHERE ' + whereClause;
+  }
+
   const res = await db.select<Types.EndpointDetail[]>(
     `SELECT Endpoints.*, Outbounds.Protocol, StreamSettings.Network, StreamSettings.Security
      FROM Endpoints
      LEFT JOIN Outbounds ON Endpoints.EndpointID = Outbounds.EndpointID
      LEFT JOIN StreamSettings ON Endpoints.EndpointID = StreamSettings.EndpointID
-     WHERE GroupID = ?`,
-    [props.groupID],
+     LEFT JOIN EndpointsGroups ON Endpoints.GroupID = EndpointsGroups.GroupID
+     ${whereClause}`,
+    params,
   );
+
   return res;
 };
 
@@ -1463,15 +1603,25 @@ export const deleteEndpoint = async (props: { endpointID: string }) => {
   ]);
 };
 
-export const deleteGroup = async (props: { groupID: string }) => {
+// Delete all endpoints in a group but keep the group itself
+export const deleteEndpointsInGroup = async (props: { groupID: string }) => {
   const db = await initDb();
-  const endpoints = await queryEndpoints({ groupID: props.groupID });
+  const endpoints = await queryEndpoints({
+    groupID: props.groupID,
+  });
+  // Delete all endpoints and their related data
   await Promise.all(
     endpoints.map((endpoint) =>
       deleteEndpoint({ endpointID: endpoint.EndpointID }),
     ),
   );
-  await db.execute('DELETE FROM Endpoints WHERE GroupID = ?', [props.groupID]);
+};
+
+export const deleteGroup = async (props: { groupID: string }) => {
+  const db = await initDb();
+  // First delete all endpoints in the group
+  await deleteEndpointsInGroup({ groupID: props.groupID });
+  // Then delete the group itself
   await db.execute('DELETE FROM EndpointsGroups WHERE GroupID = ?', [
     props.groupID,
   ]);
@@ -1526,6 +1676,529 @@ export const updateAutoCheckUpdate = async (props: {
     `UPDATE AppSettings SET AutoDownloadAndInstallUpgrades = ? WHERE UserID = ?`,
     [props.autoCheckUpdate ? 1 : 0, props.userID],
   );
+};
+
+export const updateServiceRunningState = async (props: {
+  userID: string;
+  serviceRunningState: boolean;
+}) => {
+  const db = await initDb();
+  await db.execute(
+    `UPDATE AppStatus SET ServiceRunningState = ? WHERE UserID = ?`,
+    [props.serviceRunningState ? 1 : 0, props.userID],
+  );
+};
+
+export const queryLatencyTestSettings = async (props: {
+  userID: string;
+}): Promise<{ url: string; timeout: number }> => {
+  const db = await initDb();
+  const res = await db.select<
+    { LatencyTestUrl: string; LatencyTestTimeout: number }[]
+  >(
+    'SELECT LatencyTestUrl, LatencyTestTimeout FROM AppSettings WHERE UserID = ?',
+    [props.userID],
+  );
+
+  return {
+    url: res[0].LatencyTestUrl,
+    timeout: res[0].LatencyTestTimeout,
+  };
+};
+
+export const updateLatencyTestSettings = async (props: {
+  userID: string;
+  url: string;
+  timeout: number;
+}) => {
+  const db = await initDb();
+  await db.execute(
+    'UPDATE AppSettings SET LatencyTestUrl = ?, LatencyTestTimeout = ? WHERE UserID = ?',
+    [props.url, props.timeout, props.userID],
+  );
+};
+
+export const querySubscriptions = async (props: {
+  userID: string;
+}): Promise<
+  { Remark: string; Url: string; GroupID: string; SubscriptionID: string }[]
+> => {
+  const db = await initDb();
+  const res = await db.select<
+    { Remark: string; Url: string; GroupID: string; SubscriptionID: string }[]
+  >(
+    'SELECT Remark, Url, GroupID, SubscriptionID FROM Subscriptions WHERE UserID = ?',
+    [props.userID],
+  );
+
+  return res;
+};
+
+export const checkDuplicateSubscription = async (props: {
+  userID: string;
+  url: string;
+}): Promise<boolean> => {
+  const db = await initDb();
+  const existing = await db.select<Array<{ SubscriptionID: string }>>(
+    'SELECT SubscriptionID FROM Subscriptions WHERE UserID = ? AND Url = ?',
+    [props.userID, props.url],
+  );
+  return existing.length > 0;
+};
+
+export const addSubscription = async (props: {
+  userID: string;
+  remark: string;
+  url: string;
+  groupID: string;
+}): Promise<void> => {
+  const db = await initDb();
+
+  // Check for duplicate subscription
+  const isDuplicate = await checkDuplicateSubscription({
+    userID: props.userID,
+    url: props.url,
+  });
+
+  if (isDuplicate) {
+    throw new Error('Subscription with this URL already exists');
+  }
+
+  const subscriptionID = uuid();
+
+  await db.execute(
+    `INSERT INTO Subscriptions (UserID, Remark, Url, SubscriptionID, GroupID)
+     VALUES (?, ?, ?, ?, ?)`,
+    [props.userID, props.remark, props.url, subscriptionID, props.groupID],
+  );
+};
+
+export const deleteSubscription = async (props: {
+  subscriptionID: string;
+}): Promise<void> => {
+  const db = await initDb();
+
+  await db.execute(`DELETE FROM Subscriptions WHERE SubscriptionID = ?`, [
+    props.subscriptionID,
+  ]);
+};
+
+export const updateSubscription = async (props: {
+  subscriptionID: string;
+  remark?: string;
+  url?: string;
+}): Promise<void> => {
+  const db = await initDb();
+
+  // Only update fields that are provided
+  if (props.remark !== undefined && props.url !== undefined) {
+    await db.execute(
+      `UPDATE Subscriptions SET Remark = ?, Url = ? WHERE SubscriptionID = ?`,
+      [props.remark, props.url, props.subscriptionID],
+    );
+  } else if (props.remark !== undefined) {
+    await db.execute(
+      `UPDATE Subscriptions SET Remark = ? WHERE SubscriptionID = ?`,
+      [props.remark, props.subscriptionID],
+    );
+  } else if (props.url !== undefined) {
+    await db.execute(
+      `UPDATE Subscriptions SET Url = ? WHERE SubscriptionID = ?`,
+      [props.url, props.subscriptionID],
+    );
+  }
+};
+
+export const updateAllSubscriptions = async (props: {
+  userID: string;
+}): Promise<void> => {
+  const db = await initDb();
+
+  // Get all subscriptions for the user
+  const subscriptions = await querySubscriptions(props);
+
+  // In a real implementation, you would:
+  // 1. Fetch content from each subscription URL
+  // 2. Parse the content to extract endpoints
+  // 3. Add or update endpoints in the database
+  // 4. Remove endpoints that are no longer in the subscription
+
+  // This is a placeholder implementation
+  // You'll need to add actual subscription fetching and parsing logic
+
+  // For now, we'll just log that update occurred
+  console.log(
+    `Updated subscriptions for user ${props.userID} at ${new Date().toISOString()}`,
+  );
+};
+
+// Helper function to create or get EndpointsGroups for a subscription
+const ensureEndpointsGroup = async (props: {
+  userID: string;
+  groupID: string;
+  subscriptionID: string;
+  remark: string;
+  link: string;
+}): Promise<string> => {
+  const db = await initDb();
+
+  // Check if group already exists
+  const existingGroup = await db.select<Types.EndpointsGroups[]>(
+    'SELECT * FROM EndpointsGroups WHERE GroupID = ? AND UserID = ?',
+    [props.groupID, props.userID],
+  );
+
+  if (existingGroup.length > 0) {
+    // Update the group if it exists (in case remark or link changed)
+    await db.execute(
+      `
+      UPDATE EndpointsGroups 
+      SET GroupName = ?, Remark = ?, Link = ?, SubscriptionID = ?
+      WHERE GroupID = ? AND UserID = ?
+      `,
+      [
+        props.remark || 'Subscription Group',
+        props.remark || 'Subscription Group',
+        props.link,
+        props.subscriptionID,
+        props.groupID,
+        props.userID,
+      ],
+    );
+    return existingGroup[0].GroupID;
+  }
+
+  // Create new group with subscription remark as group name
+  await db.execute(
+    `
+    INSERT INTO EndpointsGroups (
+      GroupID, UserID, GroupName, Remark, Link, SubscriptionID, SpeedTestType
+    )
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+    `,
+    [
+      props.groupID,
+      props.userID,
+      props.remark || 'Subscription Group',
+      props.remark || 'Subscription Group',
+      props.link,
+      props.subscriptionID,
+      'ping',
+    ],
+  );
+
+  return props.groupID;
+};
+
+// Parse subscription data and create endpoints
+export const parseSubscriptionAndCreateEndpoints = async (props: {
+  userID: string;
+  subscriptionID: string;
+  groupID: string;
+  remark: string;
+  link: string;
+  subscriptionData: string;
+}): Promise<{ success: number; failed: number }> => {
+  const { VMess, Shadowsocks, Trojan, Hysteria2 } =
+    await import('~/lib/protocol');
+
+  let successCount = 0;
+  let failedCount = 0;
+
+  // Ensure the endpoints group exists
+  await ensureEndpointsGroup({
+    userID: props.userID,
+    groupID: props.groupID,
+    subscriptionID: props.subscriptionID,
+    remark: props.remark,
+    link: props.link,
+  });
+
+  // Delete all existing endpoints in this group before adding new ones
+  await deleteEndpointsInGroup({ groupID: props.groupID });
+
+  // Parse subscription data - split by lines
+  const lines = props.subscriptionData
+    .split('\n')
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0);
+
+  for (const line of lines) {
+    try {
+      let protocolFactory: any = null;
+      let protocol = '';
+      let endpointID = uuid();
+      let link = '';
+      let remark = '';
+      let stream = 'tcp';
+      let security = 'none';
+
+      // Determine protocol type and create protocol factory
+      if (/^vmess:\/\//i.test(line)) {
+        protocolFactory = new VMess(line);
+        protocol = 'vmess';
+      } else if (/^ss:\/\//i.test(line)) {
+        protocolFactory = new Shadowsocks(line);
+        protocol = 'shadowsocks';
+      } else if (/^trojan:\/\//i.test(line)) {
+        protocolFactory = new Trojan(line);
+        protocol = 'trojan';
+      } else if (/^hysteria2:\/\//i.test(line)) {
+        protocolFactory = new Hysteria2(line);
+        protocol = 'hysteria2';
+      } else {
+        console.warn(
+          `Unsupported protocol in line: ${line.substring(0, 50)}...`,
+        );
+        failedCount++;
+        continue;
+      }
+
+      // Get link and remark
+      link = protocolFactory.getLink();
+      remark = protocolFactory.getPs() || `Endpoint ${successCount + 1}`;
+
+      // Get stream and security from outbound
+      const outbound = protocolFactory.getOutbound();
+      stream = outbound.streamSettings?.network || 'tcp';
+      security = outbound.streamSettings?.security || 'none';
+
+      // Create base endpoint info directly with the correct subscription group
+      const db = await initDb();
+      await db.execute(
+        `
+        INSERT INTO Endpoints (
+          EndpointID, Link, Remark, Latency, GroupID, GroupName
+        ) VALUES (?, ?, ?, ?, ?, ?)
+        `,
+        [
+          endpointID,
+          link,
+          remark,
+          null,
+          props.groupID,
+          props.remark || 'Subscription Group',
+        ],
+      );
+
+      await db.execute(
+        `
+        INSERT INTO Outbounds (EndpointID, Protocol, Tag)
+        VALUES (?, ?, ?)
+        `,
+        [endpointID, protocol, null],
+      );
+
+      await db.execute(
+        `
+        INSERT INTO StreamSettings (EndpointID, Network, Security)
+        VALUES (?, ?, ?)
+        `,
+        [endpointID, stream, security],
+      );
+
+      // Add protocol-specific data
+      switch (protocol) {
+        case 'vmess': {
+          const settings = outbound.settings as any;
+          if (settings?.vnext?.[0]?.users?.[0]) {
+            const vnext = settings.vnext[0];
+            const user = vnext.users[0];
+            await addVmess({
+              endpointID,
+              vmess: {
+                address: vnext.address,
+                port: vnext.port,
+                uuid: user.id,
+                alterID: user.alterId || 0,
+                security: user.security || 'auto',
+                level: user.level || 0,
+              },
+            });
+          }
+          break;
+        }
+        case 'shadowsocks': {
+          const settings = outbound.settings as any;
+          if (settings?.servers?.[0]) {
+            const server = settings.servers[0];
+            await addShadowsocks({
+              endpointID,
+              shadowsocks: {
+                address: server.address,
+                port: server.port,
+                method: server.method,
+                password: server.password,
+                level: server.level || 0,
+              },
+            });
+          }
+          break;
+        }
+        case 'trojan': {
+          const settings = outbound.settings as any;
+          if (settings?.servers?.[0]) {
+            const server = settings.servers[0];
+            await addTrojan({
+              endpointID,
+              trojan: {
+                address: server.address,
+                port: server.port,
+                password: server.password,
+                level: server.level || 0,
+              },
+            });
+          }
+          break;
+        }
+        case 'hysteria2': {
+          const settings = outbound.settings as any;
+          if (settings?.servers?.[0]) {
+            const server = settings.servers[0];
+            await addHysteria2({
+              endpointID,
+              hysteria2: {
+                address: server.address,
+                port: server.port,
+              },
+            });
+          }
+          break;
+        }
+      }
+
+      // Add stream settings
+      const streamSettings = outbound.streamSettings;
+      if (streamSettings) {
+        switch (stream) {
+          case 'ws':
+            if (streamSettings.wsSettings) {
+              await addWebSocketStream({
+                endpointID,
+                stream: {
+                  path: streamSettings.wsSettings.path || '/',
+                  host: streamSettings.wsSettings.headers?.host || '',
+                },
+              });
+            }
+            break;
+          case 'h2':
+            if (streamSettings.httpSettings) {
+              await addHttp2Stream({
+                endpointID,
+                http: {
+                  host: Array.isArray(streamSettings.httpSettings.host)
+                    ? streamSettings.httpSettings.host[0] || ''
+                    : streamSettings.httpSettings.host || '',
+                  path: streamSettings.httpSettings.path || '/',
+                  method: 'PUT',
+                },
+              });
+            }
+            break;
+          case 'grpc':
+            if (streamSettings.grpcSettings) {
+              await addGrpcStream({
+                endpointID,
+                grpc: {
+                  serviceName: streamSettings.grpcSettings.serviceName || '',
+                },
+              });
+            }
+            break;
+          case 'kcp':
+            if (streamSettings.kcpSettings) {
+              await addKcpStream({
+                endpointID,
+                kcp: {
+                  mtu: streamSettings.kcpSettings.mtu || 1350,
+                  tti: streamSettings.kcpSettings.tti || 50,
+                  uplinkCapacity:
+                    streamSettings.kcpSettings.uplinkCapacity || 5,
+                  downlinkCapacity:
+                    streamSettings.kcpSettings.downlinkCapacity || 20,
+                  congestion: streamSettings.kcpSettings.congestion || false,
+                  readBufferSize:
+                    streamSettings.kcpSettings.readBufferSize || 2,
+                  writeBufferSize:
+                    streamSettings.kcpSettings.writeBufferSize || 2,
+                  header: streamSettings.kcpSettings.header?.type || 'none',
+                },
+              });
+            }
+            break;
+          case 'quic':
+            if (streamSettings.quicSettings) {
+              await addQuicStream({
+                endpointID,
+                quic: {
+                  key: streamSettings.quicSettings.key || '',
+                  security: streamSettings.quicSettings.security || 'none',
+                  header: streamSettings.quicSettings.header?.type || 'none',
+                },
+              });
+            }
+            break;
+          case 'tcp':
+            if (streamSettings.tcpSettings) {
+              await addTcpStream({
+                endpointID,
+                tcp: {
+                  header: streamSettings.tcpSettings.header?.type || 'none',
+                  requestHost:
+                    streamSettings.tcpSettings.header?.request?.headers
+                      ?.Host?.[0] || null,
+                  requestPath:
+                    streamSettings.tcpSettings.header?.request?.path?.[0] ||
+                    null,
+                },
+              });
+            }
+            break;
+          case 'hysteria2':
+            if (streamSettings.hysteria2Settings) {
+              await addHysteria2Stream({
+                endpointID,
+                hysteria2: {
+                  password: streamSettings.hysteria2Settings.password || '',
+                  type:
+                    streamSettings.hysteria2Settings.congestion?.type || 'bbr',
+                  uploadSpeed:
+                    streamSettings.hysteria2Settings.congestion?.up_mbps || 50,
+                  downloadSpeed:
+                    streamSettings.hysteria2Settings.congestion?.down_mbps ||
+                    100,
+                  enableUDP:
+                    streamSettings.hysteria2Settings.use_udp_extension || false,
+                },
+              });
+            }
+            break;
+        }
+      }
+
+      // Add security settings
+      if (security === 'tls' && streamSettings?.tlsSettings) {
+        await addTlsSecurity({
+          endpointID,
+          security: {
+            allowInsecure: streamSettings.tlsSettings.allowInsecure || false,
+            serverName: streamSettings.tlsSettings.serverName || '',
+          },
+        });
+      }
+
+      successCount++;
+    } catch (error) {
+      console.error(
+        `Failed to parse endpoint from line: ${line.substring(0, 50)}...`,
+        error,
+      );
+      failedCount++;
+    }
+  }
+
+  return { success: successCount, failed: failedCount };
 };
 
 export { Types };

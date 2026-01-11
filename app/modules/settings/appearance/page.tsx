@@ -15,7 +15,7 @@ import { useTheme } from '@heroui/use-theme';
 import SystemThemeManager from '~/utils/theme.util';
 
 import { useTranslation } from 'react-i18next';
-import { useLoaderData, useRevalidator } from '@remix-run/react';
+import { useLoaderData, useRevalidator } from 'react-router';
 import { queryAppearance, updateAppearance } from '~/api';
 
 export const loader = async () => {

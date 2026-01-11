@@ -41,34 +41,30 @@ export class Hysteria2 extends Protocol {
     // Remove the "hysteria2://" prefix
     const linkWithoutScheme = arg.slice(12);
 
-    // Split into [userinfo@]host[:port][?query][#fragment]
+    // Split into [password@]host[:port][?query][#fragment]
     const [mainPart, ...fragmentParts] = linkWithoutScheme.split('#');
     const fragment = fragmentParts.join('#');
-    const [addressPortPart, queryPart] = mainPart.split('?');
-    const [userinfoHostPort] = addressPortPart.split('?');
+    const [addressPortPart, queryPart = ''] = mainPart.split('?');
 
-    // Extract userinfo if present
-    let userInfo = '';
-    let hostPort = '';
-    if (userinfoHostPort.includes('@')) {
-      [userInfo, hostPort] = userinfoHostPort.split('@');
-    } else {
-      hostPort = userinfoHostPort;
-    }
-
-    // Extract username and password if present
-    let username = '';
+    // Extract password and host:port
+    // Format: password@host:port or host:port
     let password = '';
-    if (userInfo) {
-      [username, password] = userInfo.split(':');
+    let hostPort = '';
+    if (addressPortPart.includes('@')) {
+      [password, hostPort] = addressPortPart.split('@');
+      // Decode password if it's URL encoded
+      password = decodeURIComponent(password);
+    } else {
+      hostPort = addressPortPart;
     }
 
     // Extract host and port
     let host = '';
-    let port = 443; // Default port
+    let port: number = 443; // Default port
     if (hostPort.includes(':')) {
-      [host, port] = hostPort.split(':');
-      port = _.parseInt(port, 10);
+      const [hostPart, portPart] = hostPort.split(':');
+      host = hostPart;
+      port = _.parseInt(portPart, 10);
     } else {
       host = hostPort;
     }
@@ -76,19 +72,41 @@ export class Hysteria2 extends Protocol {
     // Parse query parameters
     const queryParams = new URLSearchParams(queryPart);
 
+    // Helper function to get parameter with fallback names
+    const getParam = (
+      primary: string,
+      ...fallbacks: string[]
+    ): string | null => {
+      let value = queryParams.get(primary);
+      if (value) return value;
+      for (const fallback of fallbacks) {
+        value = queryParams.get(fallback);
+        if (value) return value;
+      }
+      return null;
+    };
+
+    // Map 'peer' to 'sni' (peer is the SNI server name)
+    const sni = getParam('sni', 'peer') || '';
+
+    // Handle parameter name variations
+    const upMbps = getParam('up_mbps', 'upmbps');
+    const downMbps = getParam('down_mbps', 'downmbps');
+    const fastOpen = getParam('fast_open', 'fastopen');
+
     // Build the Hysteria2Type object
     const hysteria2Config: Hysteria2Type = {
       host,
       port,
-      username,
-      password,
+      username: undefined, // Hysteria2 doesn't use username
+      password: password || undefined,
       protocol: queryParams.get('protocol') || 'udp',
-      auth: queryParams.get('auth') || '',
+      auth: password || queryParams.get('auth') || '', // Use password as auth if available
       alpn: queryParams.get('alpn')?.split(',') || [],
-      sni: queryParams.get('sni') || '',
+      sni: sni,
       insecure: queryParams.get('insecure') === '1',
-      up_mbps: parseFloat(queryParams.get('up_mbps') || '10'),
-      down_mbps: parseFloat(queryParams.get('down_mbps') || '50'),
+      up_mbps: upMbps ? parseFloat(upMbps) : 10,
+      down_mbps: downMbps ? parseFloat(downMbps) : 50,
       recv_window_conn: _.parseInt(
         queryParams.get('recv_window_conn') || '0',
         10,
@@ -96,7 +114,7 @@ export class Hysteria2 extends Protocol {
       recv_window: _.parseInt(queryParams.get('recv_window') || '0', 10),
       obfs: queryParams.get('obfs') || '',
       disable_mtu_discovery: queryParams.get('disable_mtu_discovery') === '1',
-      fast_open: queryParams.get('fast_open') === '1',
+      fast_open: fastOpen === '1' || fastOpen === 'true',
       hop_interval: _.parseInt(queryParams.get('hop_interval') || '0', 10),
       fragment: fragment ? decodeURIComponent(fragment) : undefined,
     };
@@ -114,7 +132,7 @@ export class Hysteria2 extends Protocol {
 
     this.protocol = 'hysteria2';
     this.ps = config.fragment || this.genPs();
-
+    // hysteria2://64803c20-9b2e-4ebf-ba0e-1906910311eb@108.61.252.113:443?peer=free-soul.online#shaonhuang
     // Build the outbound settings
     this.settings = {
       servers: [
@@ -144,8 +162,8 @@ export class Hysteria2 extends Protocol {
         use_udp_extension: false,
         congestion: {
           type: 'bbr',
-          up_mbps: 50,
-          down_mbps: 100,
+          up_mbps: config.up_mbps || 50,
+          down_mbps: config.down_mbps || 100,
         },
       },
       security: config.sni ? 'tls' : 'none', // Hysteria2 manages its own security

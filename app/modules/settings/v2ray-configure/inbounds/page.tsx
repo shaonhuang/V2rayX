@@ -15,12 +15,20 @@ import {
 import { useTranslation } from 'react-i18next';
 import { Select, SelectItem } from '@heroui/select';
 
-import { useLoaderData, useNavigate } from '@remix-run/react';
+import { useLoaderData, useNavigate, useRevalidator } from 'react-router';
 import { Controller, useForm, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import toast from 'react-hot-toast';
-import { queryInboundsSettings, updateInbounds } from '~/api';
+import { useEffect } from 'react';
+import { invoke } from '@tauri-apps/api/core';
+import {
+  queryInboundsSettings,
+  updateInbounds,
+  queryEndpoints,
+  queryAppStatus,
+  updateServiceRunningState,
+} from '~/api';
 
 export const loader = async () => {
   return await queryInboundsSettings({
@@ -29,7 +37,7 @@ export const loader = async () => {
 };
 
 const InboudSettigTabContent = (props: {
-  Id: string;
+  ID: string;
   Protocol: string;
   Listen: string;
   Port: number;
@@ -37,9 +45,11 @@ const InboudSettigTabContent = (props: {
 }) => {
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
+  const revalidator = useRevalidator();
+  const originalPort = props.Port;
 
   const InboundSchema = z.object({
-    listen: z.string().ip({ message: 'Listen ip is required' }),
+    listen: z.ipv4({ message: 'Listen ip is required' }),
     port: z
       .number()
       .positive({ message: 'Port is required' })
@@ -56,6 +66,7 @@ const InboudSettigTabContent = (props: {
     handleSubmit,
     watch,
     control,
+    reset,
     formState: { errors },
   } = useForm<InboundSchema>({
     resolver,
@@ -67,13 +78,27 @@ const InboudSettigTabContent = (props: {
     },
   });
 
+  // Update form values when props change
+  useEffect(() => {
+    reset({
+      listen: props.Listen ?? '',
+      port: props.Port ?? 1080,
+      tag: props.Tag ?? '',
+      protocol: props.Protocol ?? 'http',
+    });
+  }, [props.Listen, props.Port, props.Tag, props.Protocol, reset]);
+
   const onSubmit: SubmitHandler<InboundSchema> = async (data) => {
     try {
+      const userID = localStorage.getItem('userID')!;
+      const portChanged = data.port !== originalPort;
+
+      // Update inbounds in database
       await updateInbounds({
-        userID: localStorage.getItem('userID')!,
+        userID,
         inbounds: [
           {
-            Id: props.Id,
+            ID: props.ID,
             Listen: data.listen,
             Port: data.port,
             Tag: data.tag,
@@ -81,7 +106,66 @@ const InboudSettigTabContent = (props: {
           },
         ],
       });
-      toast.success(t('Inbounds have been updated successfully'));
+
+      // If port changed, stop daemon and update config.json
+      if (portChanged) {
+        const appStatus = await queryAppStatus({ userID });
+        const isDaemonRunning = appStatus[0]?.ServiceRunningState === 1;
+
+        if (isDaemonRunning) {
+          // Stop the daemon
+          await invoke('stop_daemon');
+
+          // Send system notification
+          await invoke('send_notification', {
+            title: 'V2rayX',
+            body: t('V2ray service stopped due to port change'),
+          });
+
+          // Update database status
+          await updateServiceRunningState({
+            userID,
+            serviceRunningState: false,
+          });
+
+          // Refresh system tray menu
+          await invoke('tray_update', {
+            userId: userID,
+          });
+
+          // Get the active endpoint
+          const endpoints = await queryEndpoints({ userID });
+          const activeEndpoint = endpoints.find((ep) => ep.Active === 1);
+
+          if (activeEndpoint) {
+            // Update config.json with new inbound settings
+            const injectConfig = await invoke('inject_config', {
+              endpointId: activeEndpoint.EndpointID,
+              userId: userID,
+            });
+
+            if (injectConfig) {
+              toast.success(
+                t('Inbounds updated and config.json regenerated successfully'),
+              );
+            } else {
+              toast.error(t('Failed to update config.json'));
+            }
+          } else {
+            toast.success(t('Inbounds have been updated successfully'));
+            toast(t('No active endpoint found, config.json not updated'), {
+              icon: 'ℹ️',
+            });
+          }
+        } else {
+          toast.success(t('Inbounds have been updated successfully'));
+        }
+      } else {
+        toast.success(t('Inbounds have been updated successfully'));
+      }
+
+      // Refresh the data
+      revalidator.revalidate();
     } catch (e) {
       toast.error(`${e}`);
     }
@@ -208,8 +292,16 @@ const InboudSettigTabContent = (props: {
 export function Page() {
   const data = useLoaderData();
   const navigate = useNavigate();
+  const revalidator = useRevalidator();
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const { t, i18n } = useTranslation();
+
+  // Refresh data when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      revalidator.revalidate();
+    }
+  }, [isOpen, revalidator]);
 
   return (
     <>
@@ -242,6 +334,7 @@ export function Page() {
                   >
                     {data.V2rayConfigure.Inbounds.map(
                       (inbound: {
+                        ID: string;
                         Protocol: string;
                         Listen: string;
                         Port: number;

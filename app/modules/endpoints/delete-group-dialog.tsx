@@ -10,9 +10,10 @@ import {
 } from '@heroui/react';
 import { deleteGroup, updateAppStatus } from '~/api';
 import toast from 'react-hot-toast';
-import { useRevalidator } from '@remix-run/react';
+import { useRevalidator } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { invoke } from '@tauri-apps/api/core';
+import { updateServiceRunningState } from '~/api';
 
 const DialogButton = (props: {
   groupID: string;
@@ -89,10 +90,10 @@ const DialogButton = (props: {
                       `${props.groupName} ${t('Group deleted successfully')}`,
                     );
                     if (props.isSelectedEndpointInGroup) {
-                      await invoke('stop_daemon');
-                      await invoke('tray_update', {
+                      await invoke('stop_v2ray_daemon', {
                         userId: userID,
                       });
+                      toast.success(t('V2ray-core proxy service has stopped'));
                     }
                     revalidator.revalidate();
                     onClose();

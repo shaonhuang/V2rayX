@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import toast from 'react-hot-toast';
 import { useState } from 'react';
-import { useNavigate } from '@remix-run/react';
+import { useNavigate } from 'react-router';
 import * as api from '~/api';
 import { invoke } from '@tauri-apps/api/core';
 import { useTranslation } from 'react-i18next';

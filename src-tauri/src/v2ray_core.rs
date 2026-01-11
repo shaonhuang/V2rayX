@@ -1,6 +1,7 @@
 use anyhow::Result; // You can still use anyhow for internal error handling
 use lazy_static::lazy_static;
 use log::{error, info};
+use sqlx::sqlite::SqlitePoolOptions;
 use std::fs::File;
 use std::io::Write;
 use std::sync::{Arc, Mutex};
@@ -13,6 +14,7 @@ use tauri::AppHandle;
 use tauri_plugin_shell::process::{CommandChild, CommandEvent};
 use tauri_plugin_shell::ShellExt;
 pub mod v2ray_config;
+use crate::sys_tray;
 use crate::utils;
 
 lazy_static! {
@@ -113,13 +115,12 @@ pub async fn start_daemon(
         .map_err(|e| e.to_string())?
         .args(args);
 
-    let mut success = true;
+    let success = true;
 
     match sidecar.spawn() {
         Ok((mut rx, _child)) => {
             daemon.child = Some(_child);
             tauri::async_runtime::spawn(async move {
-                // #[cfg(debug_assertions)]
                 while let Some(event) = rx.recv().await {
                     match event {
                         CommandEvent::Stdout(line) => {
@@ -127,11 +128,10 @@ pub async fn start_daemon(
                         }
                         CommandEvent::Stderr(line) => {
                             println!("[v2ray] {:?}", String::from_utf8(line));
-                            success = false;
                         }
                         CommandEvent::Error(line) => eprintln!("error: {:?}", line),
                         CommandEvent::Terminated(status) => {
-                            success = if status.code.unwrap_or(1) == 0 {
+                            if status.code.unwrap_or(1) == 0 {
                                 true
                             } else {
                                 false
@@ -185,6 +185,35 @@ pub async fn stop_daemon(
         info!("v2ray-core daemon is not running");
         Ok(true)
     }
+}
+
+#[tauri::command]
+pub async fn stop_v2ray_daemon(
+    state: State<'_, Arc<Mutex<DaemonState>>>,
+    window: WebviewWindow,
+    app_handle: AppHandle,
+    user_id: String,
+) -> Result<bool, String> {
+    let _ = stop_daemon(state, window).await;
+
+    let database_path = utils::get_database_path(&app_handle)
+        .to_string_lossy()
+        .to_string();
+
+    let database_url = format!("sqlite://{}", database_path);
+    let pool = SqlitePoolOptions::new()
+        .max_connections(5)
+        .connect(&database_url)
+        .await
+        .map_err(|e| format!("Failed to connect to the database: {}", e))
+        .unwrap();
+    sqlx::query("UPDATE AppStatus SET ServiceRunningState = 0 WHERE UserID = ?;")
+        .bind(&user_id)
+        .execute(&pool)
+        .await
+        .expect("Failed to update service running state");
+    let _ = sys_tray::tray_update(app_handle.clone(), user_id).await;
+    Ok(true)
 }
 
 #[tauri::command]

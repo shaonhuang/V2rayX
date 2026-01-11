@@ -27,6 +27,8 @@ import {
   Hysteria2 as Hysteria2Stream,
 } from './stream';
 import { SecurityTls } from './security';
+import { useLocation } from 'react-router';
+import { readText } from '@tauri-apps/plugin-clipboard-manager';
 
 import {
   VMess as VMessData,
@@ -74,13 +76,14 @@ const useEffectOnNextRender = (callback: React.EffectCallback) => {
 interface PageProps {
   type: 'add' | 'edit';
   endpoint: any;
+  url?: string;
   onValidSubmit: (endpointID: string) => void;
   onInvalidSubmit: (errors: any) => void;
 }
 
 export interface PageRef {
   submitForm: () => void;
-  // setFormValue: UseFormSetValue<ShadowsocksSchema>;
+  handleImportUrl: (importUrl?: string) => void;
 }
 
 const PageComponent: ForwardRefRenderFunction<PageRef, PageProps> = (
@@ -89,6 +92,7 @@ const PageComponent: ForwardRefRenderFunction<PageRef, PageProps> = (
 ) => {
   const { type, endpoint } = props;
   let link = '';
+  const location = useLocation();
   const [endpointID] = useState(type === 'add' ? uuid() : endpoint.endpointID);
   const userID = localStorage.getItem('userID')!;
   const [protocols, setProcotols] = useState({
@@ -96,14 +100,17 @@ const PageComponent: ForwardRefRenderFunction<PageRef, PageProps> = (
     stream: type === 'add' ? 'tcp' : endpoint.network.type,
     security: type === 'add' ? 'none' : endpoint.security.type,
   });
-  const [url, setUrl] = useState('');
+  const [url, setUrl] = useState(props?.url ?? '');
   // 'vmess://eyAidiI6IjIiLCAicHMiOiIiLCAiYWRkIjoiNDUuNzcuNzEuMjAzIiwgInBvcnQiOiI0NDMiLCAiaWQiOiI5YmIwNTAyZS1mYjI2LTQyNWEtODZkNC05YmJhNDQxNjdlNTkiLCAiYWlkIjoiMCIsICJuZXQiOiJ3cyIsICJ0eXBlIjoibm9uZSIsICJob3N0IjoiaGloYWNrZXIuc2hvcCIsICJwYXRoIjoiL1FZQXA3VXpjIiwgInRscyI6InRscyIgfQ==',
   // 'ss://YWVzLTI1Ni1nY206ZG9uZ3RhaXdhbmcuY29t@46.17.40.57:11111#www.dongtaiwang.com%E6%B4%9B%E6%9D%89%E7%9F%B6',
   // 'trojan://pass@remote_host:443?flow=xtls-rprx-origin&security=xtls&sni=sni&host=remote_host#trojan',
+  // 'hysteria2://64803c20-9b2e-4ebf-ba0e-1906910311eb@108.61.252.113:443?peer=free-soul.online#shaonhuang'
+  // 'hysteria2://64803c20-9b2e-4ebf-ba0e-1906910311eb@108.61.252.113:443?peer=free-soul.online&obfs=salamander&obfs-password=xxxx&fastopen=1&upmbps=10&downmbps=100&keepalive=5#shaonhuang'
 
-  const protocolRef = useRef(null);
-  const streamRef = useRef(null);
-  const securityRef = useRef(null);
+  const protocolRef = useRef<any>(null);
+  const streamRef = useRef<any>(null);
+  const securityRef = useRef<any>(null);
+  const lastImportedUrlRef = useRef<string>('');
   const scheduleDisplay = useEffectOnNextRender(() => {
     display();
   });
@@ -117,6 +124,20 @@ const PageComponent: ForwardRefRenderFunction<PageRef, PageProps> = (
     securityRef.current?.setFormValue('endpointID', endpointID);
     type === 'edit' && display();
   }, [protocols.protocol, protocols.stream, protocols.security]);
+
+  // Auto-import URL when it's provided via props
+  useEffect(() => {
+    if (
+      props.url &&
+      props.url.trim() &&
+      type === 'add' &&
+      lastImportedUrlRef.current !== props.url
+    ) {
+      // Import the URL when it's provided via props
+      lastImportedUrlRef.current = props.url;
+      handleImportUrl(props.url);
+    }
+  }, [props.url, type]);
 
   const onError = (errors: any) => {
     props.onInvalidSubmit(errors);
@@ -417,13 +438,12 @@ const PageComponent: ForwardRefRenderFunction<PageRef, PageProps> = (
       console.warn('Hysteria2 Stream PageRef is null');
       return;
     }
-
     const formValues = {
       password,
-      type,
-      uploadSpeed,
-      downloadSpeed,
-      enableUDP,
+      congestionType: type,
+      congestionUp: uploadSpeed,
+      congestionDown: downloadSpeed,
+      enableUDP: enableUDP === 1 || !!enableUDP,
     };
 
     setFormValues(hysteria2StreamRef, endpointID, formValues);
@@ -451,34 +471,43 @@ const PageComponent: ForwardRefRenderFunction<PageRef, PageProps> = (
     setFormValues(securityTlsRef, endpointID, formValues);
   };
 
-  const handleImportUrl = () => {
+  const handleImportUrl = (importUrl?: string) => {
+    const urlToImport = importUrl || url;
+    if (!urlToImport) {
+      toast.error(t('No URL provided'));
+      return;
+    }
+
     let protocol = 'vmess';
-    // solve setState async problem caused empty protocolFactory
     let protocolFactory: any = new VMessData('');
+
     try {
       switch (true) {
-        case /^vmess:\/\//i.test(url):
-          setProtocolFactory(new VMessData(url));
-          protocolFactory = new VMessData(url);
+        case /^vmess:\/\//i.test(urlToImport):
+          setProtocolFactory(new VMessData(urlToImport));
+          protocolFactory = new VMessData(urlToImport);
           protocol = 'vmess';
           break;
-        case /^ss:\/\//i.test(url):
-          setProtocolFactory(new ShadowsocksData(url));
-          protocolFactory = new ShadowsocksData(url);
+        case /^ss:\/\//i.test(urlToImport):
+          setProtocolFactory(new ShadowsocksData(urlToImport));
+          protocolFactory = new ShadowsocksData(urlToImport);
           protocol = 'shadowsocks';
           break;
-        case /^trojan:\/\//i.test(url):
-          setProtocolFactory(new TrojanData(url));
-          protocolFactory = new TrojanData(url);
+        case /^trojan:\/\//i.test(urlToImport):
+          setProtocolFactory(new TrojanData(urlToImport));
+          protocolFactory = new TrojanData(urlToImport);
           protocol = 'trojan';
           break;
-        case /^hysteria2:\/\//i.test(url):
-          setProtocolFactory(new Hysteria2Data(url));
-          protocolFactory = new Hysteria2Data(url);
+        case /^hysteria2:\/\//i.test(urlToImport):
+          setProtocolFactory(new Hysteria2Data(urlToImport));
+          protocolFactory = new Hysteria2Data(urlToImport);
           protocol = 'hysteria2';
           break;
+        default:
+          toast.error(t('Unsupported protocol'));
+          return;
       }
-      // get right protocols value
+
       setProcotols({
         protocol,
         stream: protocolFactory.getOutbound().streamSettings?.network || 'tcp',
@@ -486,13 +515,20 @@ const PageComponent: ForwardRefRenderFunction<PageRef, PageProps> = (
           protocolFactory.getOutbound().streamSettings?.security || 'none',
       });
 
+      // If URL was provided externally, update the input field
+      if (importUrl) {
+        setUrl(importUrl);
+      }
+
       scheduleDisplay();
       link = protocolFactory.getLink();
       toast.success(t('URL imported'));
     } catch (error) {
       console.error(error);
       toast.error(
-        'Invalid URL or parsing error. Please report link format to developer.',
+        t(
+          'Invalid URL or parsing error. Please report link format to developer.',
+        ),
       );
     }
   };
@@ -716,16 +752,17 @@ const PageComponent: ForwardRefRenderFunction<PageRef, PageProps> = (
                 password:
                   protocolFactory.getOutbound().streamSettings.hysteria2Settings
                     .password,
-                type: protocolFactory.getOutbound().streamSettings
-                  .hysteria2Settings.type,
+                type:
+                  protocolFactory.getOutbound().streamSettings.hysteria2Settings
+                    .congestion?.type || 'bbr',
                 uploadSpeed:
                   protocolFactory.getOutbound().streamSettings.hysteria2Settings
-                    .uploadSpeed,
+                    .congestion?.up_mbps || 50,
                 downloadSpeed:
                   protocolFactory.getOutbound().streamSettings.hysteria2Settings
-                    .downloadSpeed,
+                    .congestion?.down_mbps || 100,
                 enableUDP: protocolFactory.getOutbound().streamSettings
-                  .hysteria2Settings.enableUDP
+                  .hysteria2Settings.use_udp_extension
                   ? 1
                   : 0,
               }
@@ -787,7 +824,6 @@ const PageComponent: ForwardRefRenderFunction<PageRef, PageProps> = (
 
   useImperativeHandle(ref, () => ({
     submitForm: async () => {
-      // handleSubmit(onSubmit, onError)();
       if (props.type === 'add') {
         await addEndpointToLocalsBaseInfo({
           userID,
@@ -802,7 +838,7 @@ const PageComponent: ForwardRefRenderFunction<PageRef, PageProps> = (
       triggerSubmit();
       props.onValidSubmit(endpointID);
     },
-    // setFormValue: setValue,
+    handleImportUrl,
   }));
 
   return (
@@ -817,11 +853,7 @@ const PageComponent: ForwardRefRenderFunction<PageRef, PageProps> = (
               value={url}
               onValueChange={setUrl}
             ></Input>
-            <Button
-              onPress={() => {
-                handleImportUrl();
-              }}
-            >
+            <Button onPress={() => handleImportUrl()}>
               <span className="i-mdi-application-import" />
             </Button>
           </div>

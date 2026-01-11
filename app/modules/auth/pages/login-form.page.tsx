@@ -1,7 +1,7 @@
 // app/components/LoginForm.tsx
 import { Card, CardHeader, CardBody, Button, Input } from '@heroui/react';
 import { useState } from 'react';
-import { useNavigate } from '@remix-run/react';
+import { useNavigate } from 'react-router';
 import { useForm, Controller, SubmitHandler } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -36,74 +36,70 @@ export const LoginForm: React.FC<LoginFormProps> = ({ error }) => {
 
   return (
     <Card className="h-auto w-96 p-6">
-      <CardHeader className="px-4 pb-0 pt-2">
-        <h2 className="text-xl font-bold uppercase">Login</h2>
-      </CardHeader>
-      <CardBody>
-        <form
-          method="post"
-          onSubmit={handleSubmit(onSubmit)}
-          className="flex flex-col gap-4"
-        >
-          <Controller
-            name="username"
-            control={control}
-            render={({ field }) => (
-              <Input
-                {...field}
-                label="Username"
-                placeholder="Enter your username"
-                isInvalid={!!errors.username}
-                helperText={errors.username?.message}
-              />
-            )}
-          />
+      <h2 className="text-xl font-bold uppercase">Login</h2>
+      <form
+        method="post"
+        onSubmit={handleSubmit(onSubmit)}
+        className="flex flex-col gap-4"
+      >
+        <Controller
+          name="username"
+          control={control}
+          render={({ field }) => (
+            <Input
+              {...field}
+              label="Username"
+              placeholder="Enter your username"
+              isInvalid={!!errors.username}
+              helperText={errors.username?.message}
+            />
+          )}
+        />
 
-          <Controller
-            name="password"
-            control={control}
-            render={({ field }) => (
-              <Input
-                {...field}
-                type={isVisible ? 'text' : 'password'}
-                label="Password"
-                placeholder="Enter your password"
-                isInvalid={!!errors.password}
-                helperText={errors.password?.message}
-                endContent={
-                  <button
-                    type="button"
-                    onClick={() => setIsVisible(!isVisible)}
-                    className="focus:outline-none"
-                    aria-label="Toggle password visibility"
-                  >
-                    {isVisible ? (
-                      <span className="i-feather-eye-off text-xl text-default-400" />
-                    ) : (
-                      <span className="i-feather-eye text-xl text-default-400" />
-                    )}
-                  </button>
-                }
-              />
-            )}
-          />
+        <Controller
+          name="password"
+          control={control}
+          render={({ field }) => (
+            <Input
+              {...field}
+              type={isVisible ? 'text' : 'password'}
+              label="Password"
+              placeholder="Enter your password"
+              isInvalid={!!errors.password}
+              helperText={errors.password?.message}
+              endContent={
+                <button
+                  type="button"
+                  onClick={() => setIsVisible(!isVisible)}
+                  className="focus:outline-none"
+                  aria-label="Toggle password visibility"
+                >
+                  {isVisible ? (
+                    <span className="i-feather-eye-off text-xl text-default-400" />
+                  ) : (
+                    <span className="i-feather-eye text-xl text-default-400" />
+                  )}
+                </button>
+              }
+            />
+          )}
+        />
 
-          {error && <p className="text-red-500">{error}</p>}
+        {error && <p className="text-red-500">{error}</p>}
 
-          <div className="flex justify-between">
-            <Button type="submit" color="primary">
-              Login
-            </Button>
-            <Button
-              type="button"
-              onPress={() => navigate('/signup')}
-              color="secondary"
-            >
-              Register
-            </Button>
-          </div>
-        </form>
-      </CardBody>
+        <div className="flex justify-between">
+          <Button type="submit" color="primary">
+            Login
+          </Button>
+          <Button
+            type="button"
+            onPress={() => navigate('/signup')}
+            color="secondary"
+          >
+            Register
+          </Button>
+        </div>
+      </form>
     </Card>
   );
 };

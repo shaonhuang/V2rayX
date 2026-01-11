@@ -1,0 +1,5 @@
+onlyBuiltDependencies:
+  - '@heroui/shared-utils'
+  - es5-ext
+  - esbuild
+  - unrs-resolver

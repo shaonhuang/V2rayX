@@ -11,8 +11,8 @@ import {
   Checkbox,
   Chip,
 } from '@heroui/react';
-import { motion } from 'framer-motion';
-import { useLoaderData, json, useRevalidator } from '@remix-run/react';
+import { motion } from 'motion/react';
+import { useLoaderData, useRevalidator } from 'react-router';
 import { writeText } from '@tauri-apps/plugin-clipboard-manager';
 import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
@@ -50,7 +50,7 @@ export const clientLoader = async () => {
   const dashboardData = await queryDashboard({ userID });
   const bypass = await queryBypass({ userID });
   const pacRules = await queryPAC({ userID });
-  return json({ ...dashboardData, timeSeconds, ...bypass, ...pacRules });
+  return { ...dashboardData, timeSeconds, ...bypass, ...pacRules };
 };
 
 const Page = () => {
@@ -117,102 +117,109 @@ const Page = () => {
       }}
     >
       <Card className="min-h-fit py-4">
-        <CardHeader className="flex-col items-start px-4 pb-0 pt-2">
-          <p className="font-bold uppercase">V2rayX</p>
-          <NumberFlowGroup>
-            <div
-              style={{
-                fontVariantNumeric: 'tabular-nums',
-                '--number-flow-char-height': '0.85em',
-              }}
-              className="~text-3xl/4xl flex items-baseline font-semibold text-default-500"
-            >
-              <NumberFlow
-                prefix="Uptime: "
-                value={parseInt(formatUptime(uptimeSeconds).split(':')[0])}
-                trend={1}
-                format={{ minimumIntegerDigits: 2 }}
-              />
-              <NumberFlow
-                value={parseInt(formatUptime(uptimeSeconds).split(':')[1])}
-                prefix=":"
-                trend={1}
-                digits={{ 1: { max: 5 } }}
-                format={{ minimumIntegerDigits: 2 }}
-              />
-              <NumberFlow
-                value={parseInt(formatUptime(uptimeSeconds).split(':')[2])}
-                prefix=":"
-                trend={1}
-                digits={{ 1: { max: 5 } }}
-                format={{ minimumIntegerDigits: 2 }}
-              />
-            </div>
-          </NumberFlowGroup>
+        <CardHeader className="px-4 pb-0 pt-2">
+          <div className="flex-col items-start">
+            <p className="font-bold uppercase">V2rayX</p>
+            <NumberFlowGroup>
+              <div
+                style={{
+                  fontVariantNumeric: 'tabular-nums',
+                  '--number-flow-char-height': '0.85em',
+                }}
+                className="~text-3xl/4xl flex items-baseline font-semibold text-default-500"
+              >
+                <NumberFlow
+                  prefix="Uptime: "
+                  value={parseInt(formatUptime(uptimeSeconds).split(':')[0])}
+                  trend={1}
+                  format={{ minimumIntegerDigits: 2 }}
+                />
+                <NumberFlow
+                  value={parseInt(formatUptime(uptimeSeconds).split(':')[1])}
+                  prefix=":"
+                  trend={1}
+                  digits={{ 1: { max: 5 } }}
+                  format={{ minimumIntegerDigits: 2 }}
+                />
+                <NumberFlow
+                  value={parseInt(formatUptime(uptimeSeconds).split(':')[2])}
+                  prefix=":"
+                  trend={1}
+                  digits={{ 1: { max: 5 } }}
+                  format={{ minimumIntegerDigits: 2 }}
+                />
+              </div>
+            </NumberFlowGroup>
+          </div>
+          <div></div>
         </CardHeader>
         <CardBody className="overflow-visible py-2">
           <Listbox aria-label="Actions">
             {/* Socks Port ListboxItem */}
-            <ListboxItem key="socks-port" textValue="socks-port">
-              <div className="flex flex-row flex-nowrap items-center justify-between text-base">
-                <div>Socks {t('Port')}</div>
-                <div>
-                  {data.socks.map((inbound) => (
-                    <Button
-                      key={inbound.port}
-                      color="success"
-                      endContent={<span className="i-feather-copy" />}
-                      className="text-base"
-                      onPress={async () => {
-                        const command =
-                          currentPlatform === 'windows'
-                            ? `
+            {data.socks.length > 0 && (
+              <ListboxItem key="socks-port" textValue="socks-port">
+                <div className="flex flex-row flex-nowrap items-center justify-between text-base">
+                  <div>Socks {t('Port')}</div>
+                  <div className="flex gap-2">
+                    {data.socks.map((inbound) => (
+                      <Button
+                        key={inbound.port}
+                        color="success"
+                        endContent={<span className="i-feather-copy" />}
+                        className="text-base"
+                        onPress={async () => {
+                          const command =
+                            currentPlatform === 'windows'
+                              ? `
                             set HTTP_PROXY=socks5://${inbound.listen}:${inbound.port}
                             set HTTPS_PROXY=socks5://${inbound.listen}:${inbound.port}
                             `
-                            : `export http_proxy=socks5://${inbound.listen}:${inbound.port};export https_proxy=socks5://${inbound.listen}:${inbound.port};`;
-                        await writeText(command);
-                        toast.success(
-                          `${command} ${t('Command has been pasted to clipboard')}`,
-                        );
-                      }}
-                    >
-                      {inbound.port}
-                    </Button>
-                  ))}
+                              : `export http_proxy=socks5://${inbound.listen}:${inbound.port};export https_proxy=socks5://${inbound.listen}:${inbound.port};`;
+                          await writeText(command);
+                          toast.success(
+                            `${command} ${t('Command has been pasted to clipboard')}`,
+                          );
+                        }}
+                      >
+                        {inbound.port}
+                      </Button>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            </ListboxItem>
+              </ListboxItem>
+            )}
 
             {/* Http Port ListboxItem */}
-            <ListboxItem key="http-port" textValue="http-port">
-              <div className="flex flex-row flex-nowrap items-center justify-between text-base">
-                <div>Http {t('Port')}</div>
-                <div>
-                  {data.http.map((inbound) => (
-                    <Button
-                      key={inbound.port}
-                      color="success"
-                      endContent={<span className="i-feather-copy" />}
-                      className="text-base"
-                      onPress={async () => {
-                        const command =
-                          currentPlatform === 'windows'
-                            ? `set HTTP_PROXY=http://${inbound.listen}:${inbound.port}
+            {data.http.length > 0 && (
+              <ListboxItem key="http-port" textValue="http-port">
+                <div className="flex flex-row flex-nowrap items-center justify-between text-base">
+                  <div>Http {t('Port')}</div>
+                  <div className="flex gap-2">
+                    {data.http.map((inbound) => (
+                      <Button
+                        key={inbound.port}
+                        color="success"
+                        endContent={<span className="i-feather-copy" />}
+                        className="text-base"
+                        onPress={async () => {
+                          const command =
+                            currentPlatform === 'windows'
+                              ? `set HTTP_PROXY=http://${inbound.listen}:${inbound.port}
                                set HTTPS_PROXY=http://${inbound.listen}:${inbound.port}`
-                            : `export http_proxy=http://${inbound.listen}:${inbound.port};export https_proxy=http://${inbound.listen}:${inbound.port};`;
-                        await writeText(command);
-                        toast.success(
-                          `${command} ${t('Command has been pasted to clipboard')}`,
-                        );
-                      }}
-                    >
-                      {inbound.port}
-                    </Button>
-                  ))}
+                              : `export http_proxy=http://${inbound.listen}:${inbound.port};export https_proxy=http://${inbound.listen}:${inbound.port};`;
+                          await writeText(command);
+                          toast.success(
+                            `${command} ${t('Command has been pasted to clipboard')}`,
+                          );
+                        }}
+                      >
+                        {inbound.port}
+                      </Button>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            </ListboxItem>
+              </ListboxItem>
+            )}
 
             {/* Startup ListboxItem */}
             <ListboxItem

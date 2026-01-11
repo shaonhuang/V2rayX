@@ -1,6 +1,6 @@
 // app/components/SignupForm.tsx
 import { Card, CardHeader, CardBody, Button, Input } from '@heroui/react';
-import { useNavigate } from '@remix-run/react';
+import { useNavigate } from 'react-router';
 import { useForm, Controller, SubmitHandler } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';

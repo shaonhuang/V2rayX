@@ -116,6 +116,7 @@
   "Invalid text format": "잘못된 텍스트 형식",
   "Invalid JSON format": "잘못된 JSON 형식",
   "Inbounds have been updated successfully": "인바운드가 성공적으로 업데이트되었습니다",
+  "V2ray service stopped due to port change": "포트 변경으로 인해 V2ray 서비스가 중지되었습니다",
   "Command has been pasted to clipboard": "명령이 클립보드에 복사되었습니다",
   "PAC mode has been enabled": "PAC 모드가 활성화되었습니다",
   "Global mode has been enabled": "글로벌 모드가 활성화되었습니다",

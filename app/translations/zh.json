@@ -116,6 +116,7 @@
   "Invalid text format": "无效的文本格式",
   "Invalid JSON format": "无效的 JSON 格式",
   "Inbounds have been updated successfully": "入站信息已成功更新",
+  "V2ray service stopped due to port change": "由于端口更改，V2ray 服务已停止",
   "Command has been pasted to clipboard": "命令已复制到剪贴板",
   "PAC mode has been enabled": "PAC 模式已启用",
   "Global mode has been enabled": "全局模式已启用",

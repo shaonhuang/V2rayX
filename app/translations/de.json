@@ -116,6 +116,7 @@
   "Invalid text format": "Ungültiges Textformat",
   "Invalid JSON format": "Ungültiges JSON-Format",
   "Inbounds have been updated successfully": "Eingehende Verbindungen wurden erfolgreich aktualisiert",
+  "V2ray service stopped due to port change": "V2ray-Dienst aufgrund von Portänderung gestoppt",
   "Command has been pasted to clipboard": "Befehl wurde in die Zwischenablage kopiert",
   "PAC mode has been enabled": "PAC-Modus wurde aktiviert",
   "Global mode has been enabled": "Globaler Modus wurde aktiviert",

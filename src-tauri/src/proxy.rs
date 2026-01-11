@@ -548,7 +548,7 @@ pub async fn setup_pac_proxy(
     let notify_clone = notify.clone();
 
     tauri::async_runtime::spawn(async move {
-        let (addr, server_future) =
+        let (_, server_future) =
             warp::serve(route).bind_with_graceful_shutdown(serve_addr, async {
                 shutdown_rx.await.ok();
             });
@@ -689,13 +689,13 @@ pub fn unset_global_proxy() -> Result<String, String> {
         }
     }
 
-    #[cfg(target_os = "macos")]
-    {
-        // Assuming bypass domains are cleared when unsetting global proxy
-        if let Err(e) = unset_global_proxy_macos(&[]) {
-            return Err(format!("Failed to unset global proxy on macOS: {}", e));
-        }
-    }
+    // #[cfg(target_os = "macos")]
+    // {
+    //     // Assuming bypass domains are cleared when unsetting global proxy
+    //     if let Err(e) = unset_global_proxy_macos(&[]) {
+    //         return Err(format!("Failed to unset global proxy on macOS: {}", e));
+    //     }
+    // }
 
     #[cfg(target_os = "linux")]
     {

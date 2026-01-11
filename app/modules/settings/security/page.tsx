@@ -14,7 +14,7 @@ import {
   updateAutoCheckUpdate,
 } from '~/api';
 import { UPDATER_ACTIVE } from '~/api';
-import { useLoaderData, useRevalidator } from '@remix-run/react';
+import { useLoaderData, useRevalidator } from 'react-router';
 
 export const loader = async () => {
   const userID = localStorage.getItem('userID')!;

@@ -116,6 +116,7 @@
   "Invalid text format": "Неверный текстовый формат",
   "Invalid JSON format": "Неверный формат JSON",
   "Inbounds have been updated successfully": "Входящие данные успешно обновлены",
+  "V2ray service stopped due to port change": "Служба V2ray остановлена из-за изменения порта",
   "Command has been pasted to clipboard": "Команда скопирована в буфер обмена",
   "PAC mode has been enabled": "Режим PAC включен",
   "Global mode has been enabled": "Глобальный режим включен",

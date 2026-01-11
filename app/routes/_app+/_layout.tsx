@@ -1,6 +1,8 @@
-import { Outlet, redirect, json, useLoaderData } from '@remix-run/react';
+import { Outlet, redirect, useLoaderData, useNavigate } from 'react-router';
 import * as NavBar from '~/modules/base/nav/main-nav';
 import { queryUser } from '~/api';
+import { useEffect } from 'react';
+import { listen } from '@tauri-apps/api/event';
 
 export const clientLoader = async () => {
   try {
@@ -8,7 +10,7 @@ export const clientLoader = async () => {
     if (!users.length) {
       throw new Error('User not found');
     }
-    return json({ user: users[0] });
+    return { user: users[0] };
   } catch (e) {
     console.error(e);
     localStorage.removeItem('userID');
@@ -18,6 +20,17 @@ export const clientLoader = async () => {
 
 export default function AppLayoutPage() {
   const { user } = useLoaderData<typeof clientLoader>();
+  const navigate = useNavigate();
+
+  // Listen for navigation events from system tray
+  useEffect(() => {
+    const unlisten = listen<string>('navigate', (event) => {
+      navigate(event.payload);
+    });
+    return () => {
+      unlisten.then((f) => f());
+    };
+  }, [navigate]);
 
   return (
     <div className="flex h-screen flex-row">

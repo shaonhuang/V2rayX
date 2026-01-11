@@ -62,23 +62,30 @@ struct Policy {
 
 #[derive(Serialize, Deserialize, Debug)]
 struct Level {
-    statsUserUplink: bool,
-    statsUserDownlink: bool,
+    #[serde(rename = "statsUserUplink")]
+    stats_user_uplink: bool,
+    #[serde(rename = "statsUserDownlink")]
+    stats_user_downlink: bool,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 struct SystemPolicy {
-    statsInboundUplink: bool,
-    statsInboundDownlink: bool,
-    statsOutboundUplink: bool,
-    statsOutboundDownlink: bool,
+    #[serde(rename = "statsInboundUplink")]
+    stats_inbound_uplink: bool,
+    #[serde(rename = "statsInboundDownlink")]
+    stats_inbound_downlink: bool,
+    #[serde(rename = "statsOutboundUplink")]
+    stats_outbound_uplink: bool,
+    #[serde(rename = "statsOutboundDownlink")]
+    stats_outbound_downlink: bool,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 struct Outbound {
     mux: Mux,
     protocol: String,
-    streamSettings: StreamSettings,
+    #[serde(rename = "streamSettings")]
+    stream_settings: StreamSettings,
     tag: String,
     settings: OutboundSettings,
 }
@@ -91,16 +98,26 @@ struct Mux {
 
 #[derive(Serialize, Deserialize, Debug)]
 struct StreamSettings {
-    tcpSettings: Option<TcpSettings>,
-    kcpSettings: Option<KcpSettings>,
-    httpSettings: Option<Http2Settings>,
-    quicSettings: Option<QuicSettings>,
-    dsSettings: Option<serde_json::Value>, // Placeholder for DS settings
-    grpcSettings: Option<GrpcSettings>,
-    wsSettings: Option<WsSettings>,
-    realitySettings: Option<serde_json::Value>, // Placeholder for Reality settings
-    xtlsSettings: Option<serde_json::Value>,    // Placeholder for XTLS settings
-    tlsSettings: Option<TlsSettings>,
+    #[serde(rename = "tcpSettings")]
+    tcp_settings: Option<TcpSettings>,
+    #[serde(rename = "kcpSettings")]
+    kcp_settings: Option<KcpSettings>,
+    #[serde(rename = "httpSettings")]
+    http_settings: Option<Http2Settings>,
+    #[serde(rename = "quicSettings")]
+    quic_settings: Option<QuicSettings>,
+    #[serde(rename = "dsSettings")]
+    ds_settings: Option<serde_json::Value>,
+    #[serde(rename = "grpcSettings")]
+    grpc_settings: Option<GrpcSettings>,
+    #[serde(rename = "wsSettings")]
+    ws_settings: Option<WsSettings>,
+    #[serde(rename = "realitySettings")]
+    reality_settings: Option<serde_json::Value>,
+    #[serde(rename = "xtlsSettings")]
+    xtls_settings: Option<serde_json::Value>,
+    #[serde(rename = "tlsSettings")]
+    tls_settings: Option<TlsSettings>,
     security: String,
     network: String,
 }
@@ -127,12 +144,17 @@ struct TcpRequest {
 struct KcpSettings {
     mtu: u32,
     tti: u32,
-    uplinkCapacity: u32,
-    downlinkCapacity: u32,
+    #[serde(rename = "uplinkCapacity")]
+    uplink_capacity: u32,
+    #[serde(rename = "downlinkCapacity")]
+    downlink_capacity: u32,
     congestion: bool,
-    readBufferSize: u32,
-    writeBufferSize: u32,
-    headerType: String,
+    #[serde(rename = "readBufferSize")]
+    read_buffer_size: u32,
+    #[serde(rename = "writeBufferSize")]
+    write_buffer_size: u32,
+    #[serde(rename = "headerType")]
+    header_type: String,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -146,12 +168,14 @@ struct Http2Settings {
 struct QuicSettings {
     security: String,
     key: String,
-    headerType: String,
+    #[serde(rename = "headerType")]
+    header_type: String,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 struct GrpcSettings {
-    serviceName: String,
+    #[serde(rename = "serviceName")]
+    service_name: String,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -162,15 +186,25 @@ struct WsSettings {
 
 #[derive(Serialize, Deserialize, Debug)]
 struct TlsSettings {
-    allowInsecure: bool,
-    serverName: String,
+    #[serde(rename = "allowInsecure")]
+    allow_insecure: bool,
+    #[serde(rename = "serverName")]
+    server_name: String,
     fingerprint: String,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(untagged)]
+enum Servers {
+    Shadowsocks(Vec<ShadowsocksServer>),
+    Hysteria2(Vec<Hysteria2Server>),
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 struct OutboundSettings {
     vnext: Option<Vec<VNext>>,
-    servers: Option<Vec<ShadowsocksServer>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    servers: Option<Servers>,
     freedom: Option<FreedomSettings>,
     blackhole: Option<BlackholeSettings>,
     // Add other protocol-specific settings if needed
@@ -186,7 +220,8 @@ struct VNext {
 #[derive(Serialize, Deserialize, Debug)]
 struct User {
     id: String,
-    alterId: u32,
+    #[serde(rename = "alterId")]
+    alter_id: u32,
     level: u32,
     security: String,
 }
@@ -197,6 +232,12 @@ struct ShadowsocksServer {
     password: String,
     level: u32,
     email: Option<String>,
+    address: String,
+    port: u16,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+struct Hysteria2Server {
     address: String,
     port: u16,
 }
@@ -213,14 +254,17 @@ struct Routing {
 
 #[derive(Serialize, Deserialize, Debug)]
 struct RoutingSettings {
-    domainStrategy: String,
+    #[serde(rename = "domainStrategy")]
+    domain_strategy: String,
     rules: Vec<Rule>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 struct Rule {
-    inboundTag: Vec<String>,
-    outboundTag: String,
+    #[serde(rename = "inboundTag")]
+    inbound_tag: Vec<String>,
+    #[serde(rename = "outboundTag")]
+    outbound_tag: String,
     #[serde(rename = "type")]
     rule_type: String,
 }
@@ -230,8 +274,10 @@ struct Transport {}
 
 #[derive(Serialize, Deserialize, Debug)]
 struct FreedomSettings {
-    domainStrategy: String,
-    userLevel: u32,
+    #[serde(rename = "domainStrategy")]
+    domain_strategy: String,
+    #[serde(rename = "userLevel")]
+    user_level: u32,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -368,16 +414,16 @@ pub async fn generate_config(
 
     // Initialize StreamSettings components
     let mut stream_settings = StreamSettings {
-        tcpSettings: None,
-        kcpSettings: None,
-        httpSettings: None,
-        quicSettings: None,
-        dsSettings: None,
-        grpcSettings: None,
-        wsSettings: None,
-        realitySettings: None,
-        xtlsSettings: None,
-        tlsSettings: None,
+        tcp_settings: None,
+        kcp_settings: None,
+        http_settings: None,
+        quic_settings: None,
+        ds_settings: None,
+        grpc_settings: None,
+        ws_settings: None,
+        reality_settings: None,
+        xtls_settings: None,
+        tls_settings: None,
         security: security.clone(),
         network: network.clone(),
     };
@@ -417,7 +463,7 @@ pub async fn generate_config(
                 },
             };
 
-            stream_settings.tcpSettings = Some(tcp_settings);
+            stream_settings.tcp_settings = Some(tcp_settings);
         }
         "kcp" => {
             let kcp_row = sqlx::query(
@@ -431,15 +477,15 @@ pub async fn generate_config(
             let kcp_settings = KcpSettings {
                 mtu: kcp_row.get::<i64, &str>("MTU") as u32,
                 tti: kcp_row.get::<i64, &str>("TTI") as u32,
-                uplinkCapacity: kcp_row.get::<i64, &str>("UplinkCapacity") as u32,
-                downlinkCapacity: kcp_row.get::<i64, &str>("DownlinkCapacity") as u32,
+                uplink_capacity: kcp_row.get::<i64, &str>("UplinkCapacity") as u32,
+                downlink_capacity: kcp_row.get::<i64, &str>("DownlinkCapacity") as u32,
                 congestion: kcp_row.get::<i64, &str>("Congestion") == 1,
-                readBufferSize: kcp_row.get::<i64, &str>("ReadBufferSize") as u32,
-                writeBufferSize: kcp_row.get::<i64, &str>("WriteBufferSize") as u32,
-                headerType: kcp_row.get("HeaderType"),
+                read_buffer_size: kcp_row.get::<i64, &str>("ReadBufferSize") as u32,
+                write_buffer_size: kcp_row.get::<i64, &str>("WriteBufferSize") as u32,
+                header_type: kcp_row.get("HeaderType"),
             };
 
-            stream_settings.kcpSettings = Some(kcp_settings);
+            stream_settings.kcp_settings = Some(kcp_settings);
         }
         "http" => {
             let http_row = sqlx::query(
@@ -460,7 +506,7 @@ pub async fn generate_config(
                 method: method.unwrap_or_else(|| "PUT".to_string()),
             };
 
-            stream_settings.httpSettings = Some(http_settings);
+            stream_settings.http_settings = Some(http_settings);
         }
         "quic" => {
             let quic_row = sqlx::query(
@@ -474,10 +520,10 @@ pub async fn generate_config(
             let quic_settings = QuicSettings {
                 security: quic_row.get("Security"),
                 key: quic_row.get("Key"),
-                headerType: quic_row.get("HeaderType"),
+                header_type: quic_row.get("HeaderType"),
             };
 
-            stream_settings.quicSettings = Some(quic_settings);
+            stream_settings.quic_settings = Some(quic_settings);
         }
         "grpc" => {
             let grpc_row = sqlx::query("SELECT ServiceName FROM GrpcSettings WHERE EndpointID = ?")
@@ -487,10 +533,10 @@ pub async fn generate_config(
                 .map_err(|e| format!("Failed to fetch GrpcSettings: {}", e))?;
 
             let grpc_settings = GrpcSettings {
-                serviceName: grpc_row.get("ServiceName"),
+                service_name: grpc_row.get("ServiceName"),
             };
 
-            stream_settings.grpcSettings = Some(grpc_settings);
+            stream_settings.grpc_settings = Some(grpc_settings);
         }
         "ws" => {
             let ws_row = sqlx::query("SELECT Host, Path FROM WsSettings WHERE EndpointID = ?")
@@ -504,7 +550,7 @@ pub async fn generate_config(
                 headers: HashMap::from([("host".to_string(), ws_row.get::<String, &str>("Host"))]),
             };
 
-            stream_settings.wsSettings = Some(ws_settings);
+            stream_settings.ws_settings = Some(ws_settings);
         }
         _ => {}
     }
@@ -520,11 +566,11 @@ pub async fn generate_config(
 
     if let Some(tls_row) = tls_settings_row {
         let tls_settings = TlsSettings {
-            allowInsecure: tls_row.get::<i32, &str>("AllowInsecure") == 1,
-            serverName: tls_row.get("ServerName"),
+            allow_insecure: tls_row.get::<i32, &str>("AllowInsecure") == 1,
+            server_name: tls_row.get("ServerName"),
             fingerprint: tls_row.get("FingerPrint"),
         };
-        stream_settings.tlsSettings = Some(tls_settings);
+        stream_settings.tls_settings = Some(tls_settings);
     }
 
     // Fetch the specific outbound settings based on protocol
@@ -562,7 +608,7 @@ pub async fn generate_config(
 
                     users.push(User {
                         id: uuid,
-                        alterId: alter_id,
+                        alter_id,
                         level,
                         security,
                     });
@@ -614,12 +660,43 @@ pub async fn generate_config(
 
             OutboundSettings {
                 vnext: None,
-                servers: Some(servers),
+                servers: Some(Servers::Shadowsocks(servers)),
                 freedom: None,
                 blackhole: None,
             }
         }
-        // Add other protocols like "trojan", "hysteria", etc., similarly
+        "hysteria2" => {
+            // Fetch Hysteria2 configurations
+            let h2_rows = sqlx::query(
+                "SELECT Address, Port FROM Hysteria2 WHERE EndpointID = ?"
+            )
+            .bind(&endpoint_id)
+            .fetch_all(&pool)
+            .await
+            .map_err(|e| format!("Failed to fetch Hysteria2: {}", e))?;
+
+            let mut servers = Vec::new();
+            for h2_row in h2_rows {
+                // Address is stored as integer in DB, but we need it as string
+                // We'll need to convert it, but first let's check the actual type
+                // For now, assuming Address might be stored as text or we need to handle it differently
+                let address: String = h2_row.get("Address");
+                let port: u16 = h2_row.get::<i64, &str>("Port") as u16;
+
+                servers.push(Hysteria2Server {
+                    address,
+                    port,
+                });
+            }
+
+            OutboundSettings {
+                vnext: None,
+                servers: Some(Servers::Hysteria2(servers)),
+                freedom: None,
+                blackhole: None,
+            }
+        }
+        // Add other protocols like "trojan", etc., similarly
         _ => OutboundSettings {
             vnext: None,
             servers: None,
@@ -635,7 +712,7 @@ pub async fn generate_config(
             concurrency: mux_concurrency,
         },
         protocol: protocol.clone(),
-        streamSettings: stream_settings,
+        stream_settings,
         tag: tag.clone(),
         settings: outbound_settings,
     };
@@ -650,25 +727,25 @@ pub async fn generate_config(
             concurrency: 1, // Defaults; adjust as needed
         },
         protocol: "freedom".to_string(),
-        streamSettings: StreamSettings {
-            tcpSettings: None,
-            kcpSettings: None,
-            httpSettings: None,
-            quicSettings: None,
-            dsSettings: None,
-            grpcSettings: None,
-            wsSettings: None,
-            realitySettings: None,
-            xtlsSettings: None,
-            tlsSettings: None,
+        stream_settings: StreamSettings {
+            tcp_settings: None,
+            kcp_settings: None,
+            http_settings: None,
+            quic_settings: None,
+            ds_settings: None,
+            grpc_settings: None,
+            ws_settings: None,
+            reality_settings: None,
+            xtls_settings: None,
+            tls_settings: None,
             security: "none".to_string(), // Assuming 'none'; adjust if needed
             network: "tcp".to_string(),   // Assuming 'tcp'; adjust if needed
         },
         tag: "direct".to_string(),
         settings: OutboundSettings {
             freedom: Some(FreedomSettings {
-                domainStrategy: "UseIP".to_string(),
-                userLevel: 0,
+                domain_strategy: "UseIP".to_string(),
+                user_level: 0,
             }),
             vnext: None,
             servers: None,
@@ -683,17 +760,17 @@ pub async fn generate_config(
             concurrency: 1, // Defaults; adjust as needed
         },
         protocol: "blackhole".to_string(),
-        streamSettings: StreamSettings {
-            tcpSettings: None,
-            kcpSettings: None,
-            httpSettings: None,
-            quicSettings: None,
-            dsSettings: None,
-            grpcSettings: None,
-            wsSettings: None,
-            realitySettings: None,
-            xtlsSettings: None,
-            tlsSettings: None,
+        stream_settings: StreamSettings {
+            tcp_settings: None,
+            kcp_settings: None,
+            http_settings: None,
+            quic_settings: None,
+            ds_settings: None,
+            grpc_settings: None,
+            ws_settings: None,
+            reality_settings: None,
+            xtls_settings: None,
+            tls_settings: None,
             security: "none".to_string(), // Assuming 'none'; adjust if needed
             network: "tcp".to_string(),   // Assuming 'tcp'; adjust if needed
         },
@@ -755,14 +832,14 @@ pub async fn generate_config(
     // For demonstration purposes, adding a default rule
     let mut rules = Vec::new();
     rules.push(Rule {
-        inboundTag: vec!["api".to_string()],
-        outboundTag: "api".to_string(),
+        inbound_tag: vec!["api".to_string()],
+        outbound_tag: "api".to_string(),
         rule_type: "field".to_string(),
     });
 
     let routing = Routing {
         settings: RoutingSettings {
-            domainStrategy: "AsIs".to_string(),
+            domain_strategy: "AsIs".to_string(),
             rules,
         },
     };
@@ -784,15 +861,15 @@ pub async fn generate_config(
         levels: HashMap::from([(
             "0".to_string(),
             Level {
-                statsUserUplink: true,
-                statsUserDownlink: true,
+                stats_user_uplink: true,
+                stats_user_downlink: true,
             },
         )]),
         system: SystemPolicy {
-            statsInboundUplink: true,
-            statsInboundDownlink: true,
-            statsOutboundUplink: true,
-            statsOutboundDownlink: true,
+            stats_inbound_uplink: true,
+            stats_inbound_downlink: true,
+            stats_outbound_uplink: true,
+            stats_outbound_downlink: true,
         },
     };
 

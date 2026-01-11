@@ -1,4 +1,11 @@
-import { Card, CardBody, Select, SelectItem, Input } from '@heroui/react';
+import {
+  Card,
+  CardBody,
+  Select,
+  SelectItem,
+  Input,
+  NumberInput,
+} from '@heroui/react';
 import { Checkbox } from '@heroui/checkbox';
 import { useTranslation } from 'react-i18next';
 import {
@@ -204,7 +211,6 @@ const PageComponent: ForwardRefRenderFunction<PageRef, PageProps> = (
                   className="basis-1/2"
                   required
                   isSelected={value}
-                  onChange={onChange}
                   onBlur={onBlur}
                   isInvalid={invalid}
                   onValueChange={onChange}
@@ -222,13 +228,13 @@ const PageComponent: ForwardRefRenderFunction<PageRef, PageProps> = (
                 field: { name, value, onChange, onBlur, ref },
                 fieldState: { invalid, error },
               }) => (
-                <Input
+                <NumberInput
                   ref={ref}
                   name={name}
                   label="Congestion Upload Speed (Mbps)"
                   required
-                  value={value.toString()}
-                  onChange={onChange}
+                  value={value}
+                  onValueChange={onChange}
                   onBlur={onBlur}
                   isInvalid={invalid}
                   errorMessage={error?.message}
@@ -242,13 +248,13 @@ const PageComponent: ForwardRefRenderFunction<PageRef, PageProps> = (
                 field: { name, value, onChange, onBlur, ref },
                 fieldState: { invalid, error },
               }) => (
-                <Input
+                <NumberInput
                   ref={ref}
                   name={name}
                   label="Congestion Download Speed (Mbps)"
                   required
-                  value={value?.toString()}
-                  onChange={onChange}
+                  value={value}
+                  onValueChange={onChange}
                   onBlur={onBlur}
                   isInvalid={invalid}
                   errorMessage={error?.message}

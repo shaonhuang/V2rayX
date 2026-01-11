@@ -12,7 +12,7 @@ import { Switch } from '@heroui/switch';
 import { Tooltip } from '@heroui/tooltip';
 import { useTranslation } from 'react-i18next';
 import { queryGeneralSettings, updateGeneralSettings, Types } from '~/api';
-import { useLoaderData, useRevalidator } from '@remix-run/react';
+import { useLoaderData, useRevalidator } from 'react-router';
 
 export const loader = async () => {
   const userID = localStorage.getItem('userID')!;

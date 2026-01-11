@@ -6,6 +6,12 @@ import toast from 'react-hot-toast';
 import { Button } from '@heroui/react';
 import { UPDATER_ACTIVE } from '~/api';
 import * as _ from 'lodash';
+import {
+  VMess as VMessData,
+  Trojan as TrojanData,
+  Shadowsocks as ShadowsocksData,
+  Hysteria2 as Hysteria2Data,
+} from '~/lib/protocol';
 
 export async function checkForAppUpdates(
   t: ReturnType<typeof useTranslation>['t'],
@@ -90,3 +96,39 @@ export async function checkForAppUpdates(
   }
   return true;
 }
+
+export const importEndpointFromURL = (url: string, callback: () => void) => {
+  let protocol = 'vmess';
+  // solve setState async problem caused empty protocolFactory
+  let protocolFactory: any = new VMessData('');
+  try {
+    switch (true) {
+      case /^vmess:\/\//i.test(url):
+        protocolFactory = new VMessData(url);
+        protocol = 'vmess';
+        break;
+      case /^ss:\/\//i.test(url):
+        protocolFactory = new ShadowsocksData(url);
+        protocol = 'shadowsocks';
+        break;
+      case /^trojan:\/\//i.test(url):
+        protocolFactory = new TrojanData(url);
+        protocol = 'trojan';
+        break;
+      case /^hysteria2:\/\//i.test(url):
+        protocolFactory = new Hysteria2Data(url);
+        protocol = 'hysteria2';
+        break;
+    }
+
+    link = protocolFactory.getLink();
+    // toast.success(t('URL imported'));
+  } catch (error) {
+    console.error(error);
+    toast.error(
+      'Invalid URL or parsing error. Please report link format to developer.',
+    );
+  }
+};
+
+export const importEndpointFromScreenhot = (callback: () => void) => {};

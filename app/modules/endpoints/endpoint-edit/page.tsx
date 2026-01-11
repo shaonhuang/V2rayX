@@ -7,13 +7,18 @@ import {
   ModalFooter,
   Button,
   Switch,
+  PressEvent,
 } from '@heroui/react';
 import * as EditComponent from './components';
-import { useNavigate } from '@remix-run/react';
 import NiceModal, { useModal } from '@ebay/nice-modal-react';
 import Editor from '~/modules/MonacoEditorComponent';
+import type { PageRef } from './components';
 
-import { queryEndpoint } from '~/api';
+import {
+  queryEndpoint,
+  queryEndpoints,
+  updateServiceRunningState,
+} from '~/api';
 import { invoke } from '@tauri-apps/api/core';
 import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
@@ -23,38 +28,52 @@ const Dialog = NiceModal.create(
     type,
     endpoint,
     handleReload,
+    url,
   }: {
     type: 'add' | 'edit';
     endpoint: any | null;
     handleReload: () => void;
+    url?: string;
   }) => {
-    const { t, i18n } = useTranslation();
-    const submitRef = useRef();
-
+    const { t } = useTranslation();
+    const submitRef = useRef<PageRef>(null);
     const modal = useModal();
     const [mode, setMode] = useState('gui');
 
-    const handleEditorChange = (value) => {
+    const handleEditorChange = (value: string) => {
       console.log(value);
     };
 
     const handleValidSubmit = async (endpointID: string) => {
-      setTimeout(async () => {
-        const stopDaemonStatus = await invoke('stop_daemon');
-        const injectConfig = await invoke('inject_config', {
-          endpointId: endpointID,
-          userId: localStorage.getItem('userID')!,
+      let isSelected =
+        (
+          await queryEndpoints({
+            userID: localStorage.getItem('userID')!,
+          })
+        ).filter((i) => i.Active === 1).length > 0;
+      if (isSelected) {
+        await invoke('stop_daemon');
+        await updateServiceRunningState({
+          userID: localStorage.getItem('userID')!,
+          serviceRunningState: false,
         });
-        if (stopDaemonStatus && injectConfig) {
-          toast.success(t('Endpoint updated successfully'));
-        } else {
-          toast.error(t('Failed to updated endpoint'));
-        }
-        await invoke('tray_update', {
-          userId: localStorage.getItem('userID')!,
-        });
-      }, 1000);
+      }
+
+      const injectConfig = await invoke('inject_config', {
+        endpointId: endpointID,
+        userId: localStorage.getItem('userID')!,
+      });
+      if (injectConfig) {
+        toast.success(t('Endpoint updated successfully'));
+      } else {
+        toast.error(t('Failed to updated endpoint'));
+      }
+
+      await invoke('tray_update', {
+        userId: localStorage.getItem('userID')!,
+      });
       handleReload();
+      modal.hide();
     };
 
     return (
@@ -63,7 +82,9 @@ const Dialog = NiceModal.create(
         isOpen={modal.visible}
         scrollBehavior="inside"
         onOpenChange={(v) => {
-          modal.hide();
+          if (!v) {
+            modal.hide();
+          }
         }}
         backdrop="blur"
       >
@@ -90,8 +111,12 @@ const Dialog = NiceModal.create(
                     ref={submitRef}
                     type={type}
                     endpoint={endpoint}
+                    url={url}
                     onValidSubmit={handleValidSubmit}
-                    onInvalidSubmit={() => {}}
+                    onInvalidSubmit={(errors) => {
+                      console.error('Form validation failed:', errors);
+                      toast.error(t('Please check your input'));
+                    }}
                   />
                 ) : (
                   <Editor
@@ -124,8 +149,12 @@ const Dialog = NiceModal.create(
                 <Button
                   color="primary"
                   onPress={() => {
-                    submitRef.current.submitForm();
-                    onClose();
+                    if (submitRef.current) {
+                      submitRef.current.submitForm();
+                      onClose();
+                    } else {
+                      toast.error(t('Form reference not found'));
+                    }
                   }}
                 >
                   {t('Save')}
@@ -139,38 +168,66 @@ const Dialog = NiceModal.create(
   },
 );
 
-export const DialogButton = (props: {
+export const DialogButton = ({
+  type,
+  disabled,
+  endpointID,
+  handleReload,
+  onClick,
+  isIconOnly,
+  children,
+  url,
+  ...props
+}: {
   type: 'add' | 'edit';
   disabled?: boolean;
   endpointID?: string;
   handleReload: () => void;
-  onClick?: () => void;
+  onClick?: (e: PressEvent) => void;
   isIconOnly?: boolean;
+  url?: string;
   children?: React.ReactNode;
+  [key: string]: any;
 }) => {
-  const navigate = useNavigate();
+  const handleOpen = async (e: PressEvent) => {
+    let endpoint: any | null = null;
+    if (type === 'edit' && endpointID) {
+      endpoint = await queryEndpoint({ endpointID });
+    }
+
+    // 使用 NiceModal 显示对话框，这样对话框的生命周期独立于父组件
+    NiceModal.show(Dialog, {
+      type,
+      endpoint,
+      handleReload,
+      url,
+    });
+
+    onClick?.(e);
+  };
+
+  // Auto-handle URL params for direct imports
+  // useEffect(() => {
+  //   if (isOpen && formRef.current) {
+  //     const searchParams = new URLSearchParams(location.search);
+  //     if (
+  //       searchParams.get('m') === 'link' ||
+  //       searchParams.get('m') === 'screenshot'
+  //     ) {
+  //       // The form is open and ready for import
+  //       console.log('Add endpoint dialog open, ready for import');
+  //     }
+  //   }
+  // }, [isOpen, formRef.current, location.search]);
 
   return (
     <Button
-      isIconOnly={props.isIconOnly}
-      disabled={props.disabled}
-      onPress={async () => {
-        let res = null;
-        if (props.type === 'edit') {
-          res = await queryEndpoint({
-            endpointID: props.endpointID!,
-          });
-        }
-
-        props.onClick && props.onClick();
-        NiceModal.show(Dialog, {
-          type: props.type,
-          endpoint: res,
-          handleReload: props.handleReload,
-        });
-      }}
+      isIconOnly={isIconOnly}
+      isDisabled={disabled}
+      onPress={handleOpen}
+      {...props}
     >
-      {props.children}
+      {children}
     </Button>
   );
 };

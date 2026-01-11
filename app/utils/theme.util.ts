@@ -44,9 +44,34 @@ const SystemThemeManager = (() => {
     }
   }
 
+  /**
+   * Gets the actual theme value, resolving 'system' to the current system preference.
+   * @param theme - The theme value ('light', 'dark', or 'system')
+   * @returns The resolved theme ('light' or 'dark')
+   */
+  function getResolvedTheme(theme: string): 'light' | 'dark' {
+    if (theme === 'system') {
+      return window.matchMedia('(prefers-color-scheme: dark)').matches
+        ? 'dark'
+        : 'light';
+    }
+    return theme as 'light' | 'dark';
+  }
+
+  /**
+   * Checks if the current theme (or system theme) is dark.
+   * @param theme - The theme value ('light', 'dark', or 'system')
+   * @returns true if the theme is dark, false otherwise
+   */
+  function isDarkMode(theme: string): boolean {
+    return getResolvedTheme(theme) === 'dark';
+  }
+
   return {
     enableSystemThemeListener,
     cancelSystemThemeListener,
+    getResolvedTheme,
+    isDarkMode,
   };
 })();
 

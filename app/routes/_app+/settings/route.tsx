@@ -1,5 +1,4 @@
-import { motion } from 'framer-motion';
-import { json } from '@remix-run/react';
+import { motion } from 'motion/react';
 
 import * as Security from '~/modules/settings/security/page';
 import * as General from '~/modules/settings/general/page';
@@ -9,14 +8,14 @@ import * as Proxies from '~/modules/settings/proxies/page';
 import * as V2rayConfigure from '~/modules/settings/v2ray-configure/page';
 
 export const clientLoader = async () => {
-  return json({
+  return {
     Security: await Security.loader(),
     General: await General.loader(),
     Appearance: await Appearance.loader(),
     SystemProxy: await SystemProxy.loader(),
-    // Proxies: await Proxies.loader(),
+    Proxies: await Proxies.loader(),
     V2rayConfigure: await V2rayConfigure.loader(),
-  });
+  };
 };
 
 const Page = () => {
