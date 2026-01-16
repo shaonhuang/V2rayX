@@ -1,0 +1,49 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug Tauri (Rust) - Direct",
+      "program": "${workspaceFolder}/src-tauri/target/debug/app",
+      "args": [],
+      "cwd": "${workspaceFolder}/src-tauri",
+      "env": {
+        "RUST_BACKTRACE": "1",
+        "RUST_LOG": "debug"
+      },
+      "sourceLanguages": ["rust"],
+      "preLaunchTask": "build-rust-debug",
+      "stopOnEntry": false
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug Tauri (Rust) - Cargo",
+      "cargo": {
+        "args": [
+          "build",
+          "--manifest-path=${workspaceFolder}/src-tauri/Cargo.toml"
+        ],
+        "filter": {
+          "name": "app",
+          "kind": "bin"
+        }
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}/src-tauri",
+      "env": {
+        "RUST_BACKTRACE": "1",
+        "RUST_LOG": "debug"
+      },
+      "sourceLanguages": ["rust"]
+    },
+    {
+      "type": "lldb",
+      "request": "attach",
+      "name": "Attach to Tauri Process",
+      "pid": "${command:pickProcess}",
+      "sourceLanguages": ["rust"]
+    }
+  ]
+}

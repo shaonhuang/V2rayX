@@ -6,12 +6,13 @@ use crate::v2ray_core::DaemonState;
 use base64::{engine::general_purpose::STANDARD as BASE64_STANDARD, Engine};
 use chrono::Local;
 use image::ImageOutputFormat;
-use log::{error, info};
+use log::{error, info, warn};
 use reqwest::Client;
 use screenshots::Screen;
 use sqlx::sqlite::SqlitePoolOptions;
 use sqlx::sqlite::SqliteRow;
 use sqlx::Row;
+use std::fs;
 use std::io::Cursor;
 use std::net::TcpStream;
 use std::net::ToSocketAddrs;
@@ -26,6 +27,7 @@ use tauri::{
     Manager,
     State,
 };
+use tauri_plugin_dialog::{DialogExt, MessageDialogKind};
 use tauri_plugin_notification::NotificationExt;
 
 pub struct AppState {
@@ -791,4 +793,30 @@ pub async fn send_notification(
         .map_err(|e| format!("Failed to show notification: {}", e))?;
     
     Ok(())
+}
+
+#[tauri::command]
+pub async fn reset_database(app: AppHandle) -> Result<(), String> {
+    let database_path = utils::get_database_path(&app);
+    let database_path_str = database_path.to_string_lossy().to_string();
+    
+    // Close any existing database connections by dropping the pool
+    // Then delete the database file
+    if database_path.exists() {
+        info!("Deleting database file at: {}", database_path_str);
+        fs::remove_file(&database_path)
+            .map_err(|e| format!("Failed to delete database file: {}", e))?;
+        info!("Database file deleted successfully");
+    } else {
+        warn!("Database file does not exist at: {}", database_path_str);
+    }
+    
+    Ok(())
+}
+
+pub fn is_database_migration_error(error: &str) -> bool {
+    error.contains("migration") && 
+    (error.contains("was previously applied but has been modified") ||
+     error.contains("migration error") ||
+     error.contains("PluginInitialization"))
 }

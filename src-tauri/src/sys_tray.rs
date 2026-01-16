@@ -37,6 +37,7 @@ rust_i18n::i18n!("locales");
 
 const V2RAY_CORE_VERSION: &str = dotenvy_macro::dotenv!("VITE_V2RAY_CORE_VERSION");
 
+#[derive(Copy, Clone)]
 pub enum TrayState {
     Paused,
     Running,
@@ -170,48 +171,64 @@ impl SystemTrayManager {
                     }
                     "toggle-service" => {
                         let tray_manager = app.state::<SystemTrayManager>();
-                        let mut tray_state = tray_manager.tray_state.lock().unwrap();
-                        match *tray_state {
-                            TrayState::Running => {
-                                tauri::async_runtime::block_on(async {
-	                                let daemon_state = app.state::<Arc<Mutex<DaemonState>>>();
-	                                if let Err(e) = v2ray_core::stop_daemon(daemon_state, main_window).await {
-                                            error!("Failed to start daemon: {}", e);
+                        // Read the current state and release the lock immediately
+                        let current_state = *tray_manager.tray_state.lock().unwrap();
+                        
+                        tauri::async_runtime::block_on(async {
+                            match current_state {
+                                TrayState::Running => {
+                                    // Stop the daemon
+                                    let daemon_state = app.state::<Arc<Mutex<DaemonState>>>();
+                                    if let Err(e) = v2ray_core::stop_daemon(daemon_state, main_window).await {
+                                        error!("Failed to stop daemon: {}", e);
                                     }
+                                    
+                                    // Update database first
                                     sqlx::query("UPDATE AppStatus SET ServiceRunningState = 0 WHERE UserID = ?;")
-										.bind(&user_id)
-										.execute(&pool)
-										.await
-										.expect("Failed to update service running state");
+                                        .bind(&user_id)
+                                        .execute(&pool)
+                                        .await
+                                        .expect("Failed to update service running state");
 
+                                    // Update the menu (reads from database, so it will show the updated state)
                                     tray_manager
                                         .update_menu(&app, user_id.clone())
                                         .await;
-                                    app.emit("refresh","endpoints").unwrap();
+                                    
+                                    // Update in-memory state after menu update
+                                    let mut tray_state = tray_manager.tray_state.lock().unwrap();
                                     *tray_state = TrayState::Paused;
-                                });
-                            }
-                            TrayState::Paused => {
-                                tauri::async_runtime::block_on(async {
-	                                let daemon_state = app.state::<Arc<Mutex<DaemonState>>>();
-	                                let window = app.get_webview_window("main").unwrap();
-	                                if let Err(e) = v2ray_core::start_daemon(daemon_state, window).await {
-                                           error!("Failed to start daemon: {}", e);
+                                    
+                                    app.emit("refresh","endpoints").unwrap();
+                                }
+                                TrayState::Paused => {
+                                    // Start the daemon
+                                    let daemon_state = app.state::<Arc<Mutex<DaemonState>>>();
+                                    let window = app.get_webview_window("main").unwrap();
+                                    if let Err(e) = v2ray_core::start_daemon(daemon_state, window).await {
+                                        error!("Failed to start daemon: {}", e);
                                     }
+                                    
+                                    // Update database first
                                     sqlx::query("UPDATE AppStatus SET ServiceRunningState = 1 WHERE UserID = ?;")
-										.bind(&user_id)
-										.execute(&pool)
-										.await
-										.expect("Failed to update service running state");
+                                        .bind(&user_id)
+                                        .execute(&pool)
+                                        .await
+                                        .expect("Failed to update service running state");
 
+                                    // Update the menu (reads from database, so it will show the updated state)
                                     tray_manager
                                         .update_menu(&app, user_id.clone())
                                         .await;
-                                    app.emit("refresh","endpoints").unwrap();
+                                    
+                                    // Update in-memory state after menu update
+                                    let mut tray_state = tray_manager.tray_state.lock().unwrap();
                                     *tray_state = TrayState::Running;
-                                });
+                                    
+                                    app.emit("refresh","endpoints").unwrap();
+                                }
                             }
-                        }
+                        });
                     }
                     "view-config" => {
 						let config_path = app.path().resolve("config.json", BaseDirectory::AppData).expect("Failed to resolve config.json path").to_string_lossy().to_string();
@@ -572,7 +589,39 @@ impl SystemTrayManager {
 
     /// Updates the tray menu based on the selected language
     pub async fn update_menu(&self, app_handle: &AppHandle, user_id: String) {
-        let new_menu = create_tray_menu(app_handle.clone(), &user_id).await;
+        // Always fetch the current logged-in user from the database to ensure we have the correct user_id
+        let database_path = utils::get_database_path(app_handle)
+            .to_string_lossy()
+            .to_string();
+        let database_url = format!("sqlite://{}", database_path);
+        let effective_user_id = match SqlitePoolOptions::new()
+            .max_connections(5)
+            .connect(&database_url)
+            .await
+        {
+            Ok(pool) => {
+                sqlx::query("SELECT UserID FROM AppStatus WHERE LoginState = 1")
+                    .fetch_optional(&pool)
+                    .await
+                    .unwrap_or(None)
+                    .map(|row: SqliteRow| row.get::<String, _>("UserID"))
+                    .unwrap_or_else(|| {
+                        // If no logged-in user found, use the passed user_id as fallback
+                        if !user_id.is_empty() {
+                            user_id
+                        } else {
+                            "".to_string()
+                        }
+                    })
+            }
+            Err(e) => {
+                error!("Failed to connect to database: {}", e);
+                // Fallback to passed user_id if database connection fails
+                user_id
+            }
+        };
+        
+        let new_menu = create_tray_menu(app_handle.clone(), &effective_user_id).await;
         self.tray_handle
             .set_menu(Some(new_menu))
             .expect("Failed to update tray menu");

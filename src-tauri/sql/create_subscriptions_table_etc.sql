@@ -8,3 +8,6 @@ CREATE TABLE Subscriptions (
 
 ALTER TABLE "User"
     ADD Salt TEXT NOT NULL DEFAULT '';
+
+ALTER TABLE EndpointsGroups
+    ADD SubscriptionID TEXT;

@@ -198,7 +198,6 @@ create table EndpointsGroups
     GroupName     TEXT,
     Remark        TEXT,
     Link          TEXT,
-    SubscriptionID TEXT,
     SpeedTestType TEXT default ping not null,
     UserID        text              not null
         references AppSettings

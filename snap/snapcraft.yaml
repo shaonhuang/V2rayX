@@ -1,6 +1,6 @@
 name: v2rayx
 base: core22
-version: '0.5.1'
+version: '0.5.2'
 summary: V2ray client for v2ray services
 description: |
   An all-platform (macOS, Windows, Linux) V2ray client built with Tauri.
