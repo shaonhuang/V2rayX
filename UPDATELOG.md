@@ -1,3 +1,94 @@
+## v0.5.2
+
+### v0.5.2 Compared to v0.5.1
+
+#### New Features
+
+- **Import from Screenshot**:
+  - Added ability to take screenshots and automatically detect QR codes
+  - Supports importing VMess, Shadowsocks, Trojan, and Hysteria2 protocols from QR codes
+  - Visual QR code detection with corner markers highlighting
+  - Can process screenshots from clipboard or take new screenshots
+  - Automatic protocol validation and import
+
+- **Import from Subscription**:
+  - Added subscription management feature
+  - Support for multiple subscription URLs
+  - Automatic subscription updates with progress tracking
+  - Batch import of endpoints from subscriptions
+  - Base64 decoding support for subscription data
+  - Subscription status tracking and management
+
+- **Latency Test**:
+  - Added endpoint latency testing functionality
+  - Supports multiple test types: ping, connect, and TCP
+  - Configurable test URL and timeout settings
+  - Automatic latency updates for all endpoints in a group
+  - Latency display in endpoint lists and system tray
+  - Connection success rate tracking
+
+- **Database Management**:
+  - Added database reset functionality
+  - Improved database migration handling
+  - Better error handling for database operations
+
+#### Bug Fixes
+
+- **Protocol Import**:
+  - Fixed Hysteria2 protocol import issues
+  - Improved protocol parsing and validation
+  - Better error handling for invalid protocol URLs
+
+- **Service Management**:
+  - Fixed v2ray-core service start/stop not taking effect issues
+  - Improved daemon state management
+  - Better synchronization between UI state and actual service status
+  - Fixed system tray service toggle reliability
+  - Improved service status detection and updates
+
+- **Configuration**:
+  - Fixed inbound port changes not taking effect
+  - Improved configuration reload mechanism
+  - Better handling of configuration updates
+  - Fixed port binding issues
+
+- **System Tray**:
+  - Fixed system tray menu update issues
+  - Improved tray menu state synchronization
+  - Better handling of user ID in tray operations
+  - Fixed service status display in tray menu
+
+- **Database Migration**:
+  - Fixed database migration errors
+  - Added automatic database reset mechanism for incompatible schema changes
+  - Improved error messages for migration issues
+  - Better handling of migration failures
+
+#### Performance & Improvements
+
+- Upgraded Rust packages for better performance and security
+- Upgraded Node.js packages and dependencies
+- Code refactoring and improvements for better maintainability
+- Enhanced error handling throughout the application
+- Improved overall code quality and stability
+- Better logging and debugging capabilities
+
+#### Technical Changes
+
+- Enhanced database migration handling
+- Improved system tray implementation
+- Better error boundaries and error handling
+- Updated dependencies across the project
+- Improved protocol parsing and validation
+- Enhanced configuration management
+
+### Known Issues
+
+- Window size on Windows does not remember its size (waiting for upstream fix).
+- On Linux, the title bar buttons require enlarging the window before you can click to close or minimize.
+
+---
+
 ## v0.5.1
 
 ### Important Notes
