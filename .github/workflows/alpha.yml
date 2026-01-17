@@ -75,6 +75,7 @@ jobs:
       - name: Add SENTRY_DSN and Axiom variables to .env
         run: |
           echo "VITE_SENTRY_DSN=${{ secrets.SENTRY_DSN }}" >> .env
+          echo "VITE_UPDATER_ACTIVE=true" >> .env
           echo "VITE_AXIOM_API_TOKEN=${{ secrets.VITE_AXIOM_API_TOKEN }}" >> .env
           echo "VITE_AXIOM_ORG_ID=${{ secrets.VITE_AXIOM_ORG_ID }}" >> .env
           echo "VITE_AXIOM_DATASET=${{ secrets.VITE_AXIOM_DATASET }}" >> .env
@@ -199,6 +200,9 @@ jobs:
         run: |
           echo "VITE_SENTRY_DSN=${{ secrets.SENTRY_DSN }}" >> .env
           echo "VITE_UPDATER_ACTIVE=true" >> .env
+          echo "VITE_AXIOM_API_TOKEN=${{ secrets.VITE_AXIOM_API_TOKEN }}" >> .env
+          echo "VITE_AXIOM_ORG_ID=${{ secrets.VITE_AXIOM_ORG_ID }}" >> .env
+          echo "VITE_AXIOM_DATASET=${{ secrets.VITE_AXIOM_DATASET }}" >> .env
         shell: bash
 
       - name: 'Setup for linux'
