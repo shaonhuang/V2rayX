@@ -15,6 +15,7 @@ use tauri_plugin_shell::process::{CommandChild, CommandEvent};
 use tauri_plugin_shell::ShellExt;
 pub mod v2ray_config;
 use crate::sys_tray;
+use crate::telemetry;
 use crate::utils;
 
 lazy_static! {
@@ -144,6 +145,16 @@ pub async fn start_daemon(
         }
         Err(err) => panic!("{err}"),
     }
+    // Track proxy start (spawn to avoid blocking)
+    telemetry::track_feature_usage("proxy_start");
+    if telemetry::is_initialized() {
+        let _ = tauri::async_runtime::spawn(async {
+            if let Err(e) = telemetry::send_event("proxy_started", None, None).await {
+                error!("Failed to send proxy_started event: {}", e);
+            }
+        });
+    }
+
     window
         .app_handle()
         .notification()
@@ -171,6 +182,16 @@ pub async fn stop_daemon(
             .map_err(|e| format!("Failed to kill daemon: {}", e))?;
         // rx = None;
         info!("v2ray-core daemon stopped");
+
+        // Track proxy stop (spawn to avoid blocking)
+        telemetry::track_feature_usage("proxy_stop");
+        if telemetry::is_initialized() {
+            let _ = tauri::async_runtime::spawn(async {
+                if let Err(e) = telemetry::send_event("proxy_stopped", None, None).await {
+                    error!("Failed to send proxy_stopped event: {}", e);
+                }
+            });
+        }
 
         window
             .app_handle()

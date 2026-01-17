@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, Component, ErrorInfo, ReactNode } from 'react';
 import { Links, Meta, Outlet, Scripts, ScrollRestoration } from 'react-router';
 import type { LinksFunction } from 'react-router';
 import { invoke } from '@tauri-apps/api/core';
@@ -8,8 +8,16 @@ import '~/designs/styles/index.css';
 import { Toaster } from 'react-hot-toast';
 import { I18nextProvider } from 'react-i18next';
 import { getCurrentWindow } from '@tauri-apps/api/window';
+import * as Sentry from '@sentry/react';
 
 import i18n from './translations/i18n';
+import {
+  initAxiomClient,
+  initSentry,
+  setupErrorHandlers,
+  startDailySummaryTask,
+  sendEvent,
+} from './utils/telemetry';
 
 export const links: LinksFunction = () => [
   { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
@@ -41,12 +49,76 @@ export const links: LinksFunction = () => [
 //   );
 // }
 
+// Error Boundary Component
+class ErrorBoundary extends Component<
+  { children: ReactNode },
+  { hasError: boolean; error: Error | null }
+> {
+  constructor(props: { children: ReactNode }) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    const userId = localStorage.getItem('userID') || undefined;
+    Sentry.captureException(error, {
+      contexts: {
+        react: {
+          componentStack: errorInfo.componentStack,
+        },
+      },
+    });
+    // Also send to Axiom
+    sendEvent('error', userId, {
+      error: {
+        message: error.message,
+        stack: error.stack,
+        name: error.name,
+      },
+      componentStack: errorInfo.componentStack,
+    }).catch(console.error);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{ padding: '20px', textAlign: 'center' }}>
+          <h1>Something went wrong</h1>
+          <p>An error occurred. Please refresh the page.</p>
+          <button onClick={() => window.location.reload()}>Refresh</button>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
+
 export function Layout({ children }: { children: React.ReactNode }) {
   useEffect(() => {
+    // Initialize telemetry SDKs
+    initSentry();
+    initAxiomClient();
+
+    const userId = localStorage.getItem('userID') || undefined;
+
+    // Set up error handlers
+    setupErrorHandlers(userId);
+
+    // Start daily summary task
+    startDailySummaryTask(userId);
+
+    // Send app started event
+    sendEvent('app_started', userId).catch(console.error);
+
     // Close splashscreen when main app is ready
     if (typeof window !== 'undefined') {
       invoke('close_splashscreen', {
-        userId: localStorage.getItem('userID') ?? '',
+        userId: userId ?? '',
       })
         .then(() => {
           console.log('Splash screen closed successfully.');
@@ -87,25 +159,27 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Links />
       </head>
       <body>
-        <I18nextProvider i18n={i18n}>
-          <HeroUIProvider>
-            <Toaster
-              reverseOrder={false}
-              position="top-right"
-              toastOptions={{
-                className: 'dark:bg-[#121212] dark:text-white',
-              }}
-            />
-            <NiceModal.Provider>
-              <div id="font-wrapper">
-                <div id="titlebar" className="titlebar"></div>
-                {children}
-              </div>
-            </NiceModal.Provider>
-            <ScrollRestoration />
-            <Scripts />
-          </HeroUIProvider>
-        </I18nextProvider>
+        <ErrorBoundary>
+          <I18nextProvider i18n={i18n}>
+            <HeroUIProvider>
+              <Toaster
+                reverseOrder={false}
+                position="top-right"
+                toastOptions={{
+                  className: 'dark:bg-[#121212] dark:text-white',
+                }}
+              />
+              <NiceModal.Provider>
+                <div id="font-wrapper">
+                  <div id="titlebar" className="titlebar"></div>
+                  {children}
+                </div>
+              </NiceModal.Provider>
+              <ScrollRestoration />
+              <Scripts />
+            </HeroUIProvider>
+          </I18nextProvider>
+        </ErrorBoundary>
       </body>
     </html>
   );

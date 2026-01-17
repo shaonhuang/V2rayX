@@ -1,5 +1,6 @@
 use crate::proxy;
 use crate::proxy::{unset_global_proxy, unset_pac_proxy};
+use crate::telemetry;
 use crate::utils;
 use crate::v2ray_core;
 use crate::v2ray_core::DaemonState;
@@ -7,19 +8,16 @@ use base64::{engine::general_purpose::STANDARD as BASE64_STANDARD, Engine};
 use chrono::Local;
 use image::ImageOutputFormat;
 use log::{error, info, warn};
-use reqwest::Client;
 use screenshots::Screen;
 use sqlx::sqlite::SqlitePoolOptions;
 use sqlx::sqlite::SqliteRow;
 use sqlx::Row;
 use std::fs;
 use std::io::Cursor;
-use std::net::TcpStream;
-use std::net::ToSocketAddrs;
 use std::path::Path;
 use std::process::Command;
 use std::sync::{Arc, Mutex, RwLock};
-use std::time::{Duration, Instant};
+use std::time::Duration;
 use tauri::{
     // state is used in Linux
     self,
@@ -27,7 +25,6 @@ use tauri::{
     Manager,
     State,
 };
-use tauri_plugin_dialog::{DialogExt, MessageDialogKind};
 use tauri_plugin_notification::NotificationExt;
 
 pub struct AppState {
@@ -47,7 +44,12 @@ pub fn get_elapsed_time(state: State<AppState>) -> Result<String, String> {
     let start = state.start_time.read().map_err(|e| e.to_string())?;
     let now = Local::now();
     let duration = now.signed_duration_since(*start);
-    Ok(duration.num_seconds().to_string())
+    let seconds = duration.num_seconds();
+    
+    // Update uptime in telemetry
+    telemetry::update_uptime(seconds);
+    
+    Ok(seconds.to_string())
 }
 
 #[tauri::command]
@@ -118,21 +120,26 @@ pub fn clear_v2ray_core_service() {
                     match kill_output {
                         Ok(kill_result) => {
                             if kill_result.status.success() {
-                                println!("v2ray service killed successfully.");
+                                info!("v2ray service killed successfully.");
+                                eprintln!("v2ray service killed successfully.");
                             } else {
                                 let error_message = String::from_utf8_lossy(&kill_result.stderr);
+                                error!("Failed to kill v2ray service: {}", error_message);
                                 eprintln!("Failed to kill v2ray service: {}", error_message);
                             }
                         }
                         Err(e) => {
+                            error!("Error executing taskkill command: {}", e);
                             eprintln!("Error executing taskkill command: {}", e);
                         }
                     }
                 } else {
-                    println!("v2ray service is not running.");
+                    info!("v2ray service is not running.");
+                    eprintln!("v2ray service is not running.");
                 }
             }
             Err(e) => {
+                error!("Error executing tasklist command: {}", e);
                 eprintln!("Error executing tasklist command: {}", e);
             }
         }
@@ -164,22 +171,27 @@ pub fn clear_v2ray_core_service() {
                     match kill_output {
                         Ok(kill_result) => {
                             if kill_result.status.success() {
-                                println!("v2ray service killed successfully.");
+                                info!("v2ray service killed successfully.");
+                                eprintln!("v2ray service killed successfully.");
                             } else {
                                 // If pkill fails, capture and print stderr
                                 let error_message = String::from_utf8_lossy(&kill_result.stderr);
+                                error!("Failed to kill v2ray service: {}", error_message);
                                 eprintln!("Failed to kill v2ray service: {}", error_message);
                             }
                         }
                         Err(e) => {
+                            error!("Error executing pkill command: {}", e);
                             eprintln!("Error executing pkill command: {}", e);
                         }
                     }
                 } else {
-                    println!("v2ray service is not running.");
+                    info!("v2ray service is not running.");
+                    eprintln!("v2ray service is not running.");
                 }
             }
             Err(e) => {
+                error!("Error executing pgrep command: {}", e);
                 eprintln!("Error executing pgrep command: {}", e);
             }
         }
@@ -272,6 +284,9 @@ pub async fn graceful_restart(app: AppHandle, user_id: String) -> Result<(), Str
         .execute(&pool)
         .await
         .expect("Failed to update proxy mode");
+    
+    // Track proxy mode change
+    telemetry::update_proxy_mode("manual");
     if let Err(e) = v2ray_core::stop_daemon(daemon_state, main_window).await {
         error!("Failed to start daemon: {}", e);
     }
@@ -283,7 +298,7 @@ pub async fn graceful_restart(app: AppHandle, user_id: String) -> Result<(), Str
     app.restart();
 }
 
-#[tauri::command]
+    #[tauri::command]
 pub async fn update_endpoints_latency(
     app: AppHandle,
     group_id: String,
@@ -318,16 +333,14 @@ pub async fn update_endpoints_latency(
         .map_err(|e| format!("Failed to connect to the database: {}", e))?;
 
     // Get the group's SpeedTestType
-    let group_info: (String, String) = sqlx::query_as(
-        "SELECT GroupName, SpeedTestType FROM EndpointsGroups WHERE GroupID = ? AND UserID = ?",
+    let speed_test_type: String = sqlx::query_scalar(
+        "SELECT SpeedTestType FROM EndpointsGroups WHERE GroupID = ? AND UserID = ?",
     )
     .bind(&group_id)
     .bind(&user_id)
     .fetch_one(&pool)
     .await
     .map_err(|e| format!("Failed to fetch group info: {}", e))?;
-
-    let (group_name, speed_test_type) = group_info;
 
     // Get latency test settings
     let latency_settings: (String, i64) = sqlx::query_as(
@@ -503,6 +516,9 @@ pub async fn update_endpoints_latency(
                     .execute(&pool)
                     .await
                     .map_err(|e| format!("Failed to update endpoint latency: {}", e))?;
+                
+                // Track successful connection
+                telemetry::track_connection_attempt(true);
             }
             Err(_) => {
                 // Set to NULL if timeout
@@ -511,15 +527,21 @@ pub async fn update_endpoints_latency(
                     .execute(&pool)
                     .await
                     .map_err(|e| format!("Failed to update endpoint latency: {}", e))?;
+                
+                // Track failed connection
+                telemetry::track_connection_attempt(false);
             }
         }
+        
+        // Track latency test feature usage
+        telemetry::track_feature_usage("latency_test");
     }
 
     Ok(())
 }
 
 #[tauri::command]
-pub async fn take_screenshot(app: AppHandle) -> Result<String, String> {
+pub async fn take_screenshot(_app: AppHandle) -> Result<String, String> {
     let screens = Screen::all().map_err(|e| e.to_string())?;
 
     if let Some(screen) = screens.first() {
@@ -702,6 +724,9 @@ async fn is_domain_resolves_to_ip(domain: &str, ip: &str) -> bool {
 #[tauri::command]
 pub async fn fetch_subscription_data(url: String) -> Result<String, String> {
     info!("Fetching subscription from URL: {}", url);
+    
+    // Track subscription fetch feature usage
+    telemetry::track_feature_usage("subscription_fetch");
 
     // Create HTTP client with timeout and user agent
     let client = reqwest::Client::builder()

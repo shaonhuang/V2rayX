@@ -56,7 +56,7 @@ V2ray GUI client with cross-platform desktop support powered by Tauri, made espe
 
 - [x] Dark / Light Mode
 - [x] Auto Start (Not supported on Linux)
-- [x] Server Share
+- [ ] Server Share
 - [x] Activity Logs
 - [x] Support Shadowsocks/VMess/Hysteria2/Trojan Import
 
@@ -196,7 +196,14 @@ $: pnpm install
 $: pnpm check
 
 # [05]touch .env; The content of variables they are not matter but have to have it to run dev.
-$:printf "SENTRY_DSN=\n" > .env
+# For local development, you can create an empty .env file or add the following variables:
+$:printf "VITE_SENTRY_DSN=\nVITE_AXIOM_API_TOKEN=\nVITE_AXIOM_ORG_ID=\nVITE_AXIOM_DATASET=\n" > .env
+
+# Note: Axiom telemetry is optional. If VITE_AXIOM_API_TOKEN is not set, telemetry will be disabled.
+# To enable telemetry, set:
+# - VITE_AXIOM_API_TOKEN: Your Axiom API token
+# - VITE_AXIOM_ORG_ID: Your Axiom organization ID (optional)
+# - VITE_AXIOM_DATASET: Your Axiom dataset name (defaults to "v2rayx-usage" if not set)
 
 # [06]dev
 $: pnpm tauri:dev

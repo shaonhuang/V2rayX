@@ -14,6 +14,9 @@ overrides:
 importers:
   .:
     dependencies:
+      '@axiomhq/js':
+        specifier: ^1.3.1
+        version: 1.3.1
       '@ebay/nice-modal-react':
         specifier: ^1.2.13
         version: 1.2.13(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
@@ -44,6 +47,9 @@ importers:
       '@react-router/serve':
         specifier: ^7.12.0
         version: 7.12.0(react-router@7.12.0(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(typescript@5.9.3)
+      '@sentry/react':
+        specifier: ^10.34.0
+        version: 10.34.0(react@19.2.3)
       '@tauri-apps/api':
         specifier: ^2.9.1
         version: 2.9.1
@@ -265,8 +271,8 @@ importers:
         specifier: ^1.0.7
         version: 1.0.7(tailwindcss@4.1.18)
       tar:
-        specifier: ^7.5.2
-        version: 7.5.2
+        specifier: ^7.5.3
+        version: 7.5.3
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
@@ -308,6 +314,13 @@ packages:
       {
         integrity: sha512-+562v9k4aI80m1+VuMHehNJWLOFjBnXn3tdOitzD0il5b7smkSBal4+a3oKiQTbrwMmN/TBUMDvbdoWDehgOww==,
       }
+
+  '@axiomhq/js@1.3.1':
+    resolution:
+      {
+        integrity: sha512-Ytf5V3wKz8FKNiqJxnqZmUhjgJ7TItKUoyHVNE/H2V9dN1ozD6NNnsueenOjKdA48cm2sGRyP432nworst18aA==,
+      }
+    engines: { node: '>=16' }
 
   '@babel/code-frame@7.27.1':
     resolution:
@@ -2992,6 +3005,57 @@ packages:
         integrity: sha512-zt6OdqaDoOnJ1ZYsCYGt9YmWzDXl4vQdKTyJev62gFhRGKdx7mcT54V9KIjg+d2wi9EXsPvAPKe7i7WjfVWB8g==,
       }
 
+  '@sentry-internal/browser-utils@10.34.0':
+    resolution:
+      {
+        integrity: sha512-0YNr60rGHyedmwkO0lbDBjNx2KAmT3kWamjaqu7Aw+jsESoPLgt+fzaTVvUBvkftBDui2PeTSzXm/nqzssctYg==,
+      }
+    engines: { node: '>=18' }
+
+  '@sentry-internal/feedback@10.34.0':
+    resolution:
+      {
+        integrity: sha512-wgGnq+iNxsFSOe9WX/FOvtoItSTjgLJJ4dQkVYtcVM6WGBVIg4wgNYfECCnRNztUTPzpZHLjC9r+4Pym451DDQ==,
+      }
+    engines: { node: '>=18' }
+
+  '@sentry-internal/replay-canvas@10.34.0':
+    resolution:
+      {
+        integrity: sha512-XWH/9njtgMD+LLWjc4KKgBpb+dTCkoUEIFDxcvzG/87d+jirmzf0+r8EfpLwKG+GrqNiiGRV39zIqu0SfPl+cw==,
+      }
+    engines: { node: '>=18' }
+
+  '@sentry-internal/replay@10.34.0':
+    resolution:
+      {
+        integrity: sha512-Vmea0GcOg57z/S1bVSj3saFcRvDqdLzdy4wd9fQMpMgy5OCbTlo7lxVUndKzbcZnanma6zF6VxwnWER1WuN9RA==,
+      }
+    engines: { node: '>=18' }
+
+  '@sentry/browser@10.34.0':
+    resolution:
+      {
+        integrity: sha512-8WCsAXli5Z+eIN8dMY8KGQjrS3XgUp1np/pjdeWNrVPVR8q8XpS34qc+f+y/LFrYQC9bs2Of5aIBwRtDCIvRsg==,
+      }
+    engines: { node: '>=18' }
+
+  '@sentry/core@10.34.0':
+    resolution:
+      {
+        integrity: sha512-4FFpYBMf0VFdPcsr4grDYDOR87mRu6oCfb51oQjU/Pndmty7UgYo0Bst3LEC/8v0SpytBtzXq+Wx/fkwulBesg==,
+      }
+    engines: { node: '>=18' }
+
+  '@sentry/react@10.34.0':
+    resolution:
+      {
+        integrity: sha512-LDpg9WDrEwo6lr/YOAA54id/g5D1PGKEIiOGxqRZbBVyjzrsquwzhSG2CMqnp+YO6lz/r96LWuqm2cvfpht2zA==,
+      }
+    engines: { node: '>=18' }
+    peerDependencies:
+      react: ^16.14.0 || 17.x || 18.x || 19.x
+
   '@standard-schema/utils@0.3.0':
     resolution:
       {
@@ -4921,6 +4985,12 @@ packages:
         integrity: sha512-7yAQpD2UMJzLi1Dqv7qFYnPbaPx7ZfFK6PiIxQ4PfkGPyNyl2Ugx+a/umUonmKqjhM4DnfbMvdX6otXq83soQQ==,
       }
     engines: { node: ^12.20 || >= 14.13 }
+
+  fetch-retry@6.0.0:
+    resolution:
+      {
+        integrity: sha512-BUFj1aMubgib37I3v4q78fYo63Po7t4HUPTpQ6/QE6yK6cIQrP+W43FYToeTEyg5m2Y7eFUtijUuAv/PDlWuag==,
+      }
 
   file-entry-cache@8.0.0:
     resolution:
@@ -7271,10 +7341,10 @@ packages:
       }
     engines: { node: '>=6' }
 
-  tar@7.5.2:
+  tar@7.5.3:
     resolution:
       {
-        integrity: sha512-7NyxrTE4Anh8km8iEy7o0QYPs+0JKBTj5ZaqHg6B39erLg0qYXN3BijtShwbsNSvQ+LN75+KV+C4QR/f6Gwnpg==,
+        integrity: sha512-ENg5JUHUm2rDD7IvKNFGzyElLXNjachNLp6RaGf4+JOgxXHkqA+gq81ZAMCUmtMtqBsoU62lcp6S27g1LCYGGQ==,
       }
     engines: { node: '>=18' }
 
@@ -7535,6 +7605,13 @@ packages:
         integrity: sha512-pMZTvIkT1d+TFGvDOqodOclx0QWkkgi6Tdoa8gC8ffGAAqz9pzPTZWAybbsHHoED/ztMtkv/VoYTYyShUn81hA==,
       }
     engines: { node: '>= 0.4.0' }
+
+  uuid@11.1.0:
+    resolution:
+      {
+        integrity: sha512-0/A9rDy9P7cJ+8w1c9WD9V//9Wj15Ce2MPz8Ri6032usz+NfePxx5AcN3bN+r6ZL6jEo066/yNYB3tn4pQEx+A==,
+      }
+    hasBin: true
 
   uuid@13.0.0:
     resolution:
@@ -7837,6 +7914,11 @@ snapshots:
       tinyexec: 0.3.1
 
   '@antfu/utils@0.7.10': {}
+
+  '@axiomhq/js@1.3.1':
+    dependencies:
+      fetch-retry: 6.0.0
+      uuid: 11.1.0
 
   '@babel/code-frame@7.27.1':
     dependencies:
@@ -10373,6 +10455,40 @@ snapshots:
 
   '@rtsao/scc@1.1.0': {}
 
+  '@sentry-internal/browser-utils@10.34.0':
+    dependencies:
+      '@sentry/core': 10.34.0
+
+  '@sentry-internal/feedback@10.34.0':
+    dependencies:
+      '@sentry/core': 10.34.0
+
+  '@sentry-internal/replay-canvas@10.34.0':
+    dependencies:
+      '@sentry-internal/replay': 10.34.0
+      '@sentry/core': 10.34.0
+
+  '@sentry-internal/replay@10.34.0':
+    dependencies:
+      '@sentry-internal/browser-utils': 10.34.0
+      '@sentry/core': 10.34.0
+
+  '@sentry/browser@10.34.0':
+    dependencies:
+      '@sentry-internal/browser-utils': 10.34.0
+      '@sentry-internal/feedback': 10.34.0
+      '@sentry-internal/replay': 10.34.0
+      '@sentry-internal/replay-canvas': 10.34.0
+      '@sentry/core': 10.34.0
+
+  '@sentry/core@10.34.0': {}
+
+  '@sentry/react@10.34.0(react@19.2.3)':
+    dependencies:
+      '@sentry/browser': 10.34.0
+      '@sentry/core': 10.34.0
+      react: 19.2.3
+
   '@standard-schema/utils@0.3.0': {}
 
   '@swc/helpers@0.5.15':
@@ -11716,6 +11832,8 @@ snapshots:
     dependencies:
       node-domexception: 1.0.0
       web-streams-polyfill: 3.3.3
+
+  fetch-retry@6.0.0: {}
 
   file-entry-cache@8.0.0:
     dependencies:
@@ -13066,7 +13184,7 @@ snapshots:
 
   tapable@2.3.0: {}
 
-  tar@7.5.2:
+  tar@7.5.3:
     dependencies:
       '@isaacs/fs-minipass': 4.0.1
       chownr: 3.0.0
@@ -13242,6 +13360,8 @@ snapshots:
       react: 19.2.3
 
   utils-merge@1.0.1: {}
+
+  uuid@11.1.0: {}
 
   uuid@13.0.0: {}
 

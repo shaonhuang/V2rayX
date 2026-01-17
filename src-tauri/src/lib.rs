@@ -11,6 +11,7 @@ mod commands;
 mod migrations;
 mod proxy;
 mod sys_tray;
+mod telemetry;
 mod utils;
 mod v2ray_core;
 
@@ -26,7 +27,7 @@ use tauri::{
 use tauri_plugin_autostart::MacosLauncher;
 
 #[cfg(not(debug_assertions))]
-const SENTRY_DSN: &str = dotenvy_macro::dotenv!("SENTRY_DSN");
+const SENTRY_DSN: &str = dotenvy_macro::dotenv!("VITE_SENTRY_DSN");
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -34,12 +35,25 @@ pub fn run() {
 
     #[cfg(not(debug_assertions))]
     let _guard = sentry::init((
-        env::var("SENTRY_DSN").unwrap_or_else(|_| SENTRY_DSN.to_string()),
+        env::var("VITE_SENTRY_DSN").unwrap_or_else(|_| SENTRY_DSN.to_string()),
         sentry::ClientOptions {
             release: sentry::release_name!(),
             ..Default::default()
         },
     ));
+    
+    // Initialize Axiom telemetry
+    if let Ok(config) = telemetry::TelemetryConfig::from_env() {
+        if let Err(e) = telemetry::init_axiom_client(config) {
+            warn!("Failed to initialize Axiom telemetry: {}", e);
+        } else {
+            info!("Axiom telemetry initialized successfully");
+            // Daily summary task will be started in setup() where async runtime is available
+        }
+    } else {
+        info!("Axiom telemetry not configured (VITE_AXIOM_API_TOKEN, AXIOM_API_TOKEN, or AXIOM_TOKEN not set)");
+    }
+    
     let app_state = commands::AppState::new();
     let daemon_state = Arc::new(Mutex::new(v2ray_core::DaemonState::new()));
     let migrations = migrations::get_migrations();
@@ -136,6 +150,21 @@ pub fn run() {
                 tauri::async_runtime::block_on(async {
                     commands::reset_proxy_v2ray_status(app.app_handle()).await;
                     app.manage(sys_tray::init_tray(app.app_handle().clone()).await.unwrap());
+                    
+                    // Start daily summary task now that async runtime is available
+                    if telemetry::is_initialized() {
+                        telemetry::start_daily_summary_task();
+                        
+                        // Track daily active user (DAU)
+                        if let Err(e) = telemetry::track_daily_active().await {
+                            warn!("Failed to track daily active user: {}", e);
+                        }
+                        
+                        // Send initial usage event
+                        if let Err(e) = telemetry::send_event("app_started", None, None).await {
+                            warn!("Failed to send app_started event: {}", e);
+                        }
+                    }
                 });
                 app.handle().plugin(
                     tauri_plugin_log::Builder::default()

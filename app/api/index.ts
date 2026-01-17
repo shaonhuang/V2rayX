@@ -346,6 +346,11 @@ export const updateProxyMode = async (props: {
     props.proxyMode,
     props.userID,
   ]);
+
+  // Track proxy mode change
+  const { updateProxyMode: updateTelemetryProxyMode } =
+    await import('~/utils/telemetry');
+  updateTelemetryProxyMode(props.proxyMode);
 };
 
 export const queryAppStatus = async (props: {
