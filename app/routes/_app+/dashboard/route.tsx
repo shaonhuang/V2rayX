@@ -266,14 +266,18 @@ const Page = () => {
                       switch (e.target.value) {
                         case 'pac':
                           await invoke('unset_global_proxy');
+                          await invoke('unset_pac_proxy');
+                          // Convert escaped newlines to actual newlines before passing to setup_pac_proxy
+                          const pacRules = data.PAC.replace(/\\n/g, '\n');
                           await invoke('setup_pac_proxy', {
-                            customRules: data.PAC,
+                            customRules: pacRules,
                             httpPort: data.http[0].port,
                             socksPort: data.socks[0].port,
                           });
                           toast.success(t('PAC mode has been enabled'));
                           break;
                         case 'global':
+                          await invoke('unset_global_proxy');
                           await invoke('unset_pac_proxy');
                           await invoke('setup_global_proxy', {
                             host: data.http[0].listen,

@@ -15,7 +15,6 @@ mod telemetry;
 mod utils;
 mod v2ray_core;
 
-use dotenvy::dotenv;
 use std::env;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
@@ -31,8 +30,6 @@ const SENTRY_DSN: &str = dotenvy_macro::dotenv!("VITE_SENTRY_DSN");
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    dotenv().ok();
-
     #[cfg(not(debug_assertions))]
     let _guard = sentry::init((
         env::var("VITE_SENTRY_DSN").unwrap_or_else(|_| SENTRY_DSN.to_string()),

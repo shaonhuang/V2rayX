@@ -57,13 +57,16 @@ fn generate_pac_file(
 ) -> io::Result<()> {
     info!("Starting PAC file generation...");
 
+    // Convert escaped newlines (\n) to actual newlines if present
+    let custom_rules_normalized = custom_rules.replace("\\n", "\n");
+    
     let gfw_list_text = fs::read_to_string(gfw_list_text_path).map_err(|e| {
         error!("Failed to read GFW list from {}: {}", gfw_list_text_path, e);
         e
     })?;
     info!("Read GFW list from {}.", gfw_list_text_path);
     // Step 1: Process GFW list
-    let rules: Vec<String> = custom_rules
+    let rules: Vec<String> = custom_rules_normalized
         .lines()
         .chain(gfw_list_text.lines()) // Merge custom_rules and GFW list
         .map(|line| line.trim()) // Trim whitespace
@@ -100,7 +103,7 @@ fn generate_pac_file(
     }
 
     // Step 4: Write the final PAC file
-    fs::write(pac_output_path, pac_content).map_err(|e| {
+    fs::write(pac_output_path, &pac_content).map_err(|e| {
         error!("Failed to write PAC file to {}: {}", pac_output_path, e);
         e
     })?;
@@ -301,6 +304,7 @@ fn unset_global_proxy_windows() -> std::io::Result<()> {
 
 #[cfg(target_os = "macos")]
 /// Unsets global proxy settings on macOS.
+#[allow(dead_code)]
 fn unset_global_proxy_macos(bypass_domains: &[&str]) -> std::io::Result<()> {
     // List all network services
     let output = Command::new("networksetup")
@@ -689,13 +693,13 @@ pub fn unset_global_proxy() -> Result<String, String> {
         }
     }
 
-    // #[cfg(target_os = "macos")]
-    // {
-    //     // Assuming bypass domains are cleared when unsetting global proxy
-    //     if let Err(e) = unset_global_proxy_macos(&[]) {
-    //         return Err(format!("Failed to unset global proxy on macOS: {}", e));
-    //     }
-    // }
+    #[cfg(target_os = "macos")]
+    {
+        // Assuming bypass domains are cleared when unsetting global proxy
+        if let Err(e) = unset_global_proxy_macos(&[]) {
+            return Err(format!("Failed to unset global proxy on macOS: {}", e));
+        }
+    }
 
     #[cfg(target_os = "linux")]
     {

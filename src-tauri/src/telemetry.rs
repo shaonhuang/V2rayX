@@ -14,6 +14,16 @@ use log::{error, info, warn};
 use tauri;
 use uuid::Uuid;
 
+// Compile-time constants for Axiom configuration (embedded during build)
+// These are used as fallback when runtime environment variables are not available
+// Following the same pattern as SENTRY_DSN in lib.rs
+#[cfg(not(debug_assertions))]
+const AXIOM_API_TOKEN_BUILTIN: &str = dotenvy_macro::dotenv!("VITE_AXIOM_API_TOKEN");
+#[cfg(not(debug_assertions))]
+const AXIOM_DATASET_BUILTIN: &str = dotenvy_macro::dotenv!("VITE_AXIOM_DATASET");
+#[cfg(not(debug_assertions))]
+const AXIOM_ORG_ID_BUILTIN: &str = dotenvy_macro::dotenv!("VITE_AXIOM_ORG_ID");
+
 // Global telemetry client - using Arc directly since AxiomClient is Send + Sync
 static AXIOM_CLIENT: OnceLock<Arc<AxiomClient>> = OnceLock::new();
 static AXIOM_DATASET: OnceLock<String> = OnceLock::new();
@@ -54,18 +64,53 @@ pub struct TelemetryConfig {
 impl TelemetryConfig {
     pub fn from_env() -> Result<Self, String> {
         // Support VITE_ prefixed variables (for Vite/Tauri) and non-prefixed for backward compatibility
+        // Try runtime environment variables first, then fall back to compile-time constants (like SENTRY_DSN pattern)
         let api_token = env::var("VITE_AXIOM_API_TOKEN")
             .or_else(|_| env::var("AXIOM_API_TOKEN"))
             .or_else(|_| env::var("AXIOM_TOKEN"))
-            .map_err(|_| "VITE_AXIOM_API_TOKEN, AXIOM_API_TOKEN, or AXIOM_TOKEN not set".to_string())?;
+            .or_else(|_| {
+                // Fall back to compile-time constant in release builds (same pattern as SENTRY_DSN)
+                #[cfg(not(debug_assertions))]
+                {
+                    Ok(AXIOM_API_TOKEN_BUILTIN.to_string())
+                }
+                #[cfg(debug_assertions)]
+                {
+                    Err(env::VarError::NotPresent)
+                }
+            })
+            .map_err(|_: env::VarError| {
+                "VITE_AXIOM_API_TOKEN, AXIOM_API_TOKEN, or AXIOM_TOKEN not set".to_string()
+            })?;
         
         let dataset = env::var("VITE_AXIOM_DATASET")
             .or_else(|_| env::var("AXIOM_DATASET"))
-            .unwrap_or_else(|_| "v2rayx-usage".to_string());
+            .unwrap_or_else(|_| {
+                // Fall back to compile-time constant in release builds (same pattern as SENTRY_DSN)
+                #[cfg(not(debug_assertions))]
+                {
+                    AXIOM_DATASET_BUILTIN.to_string()
+                }
+                #[cfg(debug_assertions)]
+                {
+                    "v2rayx-usage".to_string()
+                }
+            });
         
         let org_id = env::var("VITE_AXIOM_ORG_ID")
             .or_else(|_| env::var("AXIOM_ORG_ID"))
-            .ok();
+            .ok()
+            .or_else(|| {
+                // Fall back to compile-time constant in release builds (same pattern as SENTRY_DSN)
+                #[cfg(not(debug_assertions))]
+                {
+                    Some(AXIOM_ORG_ID_BUILTIN.to_string())
+                }
+                #[cfg(debug_assertions)]
+                {
+                    None
+                }
+            });
 
         Ok(Self {
             api_token,

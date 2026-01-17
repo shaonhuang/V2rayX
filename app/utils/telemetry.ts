@@ -4,8 +4,6 @@ import CryptoJS from 'crypto-js';
 
 // Initialize Axiom client
 let axiomClient: Axiom | null = null;
-let locationCache: { country: string; timestamp: number } | null = null;
-const LOCATION_CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours
 
 export interface UsageMetrics {
   uptimeSeconds: number;
@@ -79,68 +77,6 @@ function getOS(): string {
   return 'unknown';
 }
 
-async function detectLocation(): Promise<{ country: string }> {
-  // Check cache first
-  if (locationCache) {
-    const now = Date.now();
-    if (now - locationCache.timestamp < LOCATION_CACHE_DURATION) {
-      return { country: locationCache.country };
-    }
-  }
-
-  try {
-    // Try ipapi.co (free, no API key, supports HTTPS)
-    const response = await fetch('https://ipapi.co/json/', {
-      signal: AbortSignal.timeout(5000),
-    });
-
-    if (response.ok) {
-      const data = await response.json();
-      const country = data.country_code || data.country || 'unknown';
-
-      // Cache the result
-      locationCache = {
-        country,
-        timestamp: Date.now(),
-      };
-
-      return { country };
-    }
-  } catch (error) {
-    console.warn(
-      'Failed to detect location with ipapi.co, trying fallback:',
-      error,
-    );
-
-    // Fallback to ip-api.com with HTTPS
-    try {
-      const fallbackResponse = await fetch(
-        'https://ip-api.com/json/?fields=country',
-        {
-          signal: AbortSignal.timeout(5000),
-        },
-      );
-
-      if (fallbackResponse.ok) {
-        const data = await fallbackResponse.json();
-        const country = data.country || 'unknown';
-
-        // Cache the result
-        locationCache = {
-          country,
-          timestamp: Date.now(),
-        };
-
-        return { country };
-      }
-    } catch (fallbackError) {
-      console.warn('Fallback location detection also failed:', fallbackError);
-    }
-  }
-
-  return { country: 'unknown' };
-}
-
 export async function sendEvent(
   eventType: string,
   userId?: string,
@@ -153,23 +89,39 @@ export async function sendEvent(
 
   const dataset = import.meta.env.VITE_AXIOM_DATASET || 'v2rayx';
   const appVersion = import.meta.env.VITE_APP_VERSION || 'unknown';
-  const location = await detectLocation();
 
   const event: Record<string, unknown> = {
     _time: new Date().toISOString(),
     event_type: eventType,
     source: 'react',
-    location: {
-      country: location.country,
-    },
     app_version: appVersion,
     os: getOS(),
-    ...usageMetrics,
-    ...additionalData,
   };
 
   if (userId) {
     event.user_id_hash = hashUserId(userId);
+  }
+
+  // Add usage metrics (only include non-zero/defined values to match Rust implementation)
+  if (usageMetrics.uptimeSeconds > 0) {
+    event.uptime_seconds = usageMetrics.uptimeSeconds;
+  }
+  if (usageMetrics.proxyMode) {
+    event.proxy_mode = usageMetrics.proxyMode;
+  }
+  if (usageMetrics.featuresUsed.length > 0) {
+    event.features_used = usageMetrics.featuresUsed;
+  }
+  if (usageMetrics.connectionAttempts > 0) {
+    event.connection_attempts = usageMetrics.connectionAttempts;
+  }
+  if (usageMetrics.connectionSuccesses > 0) {
+    event.connection_successes = usageMetrics.connectionSuccesses;
+  }
+
+  // Merge additional data
+  if (additionalData) {
+    Object.assign(event, additionalData);
   }
 
   try {
@@ -228,6 +180,8 @@ export function updateUptime(seconds: number): void {
 }
 
 export async function sendDailySummary(userId?: string): Promise<void> {
+  const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+
   const summary = {
     uptime_seconds: usageMetrics.uptimeSeconds,
     proxy_mode: usageMetrics.proxyMode,
@@ -239,7 +193,7 @@ export async function sendDailySummary(userId?: string): Promise<void> {
         ? (usageMetrics.connectionSuccesses / usageMetrics.connectionAttempts) *
           100
         : 0,
-    session_duration_ms: Date.now() - usageMetrics.sessionStart,
+    date: today,
   };
 
   await sendEvent('daily_summary', userId, summary);

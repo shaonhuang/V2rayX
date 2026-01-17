@@ -257,12 +257,13 @@ impl SystemTrayManager {
 							if let Err(e) = proxy::unset_global_proxy() {
 								error!("Failed to unset_global_proxy: {}", e);
                             }
-	                        // if let Err(e) = proxy::unset_pac_proxy() {
-                         //        error!("Failed to unset_pac_proxy: {}", e);
-                         //    }
+                            let pac_server_manage = app.state::<Mutex<proxy::PacServerShutdownHandle>>();
+                            if let Err(e) = proxy::unset_pac_proxy(pac_server_manage) {
+                                error!("Failed to unset_pac_proxy: {}", e);
+                            }
                             let (custom_rules, http_port,socks_port): (String, i32, i32) = sqlx::query_as(
 	                            "SELECT
-									(SELECT i.PAC FROM AppSettings i WHERE i.UserID = ?) AS custom_rules,
+									(SELECT a.PAC FROM AppSettings a WHERE a.UserID = ?) AS custom_rules,
 							        (SELECT i.Port FROM Inbounds i WHERE i.UserID = ? AND i.Tag = 'http-inbound') AS http_port,
 							        (SELECT i.Port FROM Inbounds i WHERE i.UserID = ? AND i.Tag = 'socks-inbound') AS socks_port,
 							        a.BypassDomains
@@ -295,9 +296,9 @@ impl SystemTrayManager {
 					}
 					"switch-global" => {
 					    tauri::async_runtime::block_on(async {
-							// if let Err(e) = proxy::unset_global_proxy() {
-       //                              error!("Failed to unset_global_proxy: {}", e);
-       //                      }
+							if let Err(e) = proxy::unset_global_proxy() {
+                                error!("Failed to unset_global_proxy: {}", e);
+                            }
        						let pac_server_manage = app.state::<Mutex<proxy::PacServerShutdownHandle>>();
 							if let Err(e) = proxy::unset_pac_proxy(pac_server_manage) {
 	                            error!("Failed to unset_pac_proxy: {}", e);
