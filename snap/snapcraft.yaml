@@ -65,6 +65,10 @@ parts:
     stage-packages:
       - libwebkit2gtk-4.1-0
       - libayatana-appindicator3-1
+      - libgl1-mesa-dri
+      - libgl1
+      - libegl1
+      - libcanberra-gtk3-module
     source: .
     build-environment:
       - TARGET: $TARGET
