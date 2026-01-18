@@ -131,7 +131,7 @@ jobs:
           path: |
             src-tauri/target/${{ matrix.target }}/release/bundle/deb/*.deb
             src-tauri/target/${{ matrix.target }}/release/bundle/rpm/*.rpm
-            # src-tauri/target/${{ matrix.target }}/release/bundle/AppImage/*.AppImage
+            src-tauri/target/${{ matrix.target }}/release/bundle/AppImage/*.AppImage
 
       - name: Tauri build
         uses: tauri-apps/tauri-action@v0
@@ -272,6 +272,8 @@ jobs:
           path: |
             src-tauri/target/${{ matrix.target }}/release/bundle/deb/*.deb
             src-tauri/target/${{ matrix.target }}/release/bundle/rpm/*.rpm
+            # AppImage disabled for ARM variants (aarch64, armv7) - not well supported
+            # src-tauri/target/${{ matrix.target }}/release/bundle/AppImage/*.AppImage
 
       - name: Get Version
         run: |

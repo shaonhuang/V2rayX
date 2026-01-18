@@ -17,13 +17,18 @@ mod v2ray_core;
 
 use std::env;
 use std::path::{Path, PathBuf};
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, OnceLock};
 use log::{error, info, warn};
 use tauri::{
     self,
+    AppHandle,
     Manager,
 };
+use tauri::path::BaseDirectory;
 use tauri_plugin_autostart::MacosLauncher;
+
+// Global AppHandle for path resolution in error handlers
+static APP_HANDLE_FOR_ERROR: OnceLock<Arc<AppHandle>> = OnceLock::new();
 
 #[cfg(not(debug_assertions))]
 const SENTRY_DSN: &str = dotenvy_macro::dotenv!("VITE_SENTRY_DSN");
@@ -145,6 +150,14 @@ pub fn run() {
                     .plugin(tauri_plugin_updater::Builder::new().build());
 
                 tauri::async_runtime::block_on(async {
+                    // Set AppHandle for telemetry path resolution
+                    if let Err(e) = telemetry::set_app_handle(app.app_handle().clone()) {
+                        warn!("Failed to set AppHandle for telemetry: {}", e);
+                    }
+                    
+                    // Store AppHandle for error handler path resolution
+                    let _ = APP_HANDLE_FOR_ERROR.set(Arc::new(app.app_handle().clone()));
+                    
                     commands::reset_proxy_v2ray_status(app.app_handle()).await;
                     app.manage(sys_tray::init_tray(app.app_handle().clone()).await.unwrap());
                     
@@ -352,69 +365,16 @@ fn handle_migration_error_dialog() {
 }
 
 fn get_database_path_for_error() -> Option<PathBuf> {
-    // Try to construct path manually based on OS
-    // This is called when the app fails to start, so we can't use AppHandle
-    get_database_path_fallback()
-}
-
-fn get_database_path_fallback() -> Option<PathBuf> {
-    // Try to get the database path without AppHandle
-    // This is a fallback method that tries to construct the path manually
-    
-    #[cfg(target_os = "macos")]
-    {
-        // On macOS, Tauri typically stores app config in ~/Library/Application Support/<app-name>/
-        if let Ok(home) = env::var("HOME") {
-            // Try multiple possible app names
-            let possible_names = vec!["v2rayx", "V2rayX", "v2rayx.shaonhuang"];
-            
-            for app_name in possible_names {
-                let mut path = PathBuf::from(&home);
-                path.push("Library");
-                path.push("Application Support");
-                path.push(app_name);
-                path.push("database.db");
-                
+    // Use Tauri's path API to resolve the database path
+    if let Some(app_handle) = APP_HANDLE_FOR_ERROR.get() {
+        match app_handle.path().resolve("database.db", BaseDirectory::AppConfig) {
+            Ok(path) => {
                 if path.exists() {
                     return Some(path);
                 }
             }
-        }
-    }
-    
-    #[cfg(target_os = "windows")]
-    {
-        // On Windows, typically in %APPDATA%\<app-name>\
-        if let Ok(appdata) = env::var("APPDATA") {
-            let app_name = env::var("TAURI_APP_NAME")
-                .or_else(|_| env::var("APP_NAME"))
-                .unwrap_or_else(|_| "V2rayX".to_string());
-            
-            let mut path = PathBuf::from(appdata);
-            path.push(&app_name);
-            path.push("database.db");
-            
-            if path.exists() {
-                return Some(path);
-            }
-        }
-    }
-    
-    #[cfg(target_os = "linux")]
-    {
-        // On Linux, typically in ~/.config/<app-name>/
-        if let Ok(home) = env::var("HOME") {
-            let app_name = env::var("TAURI_APP_NAME")
-                .or_else(|_| env::var("APP_NAME"))
-                .unwrap_or_else(|_| "V2rayX".to_string());
-            
-            let mut path = PathBuf::from(home);
-            path.push(".config");
-            path.push(&app_name);
-            path.push("database.db");
-            
-            if path.exists() {
-                return Some(path);
+            Err(e) => {
+                warn!("Failed to resolve database path using Tauri API: {}", e);
             }
         }
     }

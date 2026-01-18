@@ -27,7 +27,7 @@ export function initAxiomClient(): void {
   const orgId = import.meta.env.VITE_AXIOM_ORG_ID;
 
   if (!apiToken) {
-    console.warn('Axiom API token not configured');
+    // Silently return - telemetry is optional
     return;
   }
 
@@ -40,6 +40,10 @@ export function initAxiomClient(): void {
   } catch (error) {
     console.error('Failed to initialize Axiom client:', error);
   }
+}
+
+export function isInitialized(): boolean {
+  return axiomClient !== null;
 }
 
 export function initSentry(): void {
@@ -77,18 +81,76 @@ function getOS(): string {
   return 'unknown';
 }
 
+/**
+ * Telemetry Module
+ *
+ * This module handles telemetry and analytics for the application.
+ * It sends events to Axiom for analytics and Sentry for error tracking.
+ *
+ * Note: Device ID is managed on the Rust backend side, so we don't track it here.
+ * Client IP and daily active tracking are handled in this frontend module.
+ */
+
+// Cache for daily active tracking and client IP
+let lastActiveDateCache: string | null = null;
+let clientIpCache: string | null = null;
+
+/**
+ * Get or fetch client IP address (cached)
+ */
+async function getClientIp(): Promise<string | null> {
+  if (clientIpCache) {
+    return clientIpCache;
+  }
+
+  try {
+    // Try ipify.org first
+    const response = await fetch('https://api.ipify.org', {
+      signal: AbortSignal.timeout(5000),
+    });
+    if (response.ok) {
+      const ip = (await response.text()).trim();
+      if (ip) {
+        clientIpCache = ip;
+        return ip;
+      }
+    }
+  } catch {
+    // Fallback to icanhazip.com
+    try {
+      const response = await fetch('https://icanhazip.com', {
+        signal: AbortSignal.timeout(5000),
+      });
+      if (response.ok) {
+        const ip = (await response.text()).trim();
+        if (ip) {
+          clientIpCache = ip;
+          return ip;
+        }
+      }
+    } catch {
+      // Silently fail - IP detection is optional
+    }
+  }
+
+  return null;
+}
+
 export async function sendEvent(
   eventType: string,
   userId?: string,
   additionalData?: Record<string, unknown>,
 ): Promise<void> {
-  if (!axiomClient) {
-    console.warn('Axiom client not initialized');
+  // Early return if telemetry is not initialized (no warning - this is expected)
+  if (!isInitialized()) {
     return;
   }
 
   const dataset = import.meta.env.VITE_AXIOM_DATASET || 'v2rayx';
   const appVersion = import.meta.env.VITE_APP_VERSION || 'unknown';
+
+  // Get client IP (cached)
+  const clientIp = await getClientIp();
 
   const event: Record<string, unknown> = {
     _time: new Date().toISOString(),
@@ -97,6 +159,11 @@ export async function sendEvent(
     app_version: appVersion,
     os: getOS(),
   };
+
+  // Add client IP if available
+  if (clientIp) {
+    event.client_ip = clientIp;
+  }
 
   if (userId) {
     event.user_id_hash = hashUserId(userId);
@@ -125,7 +192,7 @@ export async function sendEvent(
   }
 
   try {
-    await axiomClient.ingest(dataset, [event]);
+    await axiomClient!.ingest(dataset, [event]);
   } catch (error) {
     console.error('Failed to send event to Axiom:', error);
   }
@@ -180,7 +247,14 @@ export function updateUptime(seconds: number): void {
 }
 
 export async function sendDailySummary(userId?: string): Promise<void> {
+  if (!isInitialized()) {
+    return;
+  }
+
   const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+
+  // Check if device was active today for DAU tracking
+  const isDailyActive = lastActiveDateCache === today;
 
   const summary = {
     uptime_seconds: usageMetrics.uptimeSeconds,
@@ -193,26 +267,66 @@ export async function sendDailySummary(userId?: string): Promise<void> {
         ? (usageMetrics.connectionSuccesses / usageMetrics.connectionAttempts) *
           100
         : 0,
+    is_daily_active: isDailyActive,
     date: today,
   };
 
   await sendEvent('daily_summary', userId, summary);
 }
 
+/**
+ * Track daily active user (DAU) - sends an event when device is active on a new day
+ */
+export async function trackDailyActive(): Promise<void> {
+  if (!isInitialized()) {
+    return;
+  }
+
+  const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+
+  // Check if we've already tracked activity for today
+  if (lastActiveDateCache === today) {
+    return; // Already tracked today
+  }
+
+  // New day - update the date and send event
+  lastActiveDateCache = today;
+
+  const dauData = {
+    date: today,
+    is_daily_active: true,
+  };
+
+  await sendEvent('daily_active', undefined, dauData);
+}
+
 // Set up daily summary task
 export function startDailySummaryTask(userId?: string): void {
+  if (!isInitialized()) {
+    return;
+  }
+
   // Send summary when page is about to unload
   window.addEventListener('beforeunload', () => {
-    sendDailySummary(userId).catch(console.error);
+    sendDailySummary(userId).catch(() => {
+      // Silently fail on unload
+    });
   });
 
   // Also send summary every 24 hours
-  setInterval(
-    () => {
+  // Use a more reliable approach than setInterval for long periods
+  const scheduleNext = () => {
+    const now = Date.now();
+    const next24h = 24 * 60 * 60 * 1000;
+    const delay = next24h - (now % next24h);
+
+    setTimeout(() => {
       sendDailySummary(userId).catch(console.error);
-    },
-    24 * 60 * 60 * 1000,
-  );
+      scheduleNext(); // Schedule next one
+    }, delay);
+  };
+
+  scheduleNext();
 }
 
 // Set up global error handlers

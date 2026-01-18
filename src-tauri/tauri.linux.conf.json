@@ -2,7 +2,7 @@
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "identifier": "v2rayx.shaonhuang",
   "bundle": {
-    "targets": ["deb", "rpm"],
+    "targets": ["deb", "rpm", "appimage"],
     "linux": {
       "deb": {
         "desktopTemplate": "./packages/linux/v2rayx.desktop"

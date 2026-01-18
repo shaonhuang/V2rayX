@@ -1,3 +1,15 @@
+//! Telemetry Module
+//!
+//! This module handles telemetry and analytics for the application.
+//! It sends events to Axiom for analytics and integrates with Sentry for error tracking.
+//!
+//! Key features:
+//! - Device ID generation and persistence
+//! - Usage metrics tracking (uptime, connections, features)
+//! - Daily active user (DAU) tracking
+//! - Client IP detection (cached)
+//! - Event sending to Axiom with proper error handling
+
 use axiom_rs::Client as AxiomClient;
 use chrono::{DateTime, Utc};
 use reqwest::Client as HttpClient;
@@ -11,7 +23,8 @@ use std::path::PathBuf;
 use std::sync::{Arc, Mutex, OnceLock};
 use std::time::Duration;
 use log::{error, info, warn};
-use tauri;
+use tauri::{AppHandle, Manager};
+use tauri::path::BaseDirectory;
 use uuid::Uuid;
 
 // Compile-time constants for Axiom configuration (embedded during build)
@@ -31,6 +44,7 @@ static USAGE_METRICS: OnceLock<Arc<Mutex<UsageMetrics>>> = OnceLock::new();
 static CLIENT_IP_CACHE: OnceLock<Arc<Mutex<Option<String>>>> = OnceLock::new();
 static DEVICE_ID: OnceLock<Arc<Mutex<Option<String>>>> = OnceLock::new();
 static LAST_ACTIVE_DATE: OnceLock<Arc<Mutex<Option<String>>>> = OnceLock::new();
+static APP_HANDLE: OnceLock<Arc<AppHandle>> = OnceLock::new();
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UsageMetrics {
@@ -165,6 +179,15 @@ pub fn init_axiom_client(config: TelemetryConfig) -> Result<(), String> {
     Ok(())
 }
 
+/// Set the AppHandle for path resolution.
+/// This should be called during app setup when AppHandle is available.
+pub fn set_app_handle(app: AppHandle) -> Result<(), String> {
+    APP_HANDLE
+        .set(Arc::new(app))
+        .map_err(|_| "AppHandle already set".to_string())?;
+    Ok(())
+}
+
 fn get_client() -> Option<Arc<AxiomClient>> {
     AXIOM_CLIENT.get().cloned()
 }
@@ -201,29 +224,36 @@ fn get_app_version() -> String {
         .unwrap_or_else(|_| "0.5.2".to_string()) // Fallback to version from tauri.conf.json
 }
 
+/// Get device ID file path using Tauri's path API.
+/// 
+/// Uses `app.path().resolve("device_id.txt", BaseDirectory::AppConfig)` when AppHandle is available.
+/// Falls back to manual path construction if AppHandle is not set.
+/// 
+/// Returns `None` if the path cannot be determined.
 fn get_device_id_file_path() -> Option<PathBuf> {
-    // Try to get device ID file path using similar logic as database path
-    // This is a fallback that works without AppHandle
+    // Try to use Tauri's path API first
+    if let Some(app_handle) = APP_HANDLE.get() {
+        match app_handle.path().resolve("device_id.txt", BaseDirectory::AppConfig) {
+            Ok(path) => return Some(path),
+            Err(e) => {
+                warn!("Failed to resolve device ID path using Tauri API: {}", e);
+                // Fall through to manual path construction
+            }
+        }
+    }
+
+    // Fallback to manual path construction if AppHandle is not available
+    let app_name = env::var("TAURI_APP_NAME")
+        .or_else(|_| env::var("APP_NAME"))
+        .unwrap_or_else(|_| "v2rayx.shaonhuang".to_string());
+
     #[cfg(target_os = "macos")]
     {
         if let Ok(home) = env::var("HOME") {
-            // Try to find existing app directory first
-            let possible_names = vec!["v2rayx", "V2rayX", "v2rayx.shaonhuang"];
-            for app_name in &possible_names {
-                let mut path = PathBuf::from(&home);
-                path.push("Library");
-                path.push("Application Support");
-                path.push(app_name);
-                if path.exists() {
-                    path.push("device_id.txt");
-                    return Some(path);
-                }
-            }
-            // If no existing directory found, use the first app name
             let mut path = PathBuf::from(&home);
             path.push("Library");
             path.push("Application Support");
-            path.push(&possible_names[0]);
+            path.push(&app_name);
             path.push("device_id.txt");
             return Some(path);
         }
@@ -232,9 +262,6 @@ fn get_device_id_file_path() -> Option<PathBuf> {
     #[cfg(target_os = "windows")]
     {
         if let Ok(appdata) = env::var("APPDATA") {
-            let app_name = env::var("TAURI_APP_NAME")
-                .or_else(|_| env::var("APP_NAME"))
-                .unwrap_or_else(|_| "V2rayX".to_string());
             let mut path = PathBuf::from(appdata);
             path.push(&app_name);
             path.push("device_id.txt");
@@ -245,9 +272,6 @@ fn get_device_id_file_path() -> Option<PathBuf> {
     #[cfg(target_os = "linux")]
     {
         if let Ok(home) = env::var("HOME") {
-            let app_name = env::var("TAURI_APP_NAME")
-                .or_else(|_| env::var("APP_NAME"))
-                .unwrap_or_else(|_| "V2rayX".to_string());
             let mut path = PathBuf::from(home);
             path.push(".config");
             path.push(&app_name);
@@ -259,6 +283,14 @@ fn get_device_id_file_path() -> Option<PathBuf> {
     None
 }
 
+/// Get or generate a persistent device ID.
+/// 
+/// The device ID is:
+/// 1. Cached in memory for performance
+/// 2. Stored in a file for persistence across app restarts
+/// 3. Generated as a UUID v7 (time-ordered) if it doesn't exist
+/// 
+/// Returns a UUID string that uniquely identifies this device installation.
 fn get_or_generate_device_id() -> String {
     // Check cache first
     if let Some(device_id_guard) = DEVICE_ID.get() {
@@ -275,6 +307,7 @@ fn get_or_generate_device_id() -> String {
             match fs::read_to_string(&file_path) {
                 Ok(id) => {
                     let id = id.trim().to_string();
+                    // Validate it's a valid UUID
                     if !id.is_empty() && Uuid::parse_str(&id).is_ok() {
                         // Cache it
                         if let Some(device_id_guard) = DEVICE_ID.get() {
@@ -283,6 +316,8 @@ fn get_or_generate_device_id() -> String {
                             }
                         }
                         return id;
+                    } else {
+                        warn!("Invalid device ID format in file, generating new one");
                     }
                 }
                 Err(e) => {
@@ -307,7 +342,7 @@ fn get_or_generate_device_id() -> String {
         if let Err(e) = fs::write(&file_path, &new_device_id) {
             warn!("Failed to write device ID file: {}", e);
         } else {
-            info!("Generated and saved new device ID: {}", new_device_id);
+            info!("Generated and saved new device ID");
         }
     }
 
@@ -321,6 +356,12 @@ fn get_or_generate_device_id() -> String {
     new_device_id
 }
 
+/// Get client's public IP address (cached for performance).
+/// 
+/// Tries multiple IP detection services with fallback.
+/// The result is cached to avoid repeated API calls.
+/// 
+/// Returns `None` if IP detection fails (this is expected and not an error).
 async fn get_client_ip() -> Option<String> {
     // Check cache first
     if let Some(cache) = CLIENT_IP_CACHE.get() {
@@ -350,7 +391,7 @@ async fn get_client_ip() -> Option<String> {
                 match resp.text().await {
                     Ok(ip_text) => {
                         let ip = ip_text.trim().to_string();
-                        if !ip.is_empty() {
+                        if !ip.is_empty() && ip.parse::<std::net::IpAddr>().is_ok() {
                             Some(ip)
                         } else {
                             None
@@ -373,7 +414,7 @@ async fn get_client_ip() -> Option<String> {
                         match resp.text().await {
                             Ok(ip_text) => {
                                 let ip = ip_text.trim().to_string();
-                                if !ip.is_empty() {
+                                if !ip.is_empty() && ip.parse::<std::net::IpAddr>().is_ok() {
                                     Some(ip)
                                 } else {
                                     None
@@ -439,7 +480,7 @@ pub async fn send_event(
     // Get or generate device ID
     let device_id = get_or_generate_device_id();
 
-    // Build event - send raw data including IP and device ID, let Axiom handle geo-location at query time using geo_info_from_ip_address
+    // Build event with IP and device ID
     let mut event = json!({
         "_time": Utc::now().to_rfc3339(),
         "event_type": event_type,
