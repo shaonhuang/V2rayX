@@ -4,7 +4,10 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-    tags-ignore: [updater, alpha]
+    tags:
+      - '*'
+  pull_request:
+    branches: [main]
 permissions: write-all
 env:
   CARGO_INCREMENTAL: 0
@@ -41,8 +44,7 @@ jobs:
           cache-all-crates: true
           cache-on-failure: true
 
-      - name: Install dependencies (ubuntu only)
-        if: matrix.os == 'ubuntu-22.04'
+      - name: Install dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev patchelf
@@ -64,7 +66,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Add SENTRY_DSN and Axiom variables to .env
+      - name: Add Env Vars
         run: |
           echo "VITE_SENTRY_DSN=${{ secrets.SENTRY_DSN }}" >> .env
           echo "VITE_AXIOM_API_TOKEN=${{ secrets.VITE_AXIOM_API_TOKEN }}" >> .env
@@ -72,7 +74,7 @@ jobs:
           echo "VITE_AXIOM_DATASET=${{ secrets.VITE_AXIOM_DATASET }}" >> .env
         shell: bash
 
-      - name: CI Build
+      - name: CI Build (Deb)
         if: ${{ github.ref_type == 'branch' }}
         run: |
           pnpm build --target ${{ matrix.target }} --bundles deb
@@ -89,32 +91,13 @@ jobs:
           environment: |
             TARGET=${{ matrix.target }}
 
-      - run: |
-          sudo snap install --dangerous ${{ steps.snapcraft.outputs.snap }}
-
-      # Upload the snap to the Snap Store
-      - uses: snapcore/action-publish@v1
-        if: ${{ github.ref_type == 'tag' }}
-        env:
-          SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.STORE_LOGIN }}
-        with:
-          snap: ${{ steps.build.outputs.snap }}
-          release: edge
-
-      - name: Upload assets to github
-        if: ${{ github.ref_type == 'tag' }}
-        uses: softprops/action-gh-release@v2
-        with:
-          prerelease: true
-          token: ${{ secrets.GITHUB_TOKEN }}
-          files: ${{ steps.snapcraft.outputs.snap }}
-
-      # Upload to build page
-      - name: CI upload Snap
+      # 关键修改：只上传 Artifact，不在这里发布
+      - name: Upload Snap Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: V2rayX x64
+          name: snap-amd64
           path: ${{ steps.snapcraft.outputs.snap }}
+          if-no-files-found: error
 
   # Not working with arm64
   alpha-for-linux-arm:
@@ -161,7 +144,7 @@ jobs:
           pnpm i
           pnpm check ${{ matrix.target }}
 
-      - name: Add SENTRY_DSN, VITE_UPDATER_ACTIVE and Axiom variables to .env
+      - name: Add Env Vars
         run: |
           echo "VITE_SENTRY_DSN=${{ secrets.SENTRY_DSN }}" >> .env
           echo "VITE_UPDATER_ACTIVE=true" >> .env
@@ -170,28 +153,23 @@ jobs:
           echo "VITE_AXIOM_DATASET=${{ secrets.VITE_AXIOM_DATASET }}" >> .env
         shell: bash
 
-      - name: 'Setup for linux'
+      - name: 'Setup Apt for Cross-Compile'
         run: |-
           sudo ls -lR /etc/apt/
-
           cat > /tmp/sources.list << EOF
           deb [arch=amd64,i386] http://archive.ubuntu.com/ubuntu jammy main multiverse universe restricted
           deb [arch=amd64,i386] http://archive.ubuntu.com/ubuntu jammy-security main multiverse universe restricted
           deb [arch=amd64,i386] http://archive.ubuntu.com/ubuntu jammy-updates main multiverse universe restricted
           deb [arch=amd64,i386] http://archive.ubuntu.com/ubuntu jammy-backports main multiverse universe restricted
-
           deb [arch=armhf,arm64] http://ports.ubuntu.com/ubuntu-ports jammy main multiverse universe restricted
           deb [arch=armhf,arm64] http://ports.ubuntu.com/ubuntu-ports jammy-security main multiverse universe restricted
           deb [arch=armhf,arm64] http://ports.ubuntu.com/ubuntu-ports jammy-updates main multiverse universe restricted
           deb [arch=armhf,arm64] http://ports.ubuntu.com/ubuntu-ports jammy-backports main multiverse universe restricted
           EOF
-
           sudo mv /etc/apt/sources.list /etc/apt/sources.list.default
           sudo mv /tmp/sources.list /etc/apt/sources.list
-
           sudo dpkg --add-architecture ${{ matrix.arch }}
           sudo apt update
-
           sudo apt install -y \
             libwebkit2gtk-4.1-dev:${{ matrix.arch }} \
             libayatana-appindicator3-dev:${{ matrix.arch }} \
@@ -201,19 +179,13 @@ jobs:
 
       - name: 'Install aarch64 tools'
         if: matrix.target == 'aarch64-unknown-linux-gnu'
-        run: |
-          sudo apt install -y \
-            gcc-aarch64-linux-gnu \
-            g++-aarch64-linux-gnu
+        run: sudo apt install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
 
       - name: 'Install armv7 tools'
         if: matrix.target == 'armv7-unknown-linux-gnueabihf'
-        run: |
-          sudo apt install -y \
-            gcc-arm-linux-gnueabihf \
-            g++-arm-linux-gnueabihf
+        run: sudo apt install -y gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf
 
-      - name: Build for Linux
+      - name: Build JS/Rust (Cross-Compile)
         run: |
           export PKG_CONFIG_ALLOW_CROSS=1
           if [ "${{ matrix.target }}" == "aarch64-unknown-linux-gnu" ]; then
@@ -239,25 +211,73 @@ jobs:
             TARGET=${{ matrix.target }}
 
         # Upload the snap to the Snap Store
-      - uses: snapcore/action-publish@v1
-        if: ${{ github.ref_type == 'tag' }}
+      - name: Upload Snap Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: snap-${{ matrix.arch }}
+          path: ${{ steps.snapcraft.outputs.snap }}
+          if-no-files-found: error
+
+  publish-release:
+    needs: [alpha-for-linux-x64, alpha-for-linux-arm] # 等待构建完成
+    runs-on: ubuntu-latest
+    if: (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')) && !startsWith(github.ref, 'refs/tags/updater') && !startsWith(github.ref, 'refs/tags/alpha')
+
+    steps:
+      - name: Download all Snap artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: ./snaps
+          merge-multiple: true
+
+      - name: List files (debug)
+        run: ls -R ./snaps
+
+      - name: Find snap files
+        id: find-snaps
+        run: |
+          find ./snaps -name "*.snap" -type f | sort > snap_files.txt
+          echo "Found snap files:"
+          cat snap_files.txt
+          # Output each file path as a separate output (support up to 10 files)
+          index=0
+          while IFS= read -r file && [ $index -lt 10 ]; do
+            echo "snap_$index=$file" >> $GITHUB_OUTPUT
+            index=$((index + 1))
+          done < snap_files.txt
+          echo "count=$index" >> $GITHUB_OUTPUT
+
+      - name: Publish snap 0 to Snap Store
+        if: steps.find-snaps.outputs.snap_0 != ''
+        uses: snapcore/action-publish@v1
         env:
           SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.STORE_LOGIN }}
         with:
-          snap: ${{ steps.build.outputs.snap }}
-          release: edge
+          snap: ${{ steps.find-snaps.outputs.snap_0 }}
+          release: ${{ startsWith(github.ref, 'refs/tags/') && 'candidate' || 'edge' }}
 
-      - name: Upload assets to github
+      - name: Publish snap 1 to Snap Store
+        if: steps.find-snaps.outputs.snap_1 != ''
+        uses: snapcore/action-publish@v1
+        env:
+          SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.STORE_LOGIN }}
+        with:
+          snap: ${{ steps.find-snaps.outputs.snap_1 }}
+          release: ${{ startsWith(github.ref, 'refs/tags/') && 'candidate' || 'edge' }}
+
+      - name: Publish snap 2 to Snap Store
+        if: steps.find-snaps.outputs.snap_2 != ''
+        uses: snapcore/action-publish@v1
+        env:
+          SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.STORE_LOGIN }}
+        with:
+          snap: ${{ steps.find-snaps.outputs.snap_2 }}
+          release: ${{ startsWith(github.ref, 'refs/tags/') && 'candidate' || 'edge' }}
+
+      - name: Upload to GitHub Release
         if: ${{ github.ref_type == 'tag' }}
         uses: softprops/action-gh-release@v2
         with:
           prerelease: true
           token: ${{ secrets.GITHUB_TOKEN }}
-          files: ${{ steps.snapcraft.outputs.snap }}
-
-      # Upload to build page
-      - name: CI upload Snap
-        uses: actions/upload-artifact@v4
-        with:
-          name: V2rayX ${{ matrix.target }}
-          path: ${{ steps.snapcraft.outputs.snap }}
+          files: ./snaps/*.snap
